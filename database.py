@@ -1,9 +1,7 @@
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, String, Integer
-from sqlalchemy.engine import create_engine
 
 
-create_engine()
 Base = declarative_base()
 
 
@@ -20,3 +18,11 @@ class SignInTokens(Base):
 
     user_id = Column(Integer, primary_key=True)
     token = Column(String(64))
+
+
+if __name__ == '__main__':
+    from sqlalchemy.engine import create_engine
+    from config import DevConfig
+
+    engine = create_engine(DevConfig.SQLALCHEMY_URL)
+    Base.metadata.create_all(engine)

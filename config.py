@@ -6,12 +6,12 @@ class BaseConfig:
 
 
 class DevConfig(BaseConfig):
-    SQLALCHEMY_URL = 'mysql://root@localhost/explorebaduk_dev'
+    SQLALCHEMY_URL = 'sqlite:///explorebaduk.db'
     WEBSOCKET_PORT = 8080
 
 
 class TestConfig(BaseConfig):
-    SQLALCHEMY_URL = 'mysql://root@localhost/explorebaduk_test'
+    SQLALCHEMY_URL = 'sqlite:///explorebaduk.db'
     WEBSOCKET_PORT = 8081
 
 
