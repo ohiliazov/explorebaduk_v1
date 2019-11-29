@@ -25,7 +25,7 @@ if __name__ == '__main__':
     from sqlalchemy.orm import sessionmaker
     from config import DevConfig
 
-    engine = create_engine(DevConfig.SQLALCHEMY_URL)
+    engine = create_engine(DevConfig.DATABASE_URI)
     Base.metadata.create_all(engine)
     Session = sessionmaker(bind=engine)
     session = Session()
