@@ -1,14 +1,29 @@
 from enum import Enum
 
 
-class Action(Enum):
-    LOGIN = 'login'
-    CHALLENGE = 'challenge'
+class ExtendedEnum(Enum):
+    @classmethod
+    def values(cls):
+        return [item.value for item in cls]
+
+
+class Target(ExtendedEnum):
+    AUTH = 'auth'
     CHAT = 'chat'
+    CHALLENGE = 'challenge'
     PLAY = 'play'
 
 
-class ChallengeAction(Enum):
+class AuthAction(ExtendedEnum):
+    LOGIN = 'login'
+    LOGOUT = 'logout'
+
+
+class ChatAction(ExtendedEnum):
+    SEND_MESSAGE = 'send'
+
+
+class ChallengeAction(ExtendedEnum):
     CREATE = 'create'
     ACCEPT = 'accept'
     REVISE = 'revise'

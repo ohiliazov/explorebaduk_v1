@@ -1,5 +1,8 @@
+import os
+
+from sqlalchemy import Column, String, Integer, create_engine
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, String, Integer
+from sqlalchemy.orm import sessionmaker
 
 
 Base = declarative_base()
@@ -20,25 +23,31 @@ class SignInToken(Base):
     token = Column(String(64))
 
 
+class DatabaseWrapper:
+    def __init__(self, database_uri):
+        self.engine = create_engine(database_uri)
+        self.session = sessionmaker(bind=self.engine)()
+
+    def first(self, model, **filters):
+        return self.session.query(model).filter_by(**filters).first()
+
+
 if __name__ == '__main__':
-    from sqlalchemy.engine import create_engine
-    from sqlalchemy.orm import sessionmaker
     from config import DevConfig
 
-    engine = create_engine(DevConfig.DATABASE_URI)
-    Base.metadata.create_all(engine)
-    Session = sessionmaker(bind=engine)
-    session = Session()
+    db = DatabaseWrapper(DevConfig.DATABASE_URI)
+    Base.metadata.create_all(db.engine)
 
-    session.execute('DELETE FROM users;')
-    session.execute('DELETE FROM signin_tokens;')
+    session = db.session
+    db.session.execute('DELETE FROM users;')
+    db.session.execute('DELETE FROM signin_tokens;')
 
     for i in range(100):
         user = User(user_id=i, email=f'test{i}@test.test', password='test')
         token = SignInToken(user_id=i, token=f'token_{i}')
 
-        session.add(user)
-        session.add(token)
+        db.session.add(user)
+        db.session.add(token)
 
-    session.commit()
-    session.close()
+    db.session.commit()
+    db.session.close()

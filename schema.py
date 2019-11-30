@@ -1,34 +1,43 @@
-from marshmallow import Schema, fields, validates
+from marshmallow import (
+    Schema,
+    fields,
+    validates,
+    ValidationError,
+    INCLUDE,
+    EXCLUDE,
+)
+
+from constants import Target, AuthAction
 
 
-class PayloadBase(Schema):
-    action = fields.String(required=True)
+class Payload(Schema):
+    class Meta:
+        unknown = INCLUDE
+    target = fields.String(required=True)
 
-    @validates('action')
-    def validate_action(self, value):
-        return value in ['login', 'chat']
+    @validates('target')
+    def validate_target(self, value):
+        try:
+            Target(value)
+        except ValueError:
+            raise ValidationError(f"Invalid target: {value}")
 
 
-class LoginPayload(PayloadBase):
-    user_id = fields.String(required=True)
+class AuthPayload(Schema):
+    class Meta:
+        unknown = INCLUDE
+    auth_action = fields.String(required=True)
+
+    @validates('auth_action')
+    def validate_auth_action(self, value):
+        try:
+            AuthAction(value)
+        except ValueError:
+            raise ValidationError(f"Invalid auth_action: {value}")
+
+
+class LoginPayload(Schema):
+    class Meta:
+        unknown = EXCLUDE
+    user_id = fields.Integer(required=True)
     token = fields.String(required=True)
-
-    @validates('token')
-    def validate_action(self, token):
-        return bool(token)
-
-
-class ChatMessagePayload(PayloadBase):
-    target_type = fields.String(required=True)
-    target_name = fields.String(required=True)  # user or room name
-    message = fields.String()
-
-
-class ChallengePayload(PayloadBase):
-    target_type = fields.String(required=True)  # player, room
-    target_name = fields.String(required=True)  # username, room
-    challenge_action = fields.String(required=True, validate=lambda m: m in ['create',
-                                                                             'accept',
-                                                                             'decline',
-                                                                             'revise'])
-    message = fields.String()
