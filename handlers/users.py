@@ -18,51 +18,69 @@ class Users:
         return [user.email for user in self.users.values()]
 
     async def handle_login(self, ws, data):
-        if ws in self.users:
-            message = {
-                "target": "user",
-                "data": f"Already logged in as {self.users[ws].email}"
-            }
-            return message
+        message = {
+            "target": "user",
+            "action": "login",
+        }
 
+        # Check if user is already logged in
+        if ws in self.users:
+            message["status"] = "success"
+            message["data"] = f"Already logged in as {self.users[ws].email}"
+
+            return await ws.send(json.dumps(message))
+
+        # Authenticate user
         signin_data = LoginPayload().load(data)
         signin_token = self.session.query(SignInToken).filter_by(**signin_data).first()
 
         if not signin_token:
-            logger.info("Authentication failed for: %s", signin_data)
-            return await ws.send(
-                json.dumps({"status": "failure", "message": "Authentication failed"}))
+            message["status"] = "failure"
+            message["data"] = "Authentication failed"
+            return await ws.send(json.dumps(message))
 
+        # Store user
         user = self.session.query(User).filter_by(user_id=signin_token.user_id).first()
-
-        logger.info("User online: %s", user.email)
-        await ws.send(json.dumps({"status": "success", "message": f"Logged in as {user.email}"}))
-
         self.users[ws] = user
+
+        message["status"] = "success"
+        message["data"] = f"Logged in as {user.email}"
+        await ws.send(json.dumps(message))
+
+        sync_message = {
+            "target": "sync",
+            "action": "user_online",
+            "data": user.email
+        }
+        return sync_message
+
+    async def handle_logout(self, ws, data):
         message = {
             "target": "user",
-            "action": "online",
-            "data": {
-                "email": user.email,
-            },
+            "action": "logout",
         }
-        return message
+        if ws not in self.users:
+            message["status"] = "success"
+            message["data"] = "User was not logged in"
 
-    async def handle_logout(self, ws):
+            return await ws.send(json.dumps(message))
+
         user = self.users.pop(ws)
-        message = {
-            "target": "users",
-            "action": "offline",
-            "data": {
-                "email": user.email,
-            },
+        message["status"] = "success"
+        message["data"] = "Logged out"
+
+        await ws.send(json.dumps(message))
+
+        sync_message = {
+            "target": "sync",
+            "action": "user_offline",
+            "data": user.email,
         }
+        return sync_message
 
-        return message
-
-    async def handle(self, ws, action: str, data: dict) -> str:
+    async def handle(self, ws, action: str, data: dict) -> dict:
         if action == UserAction.LOGIN.value:
             return await self.handle_login(ws, data)
 
-        elif action == UserAction.LOGIN.value:
-            return await self.handle_login(ws, data)
+        elif action == UserAction.LOGOUT.value:
+            return await self.handle_logout(ws, data)

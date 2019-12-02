@@ -30,6 +30,14 @@ class GameServer:
         if self.ws_server:
             return self.ws_server.websockets
 
+    async def sync(self, ws, sync_messages: list):
+        if sync_messages and len(self.clients) > 1:
+            await asyncio.wait([
+                client.send(json.dumps(sync_message))
+                for sync_message in sync_messages
+                for client in self.clients if client != ws
+            ])
+
     async def consume_message(self, ws: websockets.WebSocketServerProtocol, message: str):
         try:
             data = WebSocketMessage().loads(message)
@@ -37,21 +45,21 @@ class GameServer:
             target = data.pop('target')
             action = data.pop('action')
 
-            sync_message = None
             if target == Target.USER.value:
-                sync_message = await self.users.handle(ws, action, data)
+                await self.users.handle(ws, action, data)
             else:
                 logger.info("Message ignored: %s", message)
 
-            if sync_message and self.clients:
-                sync_message = json.dumps(sync_message)
-                await asyncio.wait([player.send(sync_message) for player in self.clients])
+        except json.decoder.JSONDecodeError as err:
+            errmsg = '%s: line %d column %d (char %d)' % (err.msg, err.lineno, err.colno, err.pos)
+            message = {"status": "failure", "errors": errmsg}
+            return await ws.send(json.dumps(message))
 
         except ValidationError as err:
             message = {"status": "failure", "errors": err.messages}
             return await ws.send(json.dumps(message))
 
-    async def sync(self, ws):
+    async def online(self, ws):
         messages = []
         if self.users.online:
             users_online = json.dumps({"target": "users", "data": self.users.online})
@@ -60,13 +68,21 @@ class GameServer:
         if messages:
             await asyncio.wait(messages)
 
+    async def offline(self, ws):
+        if ws in self.users.users:
+            user = self.users.users.pop(ws)
+            message = {"target": "sync", "action": "user_offline", "data": user.email}
+            await self.sync(ws, [message])
+
     async def run(self, ws: websockets.WebSocketServerProtocol, path: str):
-        await self.sync(ws)
+        await self.online(ws)
         try:
             async for message in ws:
                 await self.consume_message(ws, message)
         except websockets.WebSocketException:
             pass
+        finally:
+            await self.offline(ws)
 
     def serve(self):
         server = websockets.serve(self.run, self.host, self.port)
