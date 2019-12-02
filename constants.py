@@ -8,12 +8,12 @@ class ExtendedEnum(Enum):
 
 
 class Target(Enum):
-    AUTH = 'auth'
+    USER = 'user'
     CHAT = 'chat'
     CHALLENGE = 'challenge'
 
 
-class AuthAction(Enum):
+class UserAction(Enum):
     LOGIN = 'login'
     LOGOUT = 'logout'
 
@@ -27,10 +27,3 @@ class ChallengeAction(Enum):
     ACCEPT = 'accept'
     DECLINE = 'decline'
     REVISE = 'revise'
-
-
-TARGET_ACTIONS = {
-    Target.AUTH: AuthAction,
-    Target.CHAT: ChatAction,
-    Target.CHALLENGE: ChallengeAction,
-}

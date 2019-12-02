@@ -10,5 +10,10 @@ pip install websockets
 
 Run server within your python virtual environment:
 ```bash
-python server.py
+python manage.py
+```
+
+To interactively connect to server:
+```bash
+python -m websockets ws://localhost:8080
 ```

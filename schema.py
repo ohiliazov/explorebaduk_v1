@@ -9,10 +9,10 @@ from marshmallow import (
     EXCLUDE,
 )
 
-from constants import Target, AuthAction, ChatAction, ChallengeAction
+from constants import Target, UserAction, ChatAction, ChallengeAction
 
 TARGET_ACTIONS = {
-    Target.AUTH: AuthAction,
+    Target.USER: UserAction,
     Target.CHAT: ChatAction,
     Target.CHALLENGE: ChallengeAction,
 }
@@ -20,7 +20,7 @@ TARGET_ACTIONS = {
 
 class WebSocketMessage(Schema):
     class Meta:
-        unknown = EXCLUDE
+        unknown = INCLUDE
     target = fields.String(required=True)
     action = fields.String(required=True)
 
@@ -38,12 +38,6 @@ class WebSocketMessage(Schema):
             TARGET_ACTIONS[target](data['action'])
         except ValueError:
             raise ValidationError(f"Invalid action")
-
-    @post_load
-    def make_object(self, item, **kwargs):
-        target = Target(item['target'])
-        action = TARGET_ACTIONS[target](item['action'])
-        return target, action
 
 
 class LoginPayload(Schema):

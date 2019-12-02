@@ -1,49 +1,75 @@
 import asyncio
 import json
+import logging
 
+from marshmallow.exceptions import ValidationError
 import websockets
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 
-from handlers import handle_message
+from constants import Target
+from handlers.users import Users
+from schema import WebSocketMessage
 
-Session = sessionmaker()
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger('game_server')
 
 
 class GameServer:
-    clients = {}
+    def __init__(self, host, port, session=None):
+        self.ws_server = None
 
-    def __init__(self, host, port, database_uri):
         self.host = host
         self.port = port
-        self.db_engine = create_engine(database_uri)
-        self.session = Session(bind=self.db_engine)
+        self.session = session
 
-    @classmethod
-    async def register(cls, ws: websockets.WebSocketServerProtocol) -> None:
-        host, port = ws.remote_address[:2]
-        print(f'Connected: {host} {port}')
-        cls.clients[ws] = None
+        self.users = Users(session)
+        self.chats = None
 
-    @classmethod
-    async def unregister(cls, ws: websockets.WebSocketServerProtocol) -> None:
-        host, port = ws.remote_address[:2]
-        print(f'Disconnected: {host} {port}')
-        cls.clients.pop(ws)
+    @property
+    def clients(self):
+        if self.ws_server:
+            return self.ws_server.websockets
+
+    async def consume_message(self, ws: websockets.WebSocketServerProtocol, message: str):
+        try:
+            data = WebSocketMessage().loads(message)
+
+            target = data.pop('target')
+            action = data.pop('action')
+
+            sync_message = None
+            if target == Target.USER.value:
+                sync_message = await self.users.handle(ws, action, data)
+            else:
+                logger.info("Message ignored: %s", message)
+
+            if sync_message and self.clients:
+                sync_message = json.dumps(sync_message)
+                await asyncio.wait([player.send(sync_message) for player in self.clients])
+
+        except ValidationError as err:
+            message = {"status": "failure", "errors": err.messages}
+            return await ws.send(json.dumps(message))
+
+    async def sync(self, ws):
+        messages = []
+        if self.users.online:
+            users_online = json.dumps({"target": "users", "data": self.users.online})
+            messages.append(ws.send(users_online))
+
+        if messages:
+            await asyncio.wait(messages)
 
     async def run(self, ws: websockets.WebSocketServerProtocol, path: str):
-        await self.register(ws)
+        await self.sync(ws)
         try:
             async for message in ws:
-                data = json.loads(message)
-                await handle_message(self.session, ws, data)
+                await self.consume_message(ws, message)
         except websockets.WebSocketException:
             pass
-        finally:
-            await self.unregister(ws)
 
     def serve(self):
-        eb_server = websockets.serve(self.run, self.host, self.port)
-
-        asyncio.get_event_loop().run_until_complete(eb_server)
+        server = websockets.serve(self.run, self.host, self.port)
+        self.ws_server = server.ws_server
+        asyncio.get_event_loop().run_until_complete(server)
         asyncio.get_event_loop().run_forever()
