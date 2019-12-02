@@ -17,6 +17,27 @@ class Users:
     def online(self):
         return [user.email for user in self.users.values()]
 
+    async def set_online(self, ws, user):
+        self.users[ws] = user
+        message = {
+            "target": "user",
+            "action": "login",
+            "status": "success",
+            "data": f"Logged in as {user.email}"
+        }
+        await ws.send(json.dumps(message))
+
+    async def set_offline(self, ws):
+        user = self.users.pop(ws)
+        message = {
+            "target": "user",
+            "action": "logout",
+            "status": "success",
+            "data": "Logged out"
+        }
+
+        await ws.send(json.dumps(message))
+
     async def handle_login(self, ws, data):
         message = {
             "target": "user",
@@ -41,11 +62,7 @@ class Users:
 
         # Store user
         user = self.session.query(User).filter_by(user_id=signin_token.user_id).first()
-        self.users[ws] = user
-
-        message["status"] = "success"
-        message["data"] = f"Logged in as {user.email}"
-        await ws.send(json.dumps(message))
+        await self.set_online(ws, user)
 
         sync_message = {
             "target": "sync",
