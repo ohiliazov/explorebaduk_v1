@@ -2,38 +2,48 @@ from marshmallow import (
     Schema,
     fields,
     validates,
+    validates_schema,
+    post_load,
     ValidationError,
     INCLUDE,
     EXCLUDE,
 )
 
-from constants import Target, AuthAction
+from constants import Target, AuthAction, ChatAction, ChallengeAction
+
+TARGET_ACTIONS = {
+    Target.AUTH: AuthAction,
+    Target.CHAT: ChatAction,
+    Target.CHALLENGE: ChallengeAction,
+}
 
 
-class Payload(Schema):
+class WebSocketMessage(Schema):
     class Meta:
-        unknown = INCLUDE
+        unknown = EXCLUDE
     target = fields.String(required=True)
+    action = fields.String(required=True)
 
     @validates('target')
     def validate_target(self, value):
         try:
             Target(value)
         except ValueError:
-            raise ValidationError(f"Invalid target: {value}")
+            raise ValidationError(f"Invalid target")
 
-
-class AuthPayload(Schema):
-    class Meta:
-        unknown = INCLUDE
-    auth_action = fields.String(required=True)
-
-    @validates('auth_action')
-    def validate_auth_action(self, value):
+    @validates_schema
+    def validate_action(self, data, **kwargs):
+        target = Target(data['target'])
         try:
-            AuthAction(value)
+            TARGET_ACTIONS[target](data['action'])
         except ValueError:
-            raise ValidationError(f"Invalid auth_action: {value}")
+            raise ValidationError(f"Invalid action")
+
+    @post_load
+    def make_object(self, item, **kwargs):
+        target = Target(item['target'])
+        action = TARGET_ACTIONS[target](item['action'])
+        return target, action
 
 
 class LoginPayload(Schema):

@@ -1,60 +1,49 @@
 import asyncio
 import json
-import logging
 
 import websockets
-
-import config
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
 from handlers import handle_message
-from database import DatabaseWrapper
+
+Session = sessionmaker()
 
 
-logging.getLogger('websockets').setLevel(logging.ERROR)
-db = DatabaseWrapper(config.DATABASE_URI)
+class GameServer:
+    clients = {}
 
-CONNECTED = {}
+    def __init__(self, host, port, database_uri):
+        self.host = host
+        self.port = port
+        self.db_engine = create_engine(database_uri)
+        self.session = Session(bind=self.db_engine)
 
+    @classmethod
+    async def register(cls, ws: websockets.WebSocketServerProtocol) -> None:
+        host, port = ws.remote_address[:2]
+        print(f'Connected: {host} {port}')
+        cls.clients[ws] = None
 
-def online_players():
-    message = {
-        "type": "players",
-        "action": "get",
-        "payload": [player for player in CONNECTED.values() if player]
-    }
-    return json.dumps(message)
+    @classmethod
+    async def unregister(cls, ws: websockets.WebSocketServerProtocol) -> None:
+        host, port = ws.remote_address[:2]
+        print(f'Disconnected: {host} {port}')
+        cls.clients.pop(ws)
 
+    async def run(self, ws: websockets.WebSocketServerProtocol, path: str):
+        await self.register(ws)
+        try:
+            async for message in ws:
+                data = json.loads(message)
+                await handle_message(self.session, ws, data)
+        except websockets.WebSocketException:
+            pass
+        finally:
+            await self.unregister(ws)
 
-async def notify_players():
-    if CONNECTED:
-        message = online_players()
-        await asyncio.wait([player.send(message) for player in CONNECTED])
+    def serve(self):
+        eb_server = websockets.serve(self.run, self.host, self.port)
 
-
-async def register(websocket: websockets.WebSocketServerProtocol):
-    host, port = websocket.remote_address[:2]
-    print(f'Connected: host_addr={host} port={port}')
-    CONNECTED[websocket] = None
-
-
-async def unregister(websocket: websockets.WebSocketServerProtocol):
-    host, port = websocket.remote_address[:2]
-    print(f'Disconnected: host_addr={host} port={port}')
-    del CONNECTED[websocket]
-
-
-async def eb_server(websocket: websockets.WebSocketServerProtocol, path: str):
-    await register(websocket)
-    try:
-        async for message in websocket:
-            print(message)
-            await handle_message(websocket, message)
-    finally:
-        await unregister(websocket)
-
-
-if __name__ == '__main__':
-    start_server = websockets.serve(eb_server, config.SERVER_HOST, config.SERVER_PORT)
-
-    asyncio.get_event_loop().run_until_complete(start_server)
-    asyncio.get_event_loop().run_forever()
+        asyncio.get_event_loop().run_until_complete(eb_server)
+        asyncio.get_event_loop().run_forever()

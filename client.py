@@ -9,7 +9,7 @@ async def hello():
     async with websockets.connect(uri) as websocket:
         message = {
             'target': 'auth',
-            'auth_action': 'login',
+            'action': 'login',
             'user_id': 1,
             'token': 'token_1'
         }

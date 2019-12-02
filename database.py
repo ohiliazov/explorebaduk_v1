@@ -1,6 +1,5 @@
-import os
-
-from sqlalchemy import Column, String, Integer, create_engine
+from sqlalchemy import Column, String, Integer, ForeignKey, create_engine
+from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
@@ -15,12 +14,17 @@ class User(Base):
     email = Column(String(255))
     password = Column(String(255))
 
+    signin_tokens = relationship('SignInToken', back_populates="user")
+
 
 class SignInToken(Base):
     __tablename__ = 'signin_tokens'
 
-    user_id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.user_id'))
     token = Column(String(64))
+
+    user = relationship('User', back_populates="signin_tokens")
 
 
 class DatabaseWrapper:
@@ -33,21 +37,23 @@ class DatabaseWrapper:
 
 
 if __name__ == '__main__':
-    from config import DevConfig
+    import config
 
-    db = DatabaseWrapper(DevConfig.DATABASE_URI)
-    Base.metadata.create_all(db.engine)
+    Session = sessionmaker()
+    engine = create_engine(config.DATABASE_URI)
+    session = Session(bind=engine)
 
-    session = db.session
-    db.session.execute('DELETE FROM users;')
-    db.session.execute('DELETE FROM signin_tokens;')
+    Base.metadata.create_all(engine)
+
+    session.execute('DELETE FROM users;')
+    session.execute('DELETE FROM signin_tokens;')
 
     for i in range(100):
         user = User(user_id=i, email=f'test{i}@test.test', password='test')
         token = SignInToken(user_id=i, token=f'token_{i}')
 
-        db.session.add(user)
-        db.session.add(token)
+        session.add(user)
+        session.add(token)
 
-    db.session.commit()
-    db.session.close()
+    session.commit()
+    session.close()

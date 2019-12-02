@@ -1,24 +1,26 @@
 import json
+
 import websockets
 from marshmallow import ValidationError
 
-from .auth import handle_auth
-
 from constants import Target
-from schema import Payload
-
-HANDLERS = {
-    Target.AUTH: handle_auth
-}
+from handlers.auth import handle_auth
+from schema import WebSocketMessage
 
 
-async def handle_message(websocket: websockets.WebSocketServerProtocol, message: str):
+async def handle_message(session, ws: websockets.WebSocketServerProtocol, data: dict):
     try:
-        payload = Payload().loads(message)
-        target = Target(payload['target'])
-        handle_func = HANDLERS[target]
-        return await handle_func(websocket, payload)
+        target, action = WebSocketMessage().load(data)
+
+        data.pop('target')
+        data.pop('action')
+
+        if target == Target.AUTH:
+            handle_func = handle_auth
+        else:
+            raise NotImplementedError
+
+        return await handle_func(session, ws, action, data)
     except ValidationError as err:
-        message = {"status": "failure",
-                   "errors": err.messages}
-        return await websocket.send(json.dumps(message))
+        message = {"status": "failure", "errors": err.messages}
+        return await ws.send(json.dumps(message))

@@ -7,43 +7,30 @@ class ExtendedEnum(Enum):
         return [item.value for item in cls]
 
 
-class Target(ExtendedEnum):
+class Target(Enum):
     AUTH = 'auth'
     CHAT = 'chat'
     CHALLENGE = 'challenge'
-    PLAY = 'play'
 
 
-class AuthAction(ExtendedEnum):
+class AuthAction(Enum):
     LOGIN = 'login'
     LOGOUT = 'logout'
 
 
-class ChatAction(ExtendedEnum):
-    SEND_MESSAGE = 'send'
+class ChatAction(Enum):
+    NEW = 'new'
 
 
-class ChallengeAction(ExtendedEnum):
+class ChallengeAction(Enum):
     CREATE = 'create'
     ACCEPT = 'accept'
-    REVISE = 'revise'
     DECLINE = 'decline'
+    REVISE = 'revise'
 
 
-class GameTypes(Enum):
-    RANKED = 'ranked'
-    FREE = 'free'
-    TEACHING = 'teaching'
-    DEMO = 'demo'
-    SIMULTANEOUS = 'simultaneous'
-    BLIND = 'blind-go'
-    ONE_COLOR = 'one-color-go'
-    RENGO = 'rengo'
-
-
-class Rulesets(Enum):
-    CHINESE = 'Chinese Rules'
-    JAPANESE = 'Japanese Rules'
-    AGA = 'AGA Rules'
-    ING = 'Ing Rules'
-    NEW_ZEALAND = 'New Zealand Rules'
+TARGET_ACTIONS = {
+    Target.AUTH: AuthAction,
+    Target.CHAT: ChatAction,
+    Target.CHALLENGE: ChallengeAction,
+}

@@ -1,4 +1,4 @@
-# websocket server
+# ws server
 SERVER_HOST = "localhost"
 SERVER_PORT = 8080
 
