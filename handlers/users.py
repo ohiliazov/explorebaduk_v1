@@ -9,8 +9,9 @@ logger = logging.getLogger("eb_auth")
 
 
 class Users:
-    def __init__(self, session):
+    def __init__(self, session, sync_queue):
         self.session = session
+        self.sync_queue = sync_queue
         self.users = {}
 
     @property
