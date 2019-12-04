@@ -8,11 +8,10 @@ from marshmallow import (
     EXCLUDE,
 )
 
-from constants import Target, UserAction, ChatAction, ChallengeAction
+from constants import Target, UserAction, ChallengeAction
 
 TARGET_ACTIONS = {
     Target.USER: UserAction,
-    Target.CHAT: ChatAction,
     Target.CHALLENGE: ChallengeAction,
 }
 

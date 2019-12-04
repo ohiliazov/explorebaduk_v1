@@ -18,10 +18,6 @@ class UserAction(Enum):
     LOGOUT = 'logout'
 
 
-class ChatAction(Enum):
-    NEW = 'new'
-
-
 class ChallengeAction(Enum):
     CREATE = 'create'
     ACCEPT = 'accept'
