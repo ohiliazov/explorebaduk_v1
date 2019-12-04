@@ -3,7 +3,6 @@ from marshmallow import (
     fields,
     validates,
     validates_schema,
-    post_load,
     ValidationError,
     INCLUDE,
     EXCLUDE,
@@ -40,7 +39,7 @@ class WebSocketMessage(Schema):
             raise ValidationError(f"Invalid action")
 
 
-class LoginPayload(Schema):
+class LoginMessage(Schema):
     class Meta:
         unknown = EXCLUDE
     user_id = fields.Integer(required=True)

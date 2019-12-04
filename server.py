@@ -5,24 +5,22 @@ import logging
 from marshmallow.exceptions import ValidationError
 import websockets
 
+from database import create_session
 from constants import Target
 from handlers.users import Users
 from schema import WebSocketMessage
-
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger('game_server')
+from logger import logger
 
 
 class GameServer:
-    def __init__(self, host, port, session=None):
+    def __init__(self, host, port, database_uri=None):
         self.host = host
         self.port = port
         self.ws_server = None
         self.sync_queue = asyncio.Queue()
-        self.session = session
+        self.session = create_session(database_uri) if database_uri else None
 
-        self.users = Users(session, self.sync_queue)
+        self.users = Users(self.session, self.sync_queue)
         self.chats = None
 
     @property
@@ -80,7 +78,7 @@ class GameServer:
         await self.online(ws)
         try:
             async for message in ws:
-                logger.info(f"Message received: {message}")
+                logger.info(message)
                 await self.consume_message(ws, message)
         except websockets.WebSocketException:
             pass

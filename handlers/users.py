@@ -2,8 +2,8 @@ import json
 import logging
 
 from constants import UserAction
-from database import SignInToken, User
-from schema import LoginPayload
+from database import TokenModel, User
+from schema import LoginMessage
 
 logger = logging.getLogger("eb_auth")
 
@@ -53,8 +53,8 @@ class Users:
             return await ws.send(json.dumps(message))
 
         # Authenticate user
-        signin_data = LoginPayload().load(data)
-        signin_token = self.session.query(SignInToken).filter_by(**signin_data).first()
+        signin_data = LoginMessage().load(data)
+        signin_token = self.session.query(TokenModel).filter_by(**signin_data).first()
 
         if not signin_token:
             message["status"] = "failure"
