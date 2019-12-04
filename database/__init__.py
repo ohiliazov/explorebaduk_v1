@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, ForeignKey
+from sqlalchemy import Column, String, Integer, DateTime, ForeignKey
 from sqlalchemy.engine import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
@@ -14,6 +14,8 @@ class UserModel(Base):
     first_name = Column(String(60), name='First_Name')
     last_name = Column(String(60), name='Last_Name')
     email = Column(String(255), name='Email')
+    rating = Column(String(10), name='Rating')
+    puzzle_rating = Column(String(10), name='Puzzle_rating')
 
     tokens = relationship('TokenModel', back_populates='user')
 
@@ -22,8 +24,9 @@ class TokenModel(Base):
     __tablename__ = 'signin_tokens'
 
     token_id = Column(Integer, primary_key=True, name='SignIn_Token_ID')
-    user_id = Column(Integer, ForeignKey('users.User_ID'))
+    user_id = Column(Integer, ForeignKey('users.User_ID'), name='User_ID')
     token = Column(String(64), name='Token')
+    expired_at = Column(DateTime, name='Expired_At')
 
     user = relationship('UserModel', back_populates='tokens')
 
@@ -34,28 +37,44 @@ def create_session(database_uri):
     return session
 
 
-if __name__ == '__main__':
-    import config
+def create_test_database(database_uri):
     import string
     import random
+    import fauxfactory
+    import datetime
 
-    session = create_session(config.DATABASE_URI)
+    session = create_session(database_uri)
+
+    session.execute('DROP TABLE IF EXISTS users ;')
+    session.execute('DROP TABLE IF EXISTS signin_tokens ;')
 
     Base.metadata.create_all(session.bind)
 
-    session.execute('DELETE FROM users;')
-    session.execute('DELETE FROM signin_tokens;')
-
     for i in range(100):
-        user_data = {'user_id': i,
-                     'first_name': 'John',
-                     'last_name': f'Doe#{i}',
-                     'email': f'john.doe{i}@explorebaduk.test'}
+        user_data = {
+            'user_id': i,
+            'first_name': fauxfactory.gen_alpha(random.randrange(1, 60)),
+            'last_name': fauxfactory.gen_alpha(random.randrange(1, 60)),
+            'email': fauxfactory.gen_email(name=f'user{i}', domain='explorebaduk'),
+        }
         user = UserModel(**user_data)
-        token = TokenModel(token_id=i, user_id=i, token=''.join(random.choice(string.ascii_letters) for i in range(64)))
+
+        token_data = {
+            'token_id': i,
+            'user_id': i,
+            'token': ''.join(random.choice(string.ascii_letters) for i in range(64)),
+            'expired_at': datetime.datetime.utcnow() + datetime.timedelta(minutes=10),
+        }
+        token = TokenModel(**token_data)
 
         session.add(user)
         session.add(token)
 
     session.commit()
     session.close()
+
+
+if __name__ == '__main__':
+    import config
+
+    create_test_database(config.DATABASE_URI)
