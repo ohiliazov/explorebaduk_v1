@@ -1,4 +1,5 @@
-from sqlalchemy import Column, String, Integer, DateTime, ForeignKey
+import datetime
+from sqlalchemy import Column, String, Integer, DateTime, Text, ForeignKey
 from sqlalchemy.engine import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
@@ -29,6 +30,19 @@ class TokenModel(Base):
     expired_at = Column(DateTime, name='Expired_At')
 
     user = relationship('UserModel', back_populates='tokens')
+
+
+class GameModel(Base):
+    __tablename__ = 'games'
+
+    game_id = Column(Integer, primary_key=True, name='Game_ID')
+    started_at = Column(DateTime, default=datetime.datetime.utcnow, name='Started_At')
+    finished_at = Column(DateTime, name='Finished_At')
+
+    game_type = Column(String(255), name='Game_Type')
+    settings = Column()
+
+    sgf = Column(Text, name='SGF')
 
 
 def create_session(database_uri):

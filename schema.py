@@ -1,19 +1,13 @@
 from marshmallow import (
     Schema,
     fields,
-    validates,
     validates_schema,
     ValidationError,
     INCLUDE,
     EXCLUDE,
 )
 
-from constants import Target, UserAction, ChallengeAction
-
-TARGET_ACTIONS = {
-    Target.USER: UserAction,
-    Target.CHALLENGE: ChallengeAction,
-}
+from actions import VALID_ACTIONS
 
 
 class WebSocketMessage(Schema):
@@ -22,19 +16,14 @@ class WebSocketMessage(Schema):
     target = fields.String(required=True)
     action = fields.String(required=True)
 
-    @validates('target')
-    def validate_target(self, value):
-        try:
-            Target(value)
-        except ValueError:
-            raise ValidationError(f"Invalid target")
-
     @validates_schema
     def validate_action(self, data, **kwargs):
-        target = Target(data['target'])
-        try:
-            TARGET_ACTIONS[target](data['action'])
-        except ValueError:
+        valid_actions = VALID_ACTIONS.get(data['target'])
+
+        if not valid_actions:
+            raise ValidationError(f"Invalid target")
+
+        if not data['action'] in valid_actions:
             raise ValidationError(f"Invalid action")
 
 

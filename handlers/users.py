@@ -2,7 +2,7 @@ import json
 import logging
 import websockets
 
-from constants import UserAction
+from actions import USER_LOGIN, USER_LOGOUT
 from database import TokenModel, UserModel
 from schema import LoginMessage
 
@@ -18,6 +18,19 @@ class Users:
     @property
     def online(self):
         return [user.email for user in self.users.values()]
+
+    def send_user_status(self, user: UserModel, online: bool):
+        sync_message = {
+            "target": "sync",
+            "action": "user_online" if online else "user_offline",
+            "data": {
+                "user_id": user.user_id,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "rating": user.rating,
+            },
+        }
+        self.sync_queue.put_nowait(sync_message)
 
     async def handle_login(self, ws, data):
         message = {
@@ -51,18 +64,7 @@ class Users:
             "data": f"Logged in"
         }
         await ws.send(json.dumps(message))
-
-        sync_message = {
-            "target": "sync",
-            "action": "user_online",
-            "data": {
-                "user_id": user.user_id,
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-                "rating": user.rating,
-            },
-        }
-        self.sync_queue.put_nowait(sync_message)
+        self.send_user_status(user, online=True)
 
     async def handle_logout(self, ws: websockets.WebSocketServerProtocol, data):
         message = {
@@ -90,9 +92,9 @@ class Users:
         }
         self.sync_queue.put_nowait(sync_message)
 
-    async def handle(self, ws, action: str, data: dict) -> dict:
-        if action == UserAction.LOGIN.value:
-            return await self.handle_login(ws, data)
+    async def handle(self, ws, action: str, data: dict):
+        if action == USER_LOGIN:
+            await self.handle_login(ws, data)
 
-        elif action == UserAction.LOGOUT.value:
-            return await self.handle_logout(ws, data)
+        elif action == USER_LOGOUT:
+            await self.handle_logout(ws, data)

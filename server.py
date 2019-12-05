@@ -6,7 +6,7 @@ from marshmallow.exceptions import ValidationError
 import websockets
 
 from database import create_session
-from constants import Target
+from actions import TARGET_USER, TARGET_CHAT
 from handlers.users import Users
 from schema import WebSocketMessage
 from logger import logger
@@ -45,8 +45,10 @@ class GameServer:
             target = data.pop('target')
             action = data.pop('action')
 
-            if target == Target.USER.value:
+            if target == TARGET_USER:
                 await self.users.handle(ws, action, data)
+            elif target == TARGET_CHAT:
+                await self.challenges.handle(ws, action, data)
             else:
                 logger.info("Message ignored: %s", message)
 
