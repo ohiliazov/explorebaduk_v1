@@ -6,10 +6,9 @@ from marshmallow.exceptions import ValidationError
 import websockets
 
 from database import create_session
-from actions import TARGET_USER, TARGET_CHAT
+from actions import TARGET_USER
 from handlers.users import Users
 from schema import WebSocketMessage
-from logger import logger
 
 
 class GameServer:
@@ -19,6 +18,7 @@ class GameServer:
         self.ws_server = None
         self.sync_queue = asyncio.Queue()
         self.session = create_session(database_uri) if database_uri else None
+        self.logger = logging.getLogger('explorebaduk')
 
         self.users = Users(self.session, self.sync_queue)
         self.chats = None
@@ -34,7 +34,7 @@ class GameServer:
 
             if self.clients:
                 await asyncio.wait([ws.send(sync_message) for ws in self.clients])
-                logger.info(f"Sent sync message: {sync_message}")
+                self.logger.info(f">>> {sync_message}")
 
             self.sync_queue.task_done()
 
@@ -47,10 +47,8 @@ class GameServer:
 
             if target == TARGET_USER:
                 await self.users.handle(ws, action, data)
-            elif target == TARGET_CHAT:
-                await self.challenges.handle(ws, action, data)
             else:
-                logger.info("Message ignored: %s", message)
+                self.logger.info("SKIP %s", message)
 
         except json.decoder.JSONDecodeError as err:
             errmsg = '%s: line %d column %d (char %d)' % (err.msg, err.lineno, err.colno, err.pos)
@@ -61,31 +59,36 @@ class GameServer:
             message = {"status": "failure", "errors": err.messages}
             return await ws.send(json.dumps(message))
 
-    async def online(self, ws):
-        messages = []
-        if self.users.online:
-            users_online = json.dumps({"target": "users", "data": self.users.online})
-            messages.append(ws.send(users_online))
+    async def sync_user(self, ws):
+        tasks = []
+        users_online = self.users.users_online
+        if users_online:
+            message = {
+                'target': 'sync',
+                'action': 'who_is_online',
+                'data': json.dumps(users_online)
+            }
+            tasks.append(ws.send(json.dumps(message)))
 
-        if messages:
-            await asyncio.wait(messages)
+        if tasks:
+            await asyncio.wait(tasks)
 
-    async def offline(self, ws):
+    async def set_offline(self, ws):
         if ws in self.users.users:
             user = self.users.users.pop(ws)
             message = {"target": "sync", "action": "user_offline", "data": user.email}
             self.sync_queue.put_nowait(message)
 
     async def run(self, ws: websockets.WebSocketServerProtocol, path: str):
-        await self.online(ws)
+        await self.sync_user(ws)
         try:
             async for message in ws:
-                logger.info(message)
+                self.logger.info("<<< %s", message)
                 await self.consume_message(ws, message)
         except websockets.WebSocketException:
             pass
         finally:
-            await self.offline(ws)
+            await self.set_offline(ws)
 
     def serve(self):
         server = websockets.serve(self.run, self.host, self.port)

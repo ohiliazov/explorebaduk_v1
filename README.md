@@ -17,3 +17,38 @@ To interactively connect to server:
 ```bash
 python -m websockets ws://localhost:8080
 ```
+
+#### General TODO:
+  - [ ] WebSocket message exchange
+  - [ ] sgf navigation
+  - [ ] board representation
+  - [ ] game play
+  - [ ] time control
+  - [ ] counting
+  
+#### WebSocket message exchange
+##### Authorization
+- [x] login 
+- [x] logout
+
+##### Challenge
+- [ ] create challenge
+- [ ] accept challenge
+- [ ] decline challenge
+- [ ] revise challenge
+    
+##### Play move
+- [ ] play move
+- [ ] make pass
+- [ ] resign
+
+##### Undo move
+- [ ] request undo
+- [ ] accept undo
+- [ ] decline undo
+    
+##### Scoring
+- [ ] mark dead
+- [ ] mark alive
+- [ ] done
+- [ ] decline

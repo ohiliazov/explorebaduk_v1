@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import websockets
@@ -16,7 +17,7 @@ class Users:
         self.users = {}
 
     @property
-    def online(self):
+    def users_online(self):
         return [user.email for user in self.users.values()]
 
     def send_user_status(self, user: UserModel, online: bool):

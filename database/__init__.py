@@ -40,7 +40,6 @@ class GameModel(Base):
     finished_at = Column(DateTime, name='Finished_At')
 
     game_type = Column(String(255), name='Game_Type')
-    settings = Column()
 
     sgf = Column(Text, name='SGF')
 
@@ -76,7 +75,8 @@ def create_test_database(database_uri):
         token_data = {
             'token_id': i,
             'user_id': i,
-            'token': ''.join(random.choice(string.ascii_letters) for i in range(64)),
+            # 'token': ''.join(random.choice(string.ascii_letters) for i in range(64)),
+            'token': f'token_{i}',
             'expired_at': datetime.datetime.utcnow() + datetime.timedelta(minutes=10),
         }
         token = TokenModel(**token_data)
