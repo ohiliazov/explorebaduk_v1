@@ -117,18 +117,51 @@ class Node(OrderedDict):
         prop_list = prop_list or []
         for prop in prop_list:
             if prop:
-                self.add_prop(prop)
+                self.append_new_prop(prop)
 
     def __str__(self):
         """SGF representation of node. Has leading semicolon."""
         return f";{''.join([str(self[i]) for i in self])}"
 
-    def add_prop(self, prop: Property):
+    def append_new_prop(self, prop: Property):
         """Add or replaces existing property. Removes if empty."""
         if prop:
             self[prop.label] = prop
-        elif prop.label in self:
-            self.pop(prop.label)
+        else:
+            self.pop(prop.label, None)
+
+    def append_prop_value(self, label: str, value: str):
+        if label in self:
+            self[label].append(value)
+        else:
+            self.append_new_prop(Property(label, [value]))
+
+    def remove_prop_value(self, label: str, value: str):
+        if value in self[label]:
+            self[label].remove(value)
+
+            if not self[label]:
+                self.pop(label)
+
+    def add_setup_prop(self, label: str, value: str):
+        setup_labels = "AB", "AW", "AE"
+
+        for setup_label in setup_labels:
+            if label == setup_label:
+                self.append_prop_value(label, value)
+            else:
+                self.remove_prop_value(setup_label, value)
+
+    def add_comment(self, new_comment: str) -> None:
+        self.append_prop_value('C', new_comment)
+
+    def add_stone(self, label: str, coord):
+        self.add_setup_prop(label, coord)
+
+    def add_move(self, label: str, coord):
+        opponent = "W" if label == "B" else "B"
+        self.append_new_prop(Property(label, [coord]))
+        self.pop(opponent, None)
 
 
 class GameTree(UserList):
@@ -274,7 +307,7 @@ class SGFParser:
                 pv_list = self.parse_property_value()
                 if pv_list:
                     prop = Property(match.group(1), pv_list)
-                    node.add_prop(prop)
+                    node.append_new_prop(prop)
                 else:
                     raise NodePropertyParseError
             else:  # End of Node
@@ -351,7 +384,7 @@ class Cursor:
         return self.game[0]
 
     @property
-    def node(self):
+    def node(self) -> Node:
         return self.game_tree[self.index]
 
     @property
@@ -426,7 +459,7 @@ class Cursor:
         self._set_flags()
 
     def add_prop(self, prop: Property):
-        self.node.add_prop(prop)
+        self.node.append_new_prop(prop)
 
     def _set_children(self):
         """Sets up [self.children]."""
