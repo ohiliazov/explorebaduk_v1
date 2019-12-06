@@ -25,12 +25,12 @@ CoordinateType = Tuple[Location, tuple]
 
 
 class Board:
-    def __init__(self, size: int = 19,
+    def __init__(self, shape: tuple = (19, 19),
                  board: np.ndarray = None,
                  turn: Location = Location.BLACK,
                  score: dict = None,
                  history: List[Tuple[np.ndarray, Location, dict]] = None):
-        self._size = size
+        self._shape = shape
         self._board = np.array(board, copy=True, dtype=int)
         self._turn = turn
         self._score = score or {Location.BLACK: 0, Location.WHITE: 0}
@@ -47,8 +47,8 @@ class Board:
             Location.EMPTY: '. ',
         }
         board = ""
-        for x in range(self._size):
-            for y in range(self._size):
+        for x in range(self._shape[0]):
+            for y in range(self._shape[1]):
                 coord = x, y
                 board += print_map[self._get_loc(coord)]
             board += "\n"
@@ -56,7 +56,7 @@ class Board:
         return board
 
     @property
-    def board(self):
+    def current(self):
         return np.copy(self._board)
 
     @property
@@ -267,9 +267,9 @@ class Board:
 
     @property
     def legal_moves(self):
-        legal_moves = np.ones(self._size, dtype=int)
+        legal_moves = np.ones(self._shape, dtype=int)
 
-        legal_moves[self.board.nonzero()] = 0
+        legal_moves[self.current.nonzero()] = 0
 
         if self._illegal:
             legal_moves[tuple(zip(*self._illegal))] = 0
