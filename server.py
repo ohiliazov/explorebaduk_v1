@@ -2,13 +2,11 @@ import asyncio
 import json
 import logging
 
-from marshmallow.exceptions import ValidationError
 import websockets
 
 from database import create_session
-from actions import TARGET_USER
-from handlers.users import Users
-from schema import WebSocketMessage
+from actions import USER_ACTIONS
+from handlers.users import UserHandler
 
 
 class GameServer:
@@ -16,11 +14,11 @@ class GameServer:
         self.host = host
         self.port = port
         self.ws_server = None
-        self.sync_queue = asyncio.Queue()
+        self.sync_queue = asyncio.PriorityQueue()
         self.session = create_session(database_uri) if database_uri else None
         self.logger = logging.getLogger('explorebaduk')
 
-        self.users = Users(self.session, self.sync_queue)
+        self.user_handler = UserHandler(self.session, self.sync_queue)
         self.chats = None
 
     @property
@@ -30,23 +28,25 @@ class GameServer:
 
     async def sync_worker(self):
         while True:
-            sync_message = json.dumps(await self.sync_queue.get())
+            _, (receiver, sync_data) = await self.sync_queue.get()
+            message = json.dumps(sync_data)
+            if receiver:
+                await receiver.send(message)
 
-            if self.clients:
-                await asyncio.wait([ws.send(sync_message) for ws in self.clients])
-                self.logger.info(f">>> {sync_message}")
+            elif self.clients:
+                await asyncio.wait([ws.send(message) for ws in self.clients])
 
+            self.logger.debug("OUT >> %s", message)
             self.sync_queue.task_done()
 
     async def consume_message(self, ws: websockets.WebSocketServerProtocol, message: str):
         try:
-            data = WebSocketMessage().loads(message)
+            json_data = json.loads(message)
+            action = json_data.get('action')
+            data = json_data.get('data')
 
-            target = data.pop('target')
-            action = data.pop('action')
-
-            if target == TARGET_USER:
-                await self.users.handle(ws, action, data)
+            if action in USER_ACTIONS:
+                await self.user_handler.handle_action(ws, action, data)
             else:
                 self.logger.info("SKIP %s", message)
 
@@ -55,40 +55,31 @@ class GameServer:
             message = {"status": "failure", "errors": errmsg}
             return await ws.send(json.dumps(message))
 
-        except ValidationError as err:
-            message = {"status": "failure", "errors": err.messages}
-            return await ws.send(json.dumps(message))
-
-    async def sync_user(self, ws):
-        tasks = []
-        users_online = self.users.users_online
-        if users_online:
-            message = {
-                'target': 'sync',
-                'action': 'who_is_online',
-                'data': json.dumps(users_online)
+    async def register(self, ws):
+        message = {
+            "action": "sync",
+            "data": {
+                "users": [user.full_name for user in self.user_handler.users_online.values()],
+                "games": [],
+                "challenges": [],
             }
-            tasks.append(ws.send(json.dumps(message)))
+        }
+        self.sync_queue.put_nowait((3, (ws, message)))
 
-        if tasks:
-            await asyncio.wait(tasks)
-
-    async def set_offline(self, ws):
-        if ws in self.users.users:
-            user = self.users.users.pop(ws)
-            message = {"target": "sync", "action": "user_offline", "data": user.email}
-            self.sync_queue.put_nowait(message)
+    async def unregister(self, ws):
+        if ws in self.user_handler.users_online:
+            self.user_handler.set_offline(ws)
 
     async def run(self, ws: websockets.WebSocketServerProtocol, path: str):
-        await self.sync_user(ws)
+        await self.register(ws)
         try:
             async for message in ws:
-                self.logger.info("<<< %s", message)
+                self.logger.debug("IN <<< %s", message)
                 await self.consume_message(ws, message)
         except websockets.WebSocketException:
             pass
         finally:
-            await self.set_offline(ws)
+            await self.unregister(ws)
 
     def serve(self):
         server = websockets.serve(self.run, self.host, self.port)

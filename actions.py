@@ -11,6 +11,8 @@ VALID_TARGETS = [
 USER_LOGIN = 'login'
 USER_LOGOUT = 'logout'
 
+USER_ACTIONS = [USER_LOGIN, USER_LOGOUT]
+
 # Challenge actions
 CHALLENGE_NEW = 'new'
 CHALLENGE_ACCEPT = 'accept'
@@ -29,3 +31,10 @@ VALID_ACTIONS = {
         CHALLENGE_REVISE,
     ]
 }
+
+# Priority (lowest first)
+PRIORITY_CLOCK = 0
+PRIORITY_PLAY = 1
+PRIORITY_CHALLENGE = 2
+SYNC_PRIORITY = 3
+PRIORITY_USER = 4

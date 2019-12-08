@@ -7,9 +7,9 @@ from server import GameServer
 
 def setup_logger():
     logging.getLogger('websockets').setLevel(logging.ERROR)
-    FORMAT = "%(asctime)s [%(module)s %(funcName)s] %(levelname)s: %(message)s"
+    FORMAT = "%(asctime)s [%(name)s] %(levelname)s: %(message)s"
     DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
-    logging.basicConfig(level=logging.INFO, format=FORMAT, datefmt=DATE_FORMAT)
+    logging.basicConfig(level=logging.DEBUG, format=FORMAT, datefmt=DATE_FORMAT)
 
 
 if __name__ == '__main__':

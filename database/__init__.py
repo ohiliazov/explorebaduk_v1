@@ -9,7 +9,7 @@ Base = declarative_base()
 
 
 class UserModel(Base):
-    __tablename__ = 'users'
+    __tablename__ = 'user_handler'
 
     user_id = Column(Integer, primary_key=True, name='User_ID')
     first_name = Column(String(60), name='First_Name')
@@ -20,12 +20,16 @@ class UserModel(Base):
 
     tokens = relationship('TokenModel', back_populates='user')
 
+    @property
+    def full_name(self):
+        return f"{self.first_name} {self.last_name}"
+
 
 class TokenModel(Base):
     __tablename__ = 'signin_tokens'
 
     token_id = Column(Integer, primary_key=True, name='SignIn_Token_ID')
-    user_id = Column(Integer, ForeignKey('users.User_ID'), name='User_ID')
+    user_id = Column(Integer, ForeignKey('user_handler.User_ID'), name='User_ID')
     token = Column(String(64), name='Token')
     expired_at = Column(DateTime, name='Expired_At')
 
@@ -51,15 +55,14 @@ def create_session(database_uri):
 
 
 def create_test_database(database_uri):
-    import string
     import random
     import fauxfactory
     import datetime
 
     session = create_session(database_uri)
 
-    session.execute('DROP TABLE IF EXISTS users ;')
-    session.execute('DROP TABLE IF EXISTS signin_tokens ;')
+    # session.execute('DROP TABLE IF EXISTS users ;')
+    # session.execute('DROP TABLE IF EXISTS signin_tokens ;')
 
     Base.metadata.create_all(session.bind)
 
