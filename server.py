@@ -5,8 +5,8 @@ import logging
 import websockets
 
 from database import create_session
-from actions import USER_ACTIONS
-from handlers.users import UserHandler
+from constants import USER_ACTIONS
+from handlers.user import UserHandler
 
 
 class GameServer:

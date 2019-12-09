@@ -9,14 +9,14 @@ Base = declarative_base()
 
 
 class UserModel(Base):
-    __tablename__ = 'user_handler'
+    __tablename__ = 'users'
 
-    user_id = Column(Integer, primary_key=True, name='User_ID')
-    first_name = Column(String(60), name='First_Name')
-    last_name = Column(String(60), name='Last_Name')
-    email = Column(String(255), name='Email')
-    rating = Column(String(10), name='Rating')
-    puzzle_rating = Column(String(10), name='Puzzle_rating')
+    user_id = Column(Integer, primary_key=True)
+    first_name = Column(String(60))
+    last_name = Column(String(60))
+    email = Column(String(255))
+    rating = Column(String(10))
+    puzzle_rating = Column(String(10))
 
     tokens = relationship('TokenModel', back_populates='user')
 
@@ -29,9 +29,9 @@ class TokenModel(Base):
     __tablename__ = 'signin_tokens'
 
     token_id = Column(Integer, primary_key=True, name='SignIn_Token_ID')
-    user_id = Column(Integer, ForeignKey('user_handler.User_ID'), name='User_ID')
-    token = Column(String(64), name='Token')
-    expired_at = Column(DateTime, name='Expired_At')
+    user_id = Column(Integer, ForeignKey('users.User_ID'))
+    token = Column(String(64))
+    expired_at = Column(DateTime)
 
     user = relationship('UserModel', back_populates='tokens')
 
@@ -39,11 +39,11 @@ class TokenModel(Base):
 class GameModel(Base):
     __tablename__ = 'games'
 
-    game_id = Column(Integer, primary_key=True, name='Game_ID')
-    started_at = Column(DateTime, default=datetime.datetime.utcnow, name='Started_At')
-    finished_at = Column(DateTime, name='Finished_At')
+    game_id = Column(Integer, primary_key=True)
+    started_at = Column(DateTime, default=datetime.datetime.utcnow)
+    finished_at = Column(DateTime)
 
-    game_type = Column(String(255), name='Game_Type')
+    game_type = Column(String(255))
 
     sgf = Column(Text, name='SGF')
 
@@ -55,23 +55,24 @@ def create_session(database_uri):
 
 
 def create_test_database(database_uri):
-    import random
     import fauxfactory
     import datetime
 
     session = create_session(database_uri)
 
-    # session.execute('DROP TABLE IF EXISTS users ;')
-    # session.execute('DROP TABLE IF EXISTS signin_tokens ;')
+    session.execute('DROP TABLE IF EXISTS users ;')
+    session.execute('DROP TABLE IF EXISTS signin_tokens ;')
 
     Base.metadata.create_all(session.bind)
 
     for i in range(100):
         user_data = {
             'user_id': i,
-            'first_name': fauxfactory.gen_alpha(random.randrange(1, 60)),
-            'last_name': fauxfactory.gen_alpha(random.randrange(1, 60)),
-            'email': fauxfactory.gen_email(name=f'user{i}', domain='explorebaduk'),
+            'first_name': "John",
+            'last_name': f"Doe#{i}",
+            'email': fauxfactory.gen_email(name=f'johndoe{i}', domain='explorebaduk'),
+            'rating': fauxfactory.gen_number(0, 3000),
+            'puzzle_rating': fauxfactory.gen_number(0, 3000),
         }
         user = UserModel(**user_data)
 

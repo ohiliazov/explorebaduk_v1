@@ -1,13 +1,12 @@
-import json
 import logging
 import websockets
 
-from actions import USER_LOGIN, USER_LOGOUT, PRIORITY_USER, SYNC_PRIORITY
+from constants import USER_LOGIN, USER_LOGOUT
 from database import TokenModel, UserModel
 from schema import LoginSchema
-from handlers import BaseHandler
+from handlers import BaseHandler, InvalidActionError
 
-logger = logging.getLogger("eb_auth")
+logger = logging.getLogger("user_handler")
 
 
 class UserHandler(BaseHandler):
@@ -84,3 +83,6 @@ class UserHandler(BaseHandler):
 
         elif action == USER_LOGOUT:
             await self.handle_logout(ws)
+
+        else:
+            raise InvalidActionError(f"Invalid action: {action}")

@@ -1,5 +1,9 @@
 import json
-from actions import SYNC_PRIORITY
+from constants import SYNC_PRIORITY
+
+
+class InvalidActionError(Exception):
+    pass
 
 
 class BaseHandler:
