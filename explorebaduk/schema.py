@@ -15,7 +15,24 @@ class LoginSchema(Schema):
     token = fields.String(required=True)
 
 
-class TimeControlSchema(Schema):
+class RulesetSchema(Schema):
+    rules = fields.String(required=True)
+    board_size = fields.String(required=True)
+    to_join = fields.Integer(default=2)
+
+    @validates('board_size')
+    def check_board_size(self, value: str):
+        if not value.isdigit() and ':' not in value:
+            raise ValidationError(f"Invalid board size value: {value}")
+        if value.isdigit() and not 5 < int(value) < 52:
+            raise ValidationError(f"Board size is out of range: {value}")
+        else:
+            columns, rows = value.split(':')
+            if not 5 < columns < 52 or not 5 < rows < 52:
+                raise ValidationError(f"Board size is out of range: {value}")
+
+
+class TimeSystemSchema(Schema):
     setting = fields.String(required=True)
     main = fields.Integer()
     overtime = fields.Integer()
@@ -72,13 +89,15 @@ class TimeControlSchema(Schema):
         return data
 
 
-class ChallengeSchema(Schema):
-    opponent_id = fields.Integer(default=None)  # in case of direct challenge
-    name = fields.String()
-    ruleset = fields.String(required=True)
-    board_size = fields.String(required=True)
-    to_join = fields.Integer(default=2)
-
-    time_control = fields.Nested(TimeControlSchema, required=True)
+class LimitSchema(Schema):
     no_undo = fields.Boolean(default=False)
     no_pause = fields.Boolean(default=False)
+    no_analyze = fields.Boolean(default=False)
+    is_private = fields.Boolean(default=False)
+
+
+class ChallengeSchema(Schema):
+    name = fields.String()
+    ruleset = fields.Nested(RulesetSchema, required=True)
+    time_system = fields.Nested(TimeSystemSchema, required=True)
+    limit = fields.Nested(LimitSchema, required=True)

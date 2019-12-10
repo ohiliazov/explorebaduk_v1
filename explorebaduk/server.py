@@ -1,4 +1,5 @@
 import asyncio
+import json
 
 from explorebaduk.config import DATABASE_URI
 from explorebaduk.database import create_session
@@ -29,22 +30,32 @@ class GameServer:
         if self.ws_server:
             return self.ws_server.websockets
 
-    async def sync_user(self, ws):
+    @staticmethod
+    async def send_message(ws, action, data: dict):
         message = {
-            "action": "sync",
-            "data": {
-                "users": [user.as_dict() for user in self.users],
-                "games": self.games,
-                "challenges": self.challenges,
-            }
+            "action": action,
+            "data": data,
         }
-        self.sync_queue.put_nowait((ws, message))
+        await ws.send(json.dumps(message))
+
+    async def sync_user(self, ws):
+        data = {
+            "users": [user.as_dict() for user in self.users],
+            "games": self.games,
+            "challenges": self.challenges,
+        }
+
+        await self.send_message(ws, "sync", data)
 
     async def goodbye_user(self, ws):
         self.users.pop(ws, None)
 
-    def sync_all_users(self, ws, data: dict):
-        self.sync_queue.put_nowait((ws, data))
+    async def sync_all_users(self, data: dict):
+        message = {
+            "action": "sync",
+            "data": data,
+        }
+        await self.sync_queue.put(message)
 
 
 eb_server = GameServer()

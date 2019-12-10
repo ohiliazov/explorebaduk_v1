@@ -16,6 +16,7 @@ USER_ACTIONS = [USER_LOGIN, USER_LOGOUT]
 
 # Challenge actions
 CHALLENGE_CREATE = 'new'
+CHALLENGE_CANCEL = 'cancel'
 CHALLENGE_ACCEPT = 'accept'
 CHALLENGE_DECLINE = 'decline'
 CHALLENGE_REVISE = 'revise'
