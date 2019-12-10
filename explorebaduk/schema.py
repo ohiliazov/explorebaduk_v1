@@ -1,6 +1,6 @@
 from marshmallow import Schema, fields, post_load, validates, validates_schema, ValidationError
 
-from constants import (
+from explorebaduk.constants import (
     VALID_TIME_SETTINGS,
     NO_TIME,
     ABSOLUTE,

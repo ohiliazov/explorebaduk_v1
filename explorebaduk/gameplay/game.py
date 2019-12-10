@@ -1,8 +1,8 @@
 import numpy as np
 
-from gameplay.board import Board, Location, IllegalMoveError
-from gameplay.sgflib import Property, Node
-from utils.sgf import sgf_coord_to_int, int_coord_to_sgf, create_new_sgf
+from explorebaduk.gameplay import Board, Location, IllegalMoveError
+from explorebaduk.gameplay.sgflib import Property, Node
+from explorebaduk.utils.sgf import sgf_coord_to_int, int_coord_to_sgf, create_new_sgf
 
 
 class Game:

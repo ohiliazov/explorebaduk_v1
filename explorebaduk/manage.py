@@ -1,8 +1,8 @@
 import logging
 
-import config
-from database import create_session
-from server import GameServer
+from explorebaduk import config
+from explorebaduk.database import create_session
+from explorebaduk.server import GameServer
 
 
 def setup_logger():

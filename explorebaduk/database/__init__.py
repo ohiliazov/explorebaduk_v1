@@ -29,7 +29,7 @@ class TokenModel(Base):
     __tablename__ = 'signin_tokens'
 
     token_id = Column(Integer, primary_key=True, name='SignIn_Token_ID')
-    user_id = Column(Integer, ForeignKey('users.User_ID'))
+    user_id = Column(Integer, ForeignKey('users.user_id'))
     token = Column(String(64))
     expired_at = Column(DateTime)
 
@@ -93,6 +93,6 @@ def create_test_database(database_uri):
 
 
 if __name__ == '__main__':
-    import config
+    from explorebaduk import config
 
     create_test_database(config.DATABASE_URI)

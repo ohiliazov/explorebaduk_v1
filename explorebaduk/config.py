@@ -6,7 +6,7 @@ APP_VERSION = '0.1.0'
 # path to project root directory
 BASE_PATH = os.path.dirname(os.path.abspath(__file__))
 
-# ws server
+# ws game_server
 SERVER_HOST = "localhost"
 SERVER_PORT = 8080
 
