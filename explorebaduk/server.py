@@ -24,7 +24,7 @@ class GameServer:
     def players_event(self):
         return json.dumps({
             'type': 'players',
-            'data': [player.user.full_name for player in self.users.values() if player.logged_in]
+            'data': [player.user.full_name for player in self.users.values() if player and player.logged_in]
         })
 
     async def notify_users(self):

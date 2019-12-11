@@ -7,18 +7,32 @@ import random
 async def hello():
     uri = "ws://localhost:8080"
     rand_user_id = random.randint(0, 99)
-    good = random.randint(0, 99) > 20
     async with websockets.connect(uri) as websocket:
-        message = {
-            'action': 'login',
-            'data': {
-                'user_id': rand_user_id,
-                'token': f'token_{rand_user_id}' if good else 'wrong_token'
+        while True:
+            message = {
+                'type': 'login',
+                'data': {
+                    'user_id': rand_user_id,
+                    'token': f'token_{rand_user_id}' if random.randint(0, 100) < 80 else 'wrong_token'
+                }
             }
-        }
-        await websocket.send(json.dumps(message))
+            await asyncio.sleep(random.random()*10)
+            await websocket.send(json.dumps(message))
+            await websocket.recv()
+            print('login')
 
-        async for message in websocket:
-            print(json.loads(message))
+            if random.randint(0, 100) > 80:
+                await asyncio.sleep(random.random()*10)
+                await websocket.send(json.dumps(message))
+                await websocket.recv()
+                print('re-login')
 
-asyncio.get_event_loop().run_until_complete(hello())
+            message = {'type': 'logout', 'data': ''}
+            await asyncio.sleep(random.random()*10)
+            await websocket.send(json.dumps(message))
+            await websocket.recv()
+            print('logout')
+
+many_users = [hello() for i in range(100)]
+
+asyncio.get_event_loop().run_until_complete(asyncio.gather(*many_users))

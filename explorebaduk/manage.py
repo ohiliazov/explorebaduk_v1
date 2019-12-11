@@ -10,7 +10,7 @@ from explorebaduk.handlers import handle_message
 
 FORMAT = "%(asctime)s [%(name)s] %(levelname)s: %(message)s"
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
-logging.basicConfig(level=logging.DEBUG, format=FORMAT, datefmt=DATE_FORMAT)
+logging.basicConfig(level=logging.INFO, format=FORMAT, datefmt=DATE_FORMAT)
 logger = logging.getLogger('explorebaduk')
 
 
@@ -18,7 +18,7 @@ async def start_server(ws: websockets.WebSocketServerProtocol, path: str):
     await eb_server.register(ws)
     try:
         async for message in ws:
-            logger.debug("IN <<< %s", message)
+            logger.info("IN <<< %s", message)
             await handle_message(ws, message)
     except websockets.WebSocketException:
         pass

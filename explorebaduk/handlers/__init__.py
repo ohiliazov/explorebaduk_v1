@@ -11,14 +11,14 @@ logger = logging.getLogger('explorebaduk')
 async def handle_message(ws, message: str):
     try:
         json_data = json.loads(message)
-        action = json_data.get('action')
+        message_type = json_data.get('type')
         data = json_data.get('data')
 
-        if action in AUTH_ACTIONS:
-            await handle_auth(ws, action, data)
+        if message_type in AUTH_ACTIONS:
+            await handle_auth(ws, message_type, data)
 
-        elif action in CHALLENGE_ACTIONS:
-            await handle_challenge(ws, action, data)
+        elif message_type in CHALLENGE_ACTIONS:
+            await handle_challenge(ws, message_type, data)
 
         else:
             logger.info("SKIP %s", message)
