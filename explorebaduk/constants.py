@@ -19,9 +19,16 @@ CHALLENGE_CREATE = 'new'
 CHALLENGE_CANCEL = 'cancel'
 CHALLENGE_ACCEPT = 'accept'
 CHALLENGE_DECLINE = 'decline'
-CHALLENGE_REVISE = 'revise'
+CHALLENGE_RETURN = 'return'
+CHALLENGE_START = 'start'
 
 CHALLENGE_ACTIONS = [CHALLENGE_CREATE, CHALLENGE_ACCEPT, CHALLENGE_DECLINE, CHALLENGE_REVISE]
 
 OK = 'ok'
 ERROR = 'error'
+
+# challenge statuses
+REQUESTED = 'requested'
+ACCEPTED = 'accepted'
+CHANGED = 'changed'
+RETURNED = 'returned'

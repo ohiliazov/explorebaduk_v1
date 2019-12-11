@@ -1,4 +1,4 @@
-from typing import Set, Optional
+from typing import Set, Dict, Optional
 
 from explorebaduk.database import UserModel
 
@@ -20,33 +20,53 @@ class Player:
     def logout(self):
         self.user = None
 
-    def join_game(self, game: 'Game'):
-        self.joined_games.add(game)
-        game.join_player(self)
-
-    def leave_game(self, game: 'Game'):
-        self.joined_games.remove(game)
-        game.leave_player(self)
-
-    def join_challenge(self, challenge: 'Challenge'):
+    def join_challenge(self, challenge: 'Challenge', status: str):
         self.joined_challenges.add(challenge)
-        challenge.join_player(self)
+        challenge.joined[self] = status
 
     def leave_challenge(self, challenge: 'Challenge'):
         self.joined_challenges.remove(challenge)
-        challenge.leave_player(self)
+        challenge.joined.pop(self)
 
 
 class Challenge:
-    def __init__(self, creator: Player):
+    def __init__(self, creator: Player, data: dict):
         self.creator = creator
-        self.joined: Set[Player] = set()
+        self.data = data
+        self.joined: Dict[Player] = {}
+        self.blacklist = set()
 
-    def join_player(self, player: Player):
-        self.joined.add(player)
+    @property
+    def ready(self):
+        return list(self.joined.values()).count('accepted') == 1
+
+    def cancel(self):
+        for player in self.joined:
+            player.leave_challenge(self)
+
+    def join_player(self, player: Player, status: str):
+        if player not in self.blacklist:
+            self.joined[player] = status
+
+    def accept_player(self, player):
+        if player not in self.blacklist:
+            self.joined[player] = 'accepted'
+
+    def join_with_edits(self, player):
+        if player not in self.blacklist:
+            self.joined[player] = 'changed'
+
+    def revise_edits(self, player):
+        if player not in self.blacklist:
+            self.joined[player] = 'returned'
+
+    def add_to_blacklist(self, player):
+        self.blacklist.add(player)
+        self.leave_player(player)
 
     def leave_player(self, player: Player):
-        self.joined.remove(player)
+        self.joined.pop(player)
+        player.joined_challenges.remove(self)
 
 
 class Game:
@@ -57,9 +77,3 @@ class Game:
     @property
     def players_joined(self):
         return all([player in self.joined for player in self.players])
-
-    def join_player(self, player: Player):
-        self.joined.add(player)
-
-    def leave_player(self, player: Player):
-        self.joined.remove(player)
