@@ -5,10 +5,10 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm.session import Session
 
-Base = declarative_base()
+BaseModel = declarative_base()
 
 
-class UserModel(Base):
+class UserModel(BaseModel):
     __tablename__ = 'users'
 
     user_id = Column(Integer, primary_key=True)
@@ -25,7 +25,7 @@ class UserModel(Base):
         return f"{self.first_name} {self.last_name}"
 
 
-class TokenModel(Base):
+class TokenModel(BaseModel):
     __tablename__ = 'signin_tokens'
 
     token_id = Column(Integer, primary_key=True, name='SignIn_Token_ID')
@@ -36,7 +36,7 @@ class TokenModel(Base):
     user = relationship('UserModel', back_populates='tokens')
 
 
-class GameModel(Base):
+class GameModel(BaseModel):
     __tablename__ = 'games'
 
     game_id = Column(Integer, primary_key=True)
@@ -46,6 +46,11 @@ class GameModel(Base):
     game_type = Column(String(255))
 
     sgf = Column(Text, name='SGF')
+
+
+def bind_engine(engine):
+    BaseModel.metadata.bind = engine
+    Session.configure(bind=engine)
 
 
 def create_session(database_uri):
@@ -63,7 +68,7 @@ def create_test_database(database_uri):
     session.execute('DROP TABLE IF EXISTS users ;')
     session.execute('DROP TABLE IF EXISTS signin_tokens ;')
 
-    Base.metadata.create_all(session.bind)
+    BaseModel.metadata.create_all(session.bind)
 
     for i in range(100):
         user_data = {
