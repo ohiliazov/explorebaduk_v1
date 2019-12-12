@@ -5,7 +5,7 @@ from explorebaduk.constants import (
     CHALLENGE_CANCEL,
     CHALLENGE_ACCEPT,
     CHALLENGE_DECLINE,
-    CHALLENGE_REVISE,
+    CHALLENGE_RETURN,
 )
 from explorebaduk.server import eb_server
 from explorebaduk.schema import ChallengeSchema
@@ -74,5 +74,5 @@ def handle_challenge(ws, action: str, data: dict):
     elif action == CHALLENGE_DECLINE:
         decline_challenge(ws, data)
 
-    elif action == CHALLENGE_REVISE:
+    elif action == CHALLENGE_RETURN:
         revise_challenge(ws, data)
