@@ -15,81 +15,87 @@ class LoginSchema(Schema):
     token = fields.String(required=True)
 
 
-class RulesetSchema(Schema):
+class RuleSetSchema(Schema):
     rules = fields.String(required=True)
-    board_size = fields.String(required=True)
+    board_height = fields.Integer(required=True)
+    board_width = fields.Integer()
     to_join = fields.Integer(default=2)
 
-    @validates('board_size')
-    def check_board_size(self, value: str):
-        if not value.isdigit() and ':' not in value:
-            raise ValidationError(f"Invalid board size value: {value}")
-        if value.isdigit() and not 5 < int(value) < 52:
-            raise ValidationError(f"Board size is out of range: {value}")
-        else:
-            columns, rows = value.split(':')
-            if not 5 < columns < 52 or not 5 < rows < 52:
-                raise ValidationError(f"Board size is out of range: {value}")
+    @validates_schema
+    def check_board_size(self, data, **kwargs):
+        height = data['board_height']
+        width = data.get('board_width', height)
+
+        if any([not 5 < int(value) < 52 for value in [height, width]]):
+            raise ValidationError(f"Board size is out of range: {height}:{width}")
+
+    @post_load
+    def adjust_width(self, data, **kwargs):
+        data['board_width'] = data.get('board_width') or data['board_height']
+
+        return data
 
 
 class TimeSystemSchema(Schema):
-    setting = fields.String(required=True)
+    type = fields.String(required=True)
     main = fields.Integer()
     overtime = fields.Integer()
     periods = fields.Integer()
     stones = fields.Integer()
     bonus = fields.Integer()
+    delay = fields.Integer()
 
-    @validates('setting')
-    def validate_setting(self, value):
+    @validates('type')
+    def validate_type(self, value):
         if value not in VALID_TIME_SETTINGS:
             raise ValidationError(f"Invalid time control setting: {value}")
 
     @validates_schema
     def validate_time_control(self, data, **kwargs):
-        if data['setting'] == ABSOLUTE and not data.get('main'):
+        if data['type'] == ABSOLUTE and not data.get('main'):
             raise ValidationError("Absolute time control should have main time.")
 
-        elif data['setting'] == BYOYOMI and not (data.get('overtime') and data.get('periods')):
+        elif data['type'] == BYOYOMI and not (data.get('overtime') and data.get('periods')):
             raise ValidationError("Byoyomi time control should have overtime and periods.")
 
-        elif data['setting'] == CANADIAN and not (data.get('overtime') and data.get('stones')):
+        elif data['type'] == CANADIAN and not (data.get('overtime') and data.get('stones')):
             raise ValidationError("Canadian time control should have overtime and stones.")
 
-        elif data['setting'] == FISCHER and not data.get('bonus'):
+        elif data['type'] == FISCHER and not data.get('bonus'):
             raise ValidationError("Fischer time control should have bonus time.")
 
     @post_load
     def set_time_control(self, data, **kwargs):
-        for item in ['main', 'overtime', 'periods', 'stones', 'bonus']:
+        for item in ['main', 'overtime', 'periods', 'stones', 'bonus', 'delay']:
             data.setdefault(item, 0)
 
-        if data['setting'] == NO_TIME:
+        if data['type'] == NO_TIME:
             data['main'] = float('+inf')
 
-        if data['setting'] == ABSOLUTE:
+        if data['type'] == ABSOLUTE:
             data['overtime'] = 0
             data['periods'] = 0
             data['stones'] = 0
             data['bonus'] = 0
 
-        elif data['setting'] == BYOYOMI:
+        elif data['type'] == BYOYOMI:
             data['stones'] = 1
             data['bonus'] = 0
 
-        elif data['setting'] == CANADIAN:
+        elif data['type'] == CANADIAN:
             data['periods'] = 1
             data['bonus'] = 0
 
-        elif data['setting'] == FISCHER:
+        elif data['type'] == FISCHER:
             data['overtime'] = 0
             data['periods'] = 0
             data['stones'] = 0
+            data['delay'] = 0
 
         return data
 
 
-class LimitSchema(Schema):
+class RestrictionsSchema(Schema):
     no_undo = fields.Boolean(default=False)
     no_pause = fields.Boolean(default=False)
     no_analyze = fields.Boolean(default=False)
@@ -97,7 +103,8 @@ class LimitSchema(Schema):
 
 
 class ChallengeSchema(Schema):
-    name = fields.String()
-    ruleset = fields.Nested(RulesetSchema, required=True)
+    type = fields.String(required=True)
+    name = fields.String(required=True)
+    rule_set = fields.Nested(RuleSetSchema, required=True)
     time_system = fields.Nested(TimeSystemSchema, required=True)
-    limit = fields.Nested(LimitSchema, required=True)
+    restrictions = fields.Nested(RestrictionsSchema, required=True)
