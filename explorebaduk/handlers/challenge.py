@@ -1,45 +1,32 @@
 import logging
 
 from explorebaduk.constants import (
-    CHALLENGE_CREATE,
-    CHALLENGE_CANCEL,
-    CHALLENGE_ACCEPT,
-    CHALLENGE_DECLINE,
-    CHALLENGE_RETURN,
+    CREATE_CHALLENGE,
+    CANCEL_CHALLENGE,
 )
-from explorebaduk.server import eb_server
+from explorebaduk.exceptions import AuthenticationError, InvalidMessageError
+from explorebaduk.models import Challenge
+from explorebaduk.server import GameServer
 from explorebaduk.schema import ChallengeSchema
 
 logger = logging.getLogger('challenge_handler')
-
-
-class Challenge:
-    def __init__(self, ws, data):
-        self.creator = ws
-        self.data = data
-        self.status = 'open'
-        self.joined = {}
-
-    def join(self, ws, data):
-        print("New player joined")
-        self.joined[ws] = data
-
-    def accept(self, ws, data):
-        print("Start game")
 
 
 class ChallengeError(Exception):
     pass
 
 
-def create_challenge(ws, data):
+async def create_challenge(ws, data):
     data = ChallengeSchema().load(data)
-    eb_server[ws] = data
+    player = GameServer.players[ws]
+    GameServer.challenges[ws] = Challenge(player, data)
+    logger.info('Challenge created by: %s', GameServer.players[ws].user.full_name)
+    await GameServer.notify_challenges()
 
 
 def cancel_challenge(ws):
     logger.info("Cancelling challenge")
-    eb_server.pop(ws, None)
+    GameServer.challenges.pop(ws, None)
 
 
 def join_challenge(ws, data):
@@ -58,21 +45,15 @@ def revise_challenge(ws, data):
     pass
 
 
-def handle_challenge(ws, action: str, data: dict):
-    if not eb_server.get(ws):
-        raise ChallengeError("Not logged in")
+async def handle_challenge(ws, action: str, data: dict):
+    if not GameServer.players[ws].logged_in:
+        raise AuthenticationError("Player not logged in")
 
-    if action == CHALLENGE_CREATE:
-        create_challenge(ws, data)
+    if action == CREATE_CHALLENGE:
+        await create_challenge(ws, data)
 
-    elif action == CHALLENGE_CANCEL:
+    elif action == CANCEL_CHALLENGE:
         accept_challenge(ws, data)
 
-    elif action == CHALLENGE_ACCEPT:
-        accept_challenge(ws, data)
-
-    elif action == CHALLENGE_DECLINE:
-        decline_challenge(ws, data)
-
-    elif action == CHALLENGE_RETURN:
-        revise_challenge(ws, data)
+    else:
+        raise InvalidMessageError(f"Invalid action: {action}")

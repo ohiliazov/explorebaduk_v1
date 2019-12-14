@@ -59,15 +59,13 @@ def create_session(database_uri):
     return session
 
 
-def create_test_database(database_uri):
-    import fauxfactory
+def create_database(database_uri):
+    import random
     import datetime
 
     session = create_session(database_uri)
 
-    session.execute('DROP TABLE IF EXISTS users ;')
-    session.execute('DROP TABLE IF EXISTS signin_tokens ;')
-
+    BaseModel.metadata.drop_all(session.bind)
     BaseModel.metadata.create_all(session.bind)
 
     for i in range(100):
@@ -75,16 +73,15 @@ def create_test_database(database_uri):
             'user_id': i,
             'first_name': "John",
             'last_name': f"Doe#{i}",
-            'email': fauxfactory.gen_email(name=f'johndoe{i}', domain='explorebaduk'),
-            'rating': fauxfactory.gen_number(0, 3000),
-            'puzzle_rating': fauxfactory.gen_number(0, 3000),
+            'email': f'johndoe{i}@explorebaduk.com',
+            'rating': random.randint(0, 3000),
+            'puzzle_rating': random.randint(0, 3000),
         }
         user = UserModel(**user_data)
 
         token_data = {
             'token_id': i,
             'user_id': i,
-            # 'token': ''.join(random.choice(string.ascii_letters) for i in range(64)),
             'token': f'token_{i}',
             'expired_at': datetime.datetime.utcnow() + datetime.timedelta(minutes=10),
         }
@@ -100,4 +97,4 @@ def create_test_database(database_uri):
 if __name__ == '__main__':
     from explorebaduk import config
 
-    create_test_database(config.DATABASE_URI)
+    create_database(config.DATABASE_URI)

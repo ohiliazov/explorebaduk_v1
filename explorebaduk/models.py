@@ -44,29 +44,40 @@ class Challenge:
         for player in self.joined:
             player.leave_challenge(self)
 
-    def join_player(self, player: Player, status: str):
+    def join_player(self, player):
         if player not in self.blacklist:
-            self.joined[player] = status
+            self.joined[player] = 'joined'
 
     def accept_player(self, player):
         if player not in self.blacklist:
             self.joined[player] = 'accepted'
 
-    def join_with_edits(self, player):
-        if player not in self.blacklist:
-            self.joined[player] = 'changed'
-
-    def revise_edits(self, player):
+    def return_player(self, player):
         if player not in self.blacklist:
             self.joined[player] = 'returned'
 
+    def accept_edits(self, player):
+        if player not in self.blacklist:
+            self.joined[player] = 'accept_edits'
+
+    def revise_edits(self, player):
+        if player not in self.blacklist:
+            self.joined[player] = 'revise_edits'
+
     def add_to_blacklist(self, player):
         self.blacklist.add(player)
-        self.leave_player(player)
+        self.remove_player(player)
 
-    def leave_player(self, player: Player):
+    def remove_player(self, player: Player):
         self.joined.pop(player)
         player.joined_challenges.remove(self)
+
+    def to_dict(self):
+        return {
+            'data': self.data,
+            'creator': self.creator.user.full_name,
+            'joined': self.joined,
+        }
 
 
 class Game:

@@ -1,8 +1,10 @@
 import asyncio
 import websockets
 import logging
+import json
 
 from explorebaduk import config
+from explorebaduk.exceptions import InvalidMessageError
 from explorebaduk.server import GameServer
 from explorebaduk.handlers import handle_message
 
@@ -19,8 +21,6 @@ async def start_server(ws: websockets.WebSocketServerProtocol, path: str):
         async for message in ws:
             logger.info("IN <<< %s", message)
             await handle_message(ws, message)
-    except websockets.WebSocketException:
-        pass
     finally:
         await GameServer.unregister(ws)
 

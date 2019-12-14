@@ -1,5 +1,5 @@
-# eb-server
-The game server designed for Explore Baduk
+# ExploreBaduk GameServer
+The game server designed for the ExploreBaduk website
 
 Python 3.6 virtual environment:
 ```bash

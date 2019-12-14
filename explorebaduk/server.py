@@ -31,9 +31,22 @@ class GameServer:
         })
 
     @classmethod
+    def challenges_event(cls):
+        return json.dumps({
+            'type': 'challenges',
+            'data': [challenge.to_dict() for challenge in cls.challenges.values()]
+        })
+
+    @classmethod
     async def notify_players(cls):
         if cls.players:
             message = cls.players_event()
+            await asyncio.gather(*[user.send(message) for user in cls.players.keys()])
+
+    @classmethod
+    async def notify_challenges(cls):
+        if cls.players:
+            message = cls.challenges_event()
             await asyncio.gather(*[user.send(message) for user in cls.players.keys()])
 
     @classmethod

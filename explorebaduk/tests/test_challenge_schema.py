@@ -59,6 +59,7 @@ def test_challenge_schema(rule_set, time_absolute, no_restrictions):
         'time_system': time_absolute,
         'restrictions': no_restrictions,
     }
+    print(data)
     result = ChallengeSchema().load(data)
 
     expected = {

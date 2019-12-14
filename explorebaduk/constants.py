@@ -2,36 +2,39 @@
 OK = 'ok'
 ERROR = 'error'
 
-# Authorization
+# Authentication
 LOGIN = 'login'
 LOGOUT = 'logout'
 
-AUTH_ACTIONS = [LOGIN, LOGOUT]
+# Challenge
+CHALLENGE = 'challenge'
 
-# CHALLENGE
 # Step 0. Create challenge
-CREATE_CHALLENGE = 'create_challenge'
+CREATE_CHALLENGE = 'create'  # TODO
 
 # Step 1. Update or cancel (by creator)
-UPDATE_CHALLENGE = 'update_challenge'
-CANCEL_CHALLENGE = 'cancel_challenge'
+UPDATE_CHALLENGE = 'update'  # TODO
+CANCEL_CHALLENGE = 'cancel'  # TODO
 
 # Step 2. Join or leave challenge (by joined player)
-JOIN_CHALLENGE = 'join_challenge'
-LEAVE_CHALLENGE = 'leave_challenge'
+JOIN_CHALLENGE = 'join'  # TODO
+LEAVE_CHALLENGE = 'leave'  # TODO
 
 # Step 3. Accept, decline or return joined player (by creator)
-ACCEPT_JOINED = 'accept_joined'
-DECLINE_JOINED = 'decline_joined'
-RETURN_JOINED = 'return_joined'
+ACCEPT_JOINED = 'accept'  # TODO
+DECLINE_JOINED = 'decline'  # TODO
+EDIT_JOINED = 'edit'  # TODO
 
 # Step 4. Accept returned challenge (by joined player)
-ACCEPT_RETURN = 'accept_return'
+ACCEPT_EDITS = 'accept_edits'  # TODO
+REVISE_EDITS = 'revise_edits'  # TODO
 
-CHALLENGE_ACTIONS = [CREATE_CHALLENGE, UPDATE_CHALLENGE, CANCEL_CHALLENGE,
-                     JOIN_CHALLENGE, LEAVE_CHALLENGE,
-                     ACCEPT_JOINED, DECLINE_JOINED, RETURN_JOINED,
-                     ACCEPT_RETURN]
+CHALLENGE_ACTIONS = [
+    CREATE_CHALLENGE, UPDATE_CHALLENGE, CANCEL_CHALLENGE,
+    JOIN_CHALLENGE, LEAVE_CHALLENGE,
+    ACCEPT_JOINED, DECLINE_JOINED, EDIT_JOINED,
+    ACCEPT_EDITS, REVISE_EDITS
+]
 
 # Game
 PLAY = 'play'
