@@ -12,12 +12,8 @@ from explorebaduk.server import GameServer, db
 logger = logging.getLogger("auth")
 
 
-def login_ok_event():
-    return json.dumps({'type': LOGIN, 'result': OK})
-
-
-def logout_ok_event():
-    return json.dumps({'type': LOGOUT, 'result': OK})
+login_ok_event = json.dumps({'type': LOGIN, 'result': OK})
+logout_ok_event = json.dumps({'type': LOGOUT, 'result': OK})
 
 
 def login_error_event(error_message: str):
@@ -41,9 +37,9 @@ async def handle_login(ws: websockets.WebSocketServerProtocol, data: dict):
     user = db.query(UserModel).filter_by(user_id=signin_token.user_id).first()
     player.login_as(user)
     logger.info(f"{ws.remote_address} logged in as {player.user.full_name}")
-    return await asyncio.gather(ws.send(login_ok_event()), GameServer.notify_players())
+    return await asyncio.gather(ws.send(login_ok_event), GameServer.notify_players())
 
 
 async def handle_logout(ws: websockets.WebSocketServerProtocol):
     GameServer.players[ws].logout()
-    await asyncio.gather(ws.send(logout_ok_event()), GameServer.notify_players())
+    await asyncio.gather(ws.send(logout_ok_event), GameServer.notify_players())

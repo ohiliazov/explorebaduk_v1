@@ -3,6 +3,7 @@ import logging
 from explorebaduk.constants import (
     CREATE_CHALLENGE,
     CANCEL_CHALLENGE,
+    CHALLENGE, OK, ERROR
 )
 from explorebaduk.exceptions import AuthenticationError, InvalidMessageError
 from explorebaduk.models import Challenge
@@ -16,7 +17,14 @@ class ChallengeError(Exception):
     pass
 
 
+def challenge_error_event(error_meesage: str):
+    return {'type': CHALLENGE, 'result': ERROR, 'message': error_meesage}
+
+
 async def create_challenge(ws, data):
+    if ws in GameServer.challenges:
+        return await ws.send()
+
     data = ChallengeSchema().load(data)
     player = GameServer.players[ws]
     GameServer.challenges[ws] = Challenge(player, data)
