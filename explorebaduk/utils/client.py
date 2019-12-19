@@ -1,7 +1,6 @@
 import asyncio
 import json
 import websockets
-import random
 
 login_message = {
     'type': 'login',
@@ -50,8 +49,8 @@ async def hello():
                 try:
                     response = await asyncio.wait_for(websocket.recv(), timeout=0.1)
                     print('<', response)
-                except:
-                    pass
+                except Exception as err:
+                    print(err)
 
             elif message == 'login':
                 await websocket.send(json.dumps(login_message))

@@ -10,51 +10,44 @@ from explorebaduk.models import Player, Challenge, Game
 
 db = create_session(DATABASE_URI)
 
+PLAYERS: Dict[WebSocketServerProtocol, Player] = {}
+CHALLENGES: Dict[WebSocketServerProtocol, Challenge] = {}
+GAMES: Dict[WebSocketServerProtocol, Game] = {}
 
-class GameServer:
-    __instance = None
 
-    def __new__(cls, *args, **kwargs):
-        if not GameServer.__instance:
-            GameServer.__instance = super(GameServer, cls).__new__(cls, *args, **kwargs)
-        return GameServer.__instance
+def players_event():
+    return json.dumps({
+        'type': 'players',
+        'data': [player.user.full_name for player in PLAYERS.values() if
+                 player and player.logged_in]
+    })
 
-    players: Dict[WebSocketServerProtocol, Player] = {}
-    challenges: Dict[WebSocketServerProtocol, Challenge] = {}
-    games: Dict[WebSocketServerProtocol, Game] = {}
 
-    @classmethod
-    def players_event(cls):
-        return json.dumps({
-            'type': 'players',
-            'data': [player.user.full_name for player in cls.players.values() if player and player.logged_in]
-        })
+def challenges_event():
+    return json.dumps({
+        'type': 'challenges',
+        'data': [challenge.to_dict() for challenge in CHALLENGES.values()]
+    })
 
-    @classmethod
-    def challenges_event(cls):
-        return json.dumps({
-            'type': 'challenges',
-            'data': [challenge.to_dict() for challenge in cls.challenges.values()]
-        })
 
-    @classmethod
-    async def notify_players(cls):
-        if cls.players:
-            message = cls.players_event()
-            await asyncio.gather(*[user.send(message) for user in cls.players.keys()])
+async def notify_players():
+    if PLAYERS:
+        message = players_event()
+        await asyncio.gather(*[user.send(message) for user in PLAYERS.keys()])
 
-    @classmethod
-    async def notify_challenges(cls):
-        if cls.players:
-            message = cls.challenges_event()
-            await asyncio.gather(*[user.send(message) for user in cls.players.keys()])
 
-    @classmethod
-    async def register(cls, ws):
-        cls.players[ws] = Player()
-        await cls.notify_players()
+async def notify_challenges():
+    if PLAYERS:
+        message = challenges_event()
+        await asyncio.gather(*[user.send(message) for user in PLAYERS.keys()])
 
-    @classmethod
-    async def unregister(cls, ws):
-        cls.players.pop(ws)
-        await cls.notify_players()
+
+async def register(ws):
+    PLAYERS[ws] = Player()
+    await asyncio.gather(ws.send(players_event()),
+                         ws.send(challenges_event()))
+
+
+async def unregister(ws):
+    PLAYERS.pop(ws)
+    await notify_players()

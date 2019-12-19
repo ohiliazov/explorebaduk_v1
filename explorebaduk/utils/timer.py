@@ -1,6 +1,7 @@
 import time
 import itertools
 
+
 class Timer:
     def __init__(self):
         self.clock = None
