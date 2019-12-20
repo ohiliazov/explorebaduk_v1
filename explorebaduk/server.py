@@ -18,7 +18,7 @@ GAMES: Dict[WebSocketServerProtocol, Game] = {}
 def players_event():
     return json.dumps({
         'type': 'players',
-        'data': [player.user.full_name for player in PLAYERS.values() if
+        'data': [player.full_name for player in PLAYERS.values() if
                  player and player.logged_in]
     })
 
@@ -43,7 +43,7 @@ async def notify_challenges():
 
 
 async def register(ws):
-    PLAYERS[ws] = Player()
+    PLAYERS[ws] = Player(ws)
     await asyncio.gather(ws.send(players_event()),
                          ws.send(challenges_event()))
 

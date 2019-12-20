@@ -34,18 +34,30 @@ async def create_challenge(ws, data):
 
     data = ChallengeSchema().load(data)
     player = PLAYERS[ws]
-    CHALLENGES[ws] = Challenge(player, data)
+
+    CHALLENGES[player.id] = Challenge(player, data)
     logger.info('Challenge created by: %s', PLAYERS[ws].user.full_name)
     return await asyncio.gather(ws.send(challenge_ok_event('created')), notify_challenges())
 
 
-def cancel_challenge(ws):
+async def cancel_challenge(ws):
     logger.info("Cancelling challenge")
-    CHALLENGES.pop(ws, None)
+
+    if ws not in CHALLENGES:
+        return await ws.send(challenge_error_event('Challenge not exists'))
+
+    challenge = CHALLENGES.pop(ws)
+
+    return await asyncio.gather(*[player.send(challenge_ok_event('cancelled')) for player in challenge.joined])
 
 
-def join_challenge(ws, data):
-    challenge_id = data.pop('challenge_id')
+async def join_challenge(ws, data):
+    data = ChallengeSchema().load(data)
+
+    if not data['challenge_id']:
+        return await ws.send(challenge_error_event('Challenge ID is not provided'))
+
+    player = PLAYERS[ws]
     pass
 
 
@@ -62,7 +74,8 @@ def revise_challenge(ws, data):
 
 
 async def handle_challenge(ws, action: str, data: dict):
-    if not PLAYERS[ws].logged_in:
+    player = PLAYERS[ws]
+    if not player.logged_in:
         raise AuthenticationError("Player not logged in")
 
     if action == CREATE_CHALLENGE:

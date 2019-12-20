@@ -38,6 +38,11 @@ challenge_message = {
     }
 }
 
+challenge_cancel_message = {
+    'type': 'challenge',
+    'action': 'cancel',
+}
+
 
 async def hello():
     uri = "ws://localhost:8080"
@@ -57,6 +62,8 @@ async def hello():
             elif message == 'logout':
                 await websocket.send(json.dumps(logout_message))
             elif message == 'challenge':
+                await websocket.send(json.dumps(challenge_message))
+            elif message == 'cancel':
                 await websocket.send(json.dumps(challenge_message))
             else:
                 await websocket.send(message)

@@ -108,3 +108,4 @@ class ChallengeSchema(Schema):
     rule_set = fields.Nested(RuleSetSchema, required=True)
     time_system = fields.Nested(TimeSystemSchema, required=True)
     restrictions = fields.Nested(RestrictionsSchema, required=True)
+    creator_id = fields.String()

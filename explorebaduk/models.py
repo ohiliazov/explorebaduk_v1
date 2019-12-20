@@ -1,18 +1,29 @@
+import json
+
 from typing import Set, Dict, Optional
 
 from explorebaduk.database import UserModel
 
 
 class Player:
-    def __init__(self):
+    def __init__(self, ws):
+        self.ws = ws
         self.user: Optional[UserModel] = None
-        self.created_challenges: Set[Challenge] = set()
-        self.joined_challenges: Set[Challenge] = set()
-        self.joined_games: Set[Game] = set()
+
+    async def send(self, data: str):
+        return self.ws.send(json.dumps(data))
 
     @property
     def logged_in(self):
         return self.user is not None
+
+    @property
+    def id(self):
+        return self.user.user_id
+
+    @property
+    def full_name(self):
+        return self.user.full_name
 
     def login_as(self, user: UserModel):
         self.user = user
@@ -20,29 +31,17 @@ class Player:
     def logout(self):
         self.user = None
 
-    def join_challenge(self, challenge: 'Challenge', status: str):
-        self.joined_challenges.add(challenge)
-        challenge.joined[self] = status
-
-    def leave_challenge(self, challenge: 'Challenge'):
-        self.joined_challenges.remove(challenge)
-        challenge.joined.pop(self)
-
 
 class Challenge:
-    def __init__(self, creator: Player, data: dict):
+    def __init__(self, creator, data: dict):
         self.creator = creator
         self.data = data
-        self.joined: Dict[Player] = {}
+        self.joined: Dict[Player, str] = {creator: 'accepted'}
         self.blacklist = set()
 
     @property
     def ready(self):
-        return list(self.joined.values()).count('accepted') == 1
-
-    def cancel(self):
-        for player in self.joined:
-            player.leave_challenge(self)
+        return list(self.joined.values()).count('accepted') == 2
 
     def join_player(self, player):
         if player not in self.blacklist:
@@ -70,13 +69,12 @@ class Challenge:
 
     def remove_player(self, player: Player):
         self.joined.pop(player)
-        player.joined_challenges.remove(self)
 
     def to_dict(self):
         return {
             'data': self.data,
-            'creator': self.creator.user.full_name,
-            'joined': self.joined,
+            'creator': self.creator.full_name,
+            'joined': [{player.full_name: status} for player, status in self.joined.items()],
         }
 
 
