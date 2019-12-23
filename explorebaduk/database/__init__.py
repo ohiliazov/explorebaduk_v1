@@ -35,6 +35,10 @@ class TokenModel(BaseModel):
 
     user = relationship('UserModel', back_populates='tokens')
 
+    @property
+    def is_active(self):
+        return datetime.datetime.utcnow() < self.expired_at
+
 
 class GameModel(BaseModel):
     __tablename__ = 'games'
@@ -48,53 +52,7 @@ class GameModel(BaseModel):
     sgf = Column(Text, name='SGF')
 
 
-def bind_engine(engine):
-    BaseModel.metadata.bind = engine
-    Session.configure(bind=engine)
-
-
-def create_session(database_uri):
+def create_session(database_uri, expire_on_commit=True):
     engine = create_engine(database_uri)
-    session = Session(bind=engine)
+    session = Session(bind=engine, expire_on_commit=expire_on_commit)
     return session
-
-
-def create_database(database_uri):
-    import random
-    import datetime
-
-    session = create_session(database_uri)
-
-    BaseModel.metadata.drop_all(session.bind)
-    BaseModel.metadata.create_all(session.bind)
-
-    for i in range(100):
-        user_data = {
-            'user_id': i,
-            'first_name': "John",
-            'last_name': f"Doe#{i}",
-            'email': f'johndoe{i}@explorebaduk.com',
-            'rating': random.randint(0, 3000),
-            'puzzle_rating': random.randint(0, 3000),
-        }
-        user = UserModel(**user_data)
-
-        token_data = {
-            'token_id': i,
-            'user_id': i,
-            'token': f'token_{i}',
-            'expired_at': datetime.datetime.utcnow() + datetime.timedelta(minutes=10),
-        }
-        token = TokenModel(**token_data)
-
-        session.add(user)
-        session.add(token)
-
-    session.commit()
-    session.close()
-
-
-if __name__ == '__main__':
-    from explorebaduk import config
-
-    create_database(config.DATABASE_URI)
