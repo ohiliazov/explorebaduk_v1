@@ -2,7 +2,7 @@ import asyncio
 import json
 from websockets import WebSocketServerProtocol
 
-from typing import Dict
+from typing import Dict, Tuple
 from explorebaduk.config import DATABASE_URI
 from explorebaduk.database import create_session
 from explorebaduk.models import Player, Challenge, Game
@@ -13,6 +13,12 @@ db = create_session(DATABASE_URI)
 PLAYERS: Dict[WebSocketServerProtocol, Player] = {}
 CHALLENGES: Dict[WebSocketServerProtocol, Challenge] = {}
 GAMES: Dict[WebSocketServerProtocol, Game] = {}
+
+
+def get_by_user_id(user_id: int) -> WebSocketServerProtocol:
+    for ws, player in PLAYERS.items():
+        if player.logged_in and player.id == user_id:
+            return ws
 
 
 def players_event():

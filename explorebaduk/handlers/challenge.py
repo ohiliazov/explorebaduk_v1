@@ -10,7 +10,7 @@ from explorebaduk.constants import (
 )
 from explorebaduk.exceptions import AuthenticationError, InvalidMessageError
 from explorebaduk.models import Challenge
-from explorebaduk.server import PLAYERS, CHALLENGES, notify_challenges
+from explorebaduk.server import PLAYERS, CHALLENGES, get_by_user_id, notify_challenges
 from explorebaduk.schema import ChallengeSchema
 
 logger = logging.getLogger('challenge_handler')
@@ -35,7 +35,7 @@ async def create_challenge(ws, data):
     data = ChallengeSchema().load(data)
     player = PLAYERS[ws]
 
-    CHALLENGES[player.id] = Challenge(player, data)
+    CHALLENGES[ws] = Challenge(player, data)
     logger.info('Challenge created by: %s', PLAYERS[ws].user.full_name)
     return await asyncio.gather(ws.send(challenge_ok_event('created')), notify_challenges())
 
@@ -53,12 +53,25 @@ async def cancel_challenge(ws):
 
 async def join_challenge(ws, data):
     data = ChallengeSchema().load(data)
+    player = PLAYERS[ws]
 
-    if not data['challenge_id']:
+    if not data['creator_id']:
         return await ws.send(challenge_error_event('Challenge ID is not provided'))
 
-    player = PLAYERS[ws]
-    pass
+    creator_ws = get_by_user_id(data['creator_id'])
+
+    if not creator_ws:
+        return await ws.send(challenge_error_event('Player not found'))
+
+    if creator_ws not in CHALLENGES:
+        return await ws.send(challenge_error_event('Challenge not found'))
+
+    challenge = CHALLENGES[creator_ws]
+
+    challenge.join_player(player, data)
+
+    return await asyncio.gather(*[player.send(challenge_ok_event('joined')) for player in challenge.joined],
+                                notify_challenges())
 
 
 def accept_challenge(ws, data):
