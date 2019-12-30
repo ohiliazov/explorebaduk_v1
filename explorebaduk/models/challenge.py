@@ -7,15 +7,20 @@ ACCEPTED = 'accepted'
 
 
 class Challenge:
-    def __init__(self, creator_ws, data: dict):
-        self.creator_ws = creator_ws
+    def __init__(self, creator: Player, data: dict):
+        self.creator = creator
         self.data = data
-        self.joined: Dict[Player, Dict[str, str]] = {creator_ws: {'status': ACCEPTED}}
         self.blacklist = set()
+
+        self.joined: Dict[Player, Dict[str, str]] = {self.creator: {'status': ACCEPTED}}
+
+    @property
+    def id(self):
+        return self.creator.id
 
     @property
     def status(self):
-        return {player: data['status'] for player, data in self.joined.items()}
+        return {player.id: data['status'] for player, data in self.joined.items()}
 
     @property
     def ready(self):
@@ -23,9 +28,8 @@ class Challenge:
 
     def join_player(self, player: Player, data: dict):
         if player not in self.blacklist:
-            status = 'joined'
             self.joined[player] = {
-                'status': status,
+                'status': JOINED,
                 'data': data,
             }
 

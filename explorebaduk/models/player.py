@@ -1,17 +1,28 @@
 import json
+from enum import Enum
 
 from typing import Optional
 
 from explorebaduk.database import UserModel
 
 
+class PlayerStatus(Enum):
+    IDLE = 'idle'
+    PLAYING = 'playing'
+
+
 class Player:
     def __init__(self, ws):
         self.ws = ws
-        self.user: Optional[UserModel] = None
+        self._user: Optional[UserModel] = None
+        self.status = PlayerStatus.IDLE
 
     async def send(self, data: str):
         return self.ws.send(json.dumps(data))
+
+    @property
+    def user(self):
+        return self._user
 
     @property
     def logged_in(self):
@@ -19,14 +30,29 @@ class Player:
 
     @property
     def id(self):
-        return self.user.user_id
+        if self.logged_in:
+            return self.user.user_id
 
     @property
     def full_name(self):
-        return self.user.full_name
+        if self.logged_in:
+            return self.user.full_name
 
-    def login_as(self, user: UserModel):
-        self.user = user
+    @property
+    def rating(self):
+        if self.logged_in:
+            return self.user.rating
+
+    def to_dict(self) -> dict:
+        if self.logged_in:
+            return {
+                'user_id': self.id,
+                'full_name': self.full_name,
+                'rating': self.rating,
+            }
+
+    def login(self, user: UserModel):
+        self._user = user
 
     def logout(self):
-        self.user = None
+        self._user = None

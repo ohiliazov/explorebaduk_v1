@@ -35,7 +35,7 @@ async def handle_login(ws: websockets.WebSocketServerProtocol, data: dict):
         return await ws.send(login_error_event('Invalid token'))
 
     user = db.query(UserModel).filter_by(user_id=signin_token.user_id).first()
-    player.login_as(user)
+    player.login(user)
     logger.info(f"{ws.remote_address} logged in as {player.user.full_name}")
     return await asyncio.gather(ws.send(login_ok_event), notify_players())
 

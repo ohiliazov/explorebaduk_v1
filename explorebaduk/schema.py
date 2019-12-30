@@ -102,10 +102,16 @@ class RestrictionsSchema(Schema):
     is_private = fields.Boolean(default=False)
 
 
-class ChallengeSchema(Schema):
-    type = fields.String(required=True)
-    name = fields.String(required=True)
+class ChallengeBaseSchema(Schema):
     rule_set = fields.Nested(RuleSetSchema, required=True)
     time_system = fields.Nested(TimeSystemSchema, required=True)
     restrictions = fields.Nested(RestrictionsSchema, required=True)
-    creator_id = fields.String()
+
+
+class ChallengeSchema(ChallengeBaseSchema):
+    type = fields.String(required=True)
+    name = fields.String(required=True)
+
+
+class ChallengeJoinSchema(ChallengeBaseSchema):
+    creator_id = fields.Integer()

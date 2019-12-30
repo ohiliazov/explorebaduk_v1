@@ -9,9 +9,9 @@ from explorebaduk.constants import (
     CHALLENGE, OK, ERROR
 )
 from explorebaduk.exceptions import AuthenticationError, InvalidMessageError
-from explorebaduk.models import Challenge
+from explorebaduk.models import Challenge, Player
 from explorebaduk.server import PLAYERS, CHALLENGES, get_by_user_id, notify_challenges
-from explorebaduk.schema import ChallengeSchema
+from explorebaduk.schema import ChallengeSchema, ChallengeJoinSchema
 
 logger = logging.getLogger('challenge_handler')
 
@@ -22,6 +22,14 @@ class ChallengeError(Exception):
 
 def challenge_ok_event(message: str):
     return json.dumps({'type': CHALLENGE, 'result': OK, 'message': message})
+
+
+def challenge_join_event(challenge: Challenge, player: Player, data: dict = None):
+    return json.dumps({'type': CHALLENGE,
+                       'action': JOIN_CHALLENGE,
+                       'challenge_id': challenge.id,
+                       'player': player.to_dict(),
+                       'data': data})
 
 
 def challenge_error_event(error_message: str):
@@ -52,7 +60,7 @@ async def cancel_challenge(ws):
 
 
 async def join_challenge(ws, data):
-    data = ChallengeSchema().load(data)
+    data = ChallengeJoinSchema().load(data)
     player = PLAYERS[ws]
 
     if not data['creator_id']:
@@ -68,10 +76,13 @@ async def join_challenge(ws, data):
 
     challenge = CHALLENGES[creator_ws]
 
+    if player in challenge.blacklist:
+        return await ws.send(challenge_error_event('You are in blacklist'))
+
     challenge.join_player(player, data)
 
-    return await asyncio.gather(*[player.send(challenge_ok_event('joined')) for player in challenge.joined],
-                                notify_challenges())
+    return await asyncio.gather(*[player.send(challenge_join_event(challenge, player, data))
+                                  for player in challenge.joined])
 
 
 def accept_challenge(ws, data):
