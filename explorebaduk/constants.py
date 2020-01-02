@@ -1,3 +1,6 @@
+from enum import IntEnum
+
+
 # Message result statuses
 OK = 'ok'
 ERROR = 'error'
@@ -56,3 +59,22 @@ FISCHER = 'fischer'
 CUSTOM = 'custom'
 
 VALID_TIME_SETTINGS = [NO_TIME, ABSOLUTE, BYOYOMI, CANADIAN, FISCHER, CUSTOM]
+
+
+class GameType(IntEnum):
+    RANKED = 0
+    FREE = 1
+    DEMO = 2
+    TEACHING = 3
+    SIMULTANEOUS = 4
+    BLIND = 5
+    ONE_COLOR = 6
+    RENGO = 7
+
+
+class Ruleset(IntEnum):
+    JAPANESE = 0
+    CHINESE = 1
+    AGA = 2
+    ING = 3
+    NEW_ZEALAND = 4
