@@ -11,7 +11,7 @@ from explorebaduk.constants import (
 from explorebaduk.exceptions import AuthenticationError, InvalidMessageError
 from explorebaduk.models import Challenge, Player
 from explorebaduk.server import PLAYERS, CHALLENGES, get_by_user_id, notify_challenges
-from explorebaduk.schema import ChallengeSchema, ChallengeJoinSchema
+from explorebaduk.schema import NewChallengeSchema
 
 logger = logging.getLogger('challenge_handler')
 
@@ -40,7 +40,7 @@ async def create_challenge(ws, data):
     if ws in CHALLENGES:
         return await ws.send(challenge_error_event('Challenge already exists'))
 
-    data = ChallengeSchema().load(data)
+    data = NewChallengeSchema().load(data)
     player = PLAYERS[ws]
 
     CHALLENGES[ws] = Challenge(player, data)

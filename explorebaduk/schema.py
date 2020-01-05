@@ -1,4 +1,4 @@
-from marshmallow import Schema, fields, post_load, validates, validates_schema, ValidationError
+from marshmallow import Schema, fields, pre_load, post_load, validates, validates_schema, ValidationError
 
 from explorebaduk.constants import (
     VALID_TIME_SETTINGS,
@@ -15,53 +15,33 @@ class LoginSchema(Schema):
     token = fields.String(required=True)
 
 
-class RuleSetSchema(Schema):
-    rules = fields.String(required=True)
-    board_height = fields.Integer(required=True)
-    board_width = fields.Integer()
-    to_join = fields.Integer(default=2)
+class TimeSettingsSchema(Schema):
+    time_system = fields.Integer(required=True)
+    main_time = fields.Integer(required=True)
+    overtime = fields.Integer(required=True)
+    periods = fields.Integer(required=True)
+    stones = fields.Integer(required=True)
+    bonus = fields.Integer(required=True)
+    delay = fields.Integer(required=True)
 
-    @validates_schema
-    def check_board_size(self, data, **kwargs):
-        height = data['board_height']
-        width = data.get('board_width', height)
-
-        if any([not 5 < int(value) < 52 for value in [height, width]]):
-            raise ValidationError(f"Board size is out of range: {height}:{width}")
-
-    @post_load
-    def adjust_width(self, data, **kwargs):
-        data['board_width'] = data.get('board_width') or data['board_height']
-
-        return data
-
-
-class TimeSystemSchema(Schema):
-    type = fields.String(required=True)
-    main = fields.Integer()
-    overtime = fields.Integer()
-    periods = fields.Integer()
-    stones = fields.Integer()
-    bonus = fields.Integer()
-    delay = fields.Integer()
-
-    @validates('type')
-    def validate_type(self, value):
+    @validates('time_system')
+    def validate_time_system(self, value):
         if value not in VALID_TIME_SETTINGS:
             raise ValidationError(f"Invalid time control setting: {value}")
 
     @validates_schema
     def validate_time_control(self, data, **kwargs):
-        if data['type'] == ABSOLUTE and not data.get('main'):
+        time_system = data['time_system']
+        if time_system == ABSOLUTE and not data['main']:
             raise ValidationError("Absolute time control should have main time.")
 
-        elif data['type'] == BYOYOMI and not (data.get('overtime') and data.get('periods')):
+        elif time_system == BYOYOMI and not (data['overtime'] and data['periods']):
             raise ValidationError("Byoyomi time control should have overtime and periods.")
 
-        elif data['type'] == CANADIAN and not (data.get('overtime') and data.get('stones')):
+        elif time_system == CANADIAN and not (data['overtime'] and data['stones']):
             raise ValidationError("Canadian time control should have overtime and stones.")
 
-        elif data['type'] == FISCHER and not data.get('bonus'):
+        elif time_system == FISCHER and not data['bonus']:
             raise ValidationError("Fischer time control should have bonus time.")
 
     @post_load
@@ -69,24 +49,24 @@ class TimeSystemSchema(Schema):
         for item in ['main', 'overtime', 'periods', 'stones', 'bonus', 'delay']:
             data.setdefault(item, 0)
 
-        if data['type'] == NO_TIME:
+        if data['time_system'] == NO_TIME:
             data['main'] = float('+inf')
 
-        if data['type'] == ABSOLUTE:
+        if data['time_system'] == ABSOLUTE:
             data['overtime'] = 0
             data['periods'] = 0
             data['stones'] = 0
             data['bonus'] = 0
 
-        elif data['type'] == BYOYOMI:
+        elif data['time_system'] == BYOYOMI:
             data['stones'] = 1
             data['bonus'] = 0
 
-        elif data['type'] == CANADIAN:
+        elif data['time_system'] == CANADIAN:
             data['periods'] = 1
             data['bonus'] = 0
 
-        elif data['type'] == FISCHER:
+        elif data['time_system'] == FISCHER:
             data['overtime'] = 0
             data['periods'] = 0
             data['stones'] = 0
@@ -95,23 +75,39 @@ class TimeSystemSchema(Schema):
         return data
 
 
-class RestrictionsSchema(Schema):
-    no_undo = fields.Boolean(default=False)
-    no_pause = fields.Boolean(default=False)
-    no_analyze = fields.Boolean(default=False)
-    is_private = fields.Boolean(default=False)
+class RestrictionSchema(Schema):
+    is_open = fields.Integer(required=True)
+    undo = fields.Integer(required=True)
+    pause = fields.Integer(required=True)
 
 
-class ChallengeBaseSchema(Schema):
-    rule_set = fields.Nested(RuleSetSchema, required=True)
-    time_system = fields.Nested(TimeSystemSchema, required=True)
-    restrictions = fields.Nested(RestrictionsSchema, required=True)
+class NewChallengeSchema(Schema):
+    game_type = fields.Integer(required=True)
+    rules = fields.Integer(required=True)
+    players = fields.Integer(required=True)
+    board_width = fields.Integer(required=True)
+    board_height = fields.Integer(required=True)
+
+    restrictions = fields.Nested(RestrictionSchema, required=True)
+    time_settings = fields.Nested(TimeSettingsSchema, required=True)
+
+    @validates_schema()
+    def check_board_size(self, data, **kwargs):
+        height = data['board_height']
+        width = data['board_width']
+
+        if any([not (4 < int(value) < 53) for value in [height, width]]):
+            raise ValidationError(f"Board size is out of range: {height}:{width}")
+
+    @pre_load
+    def convert(self, data: dict, **kwargs):
+        for key, value in data.items():
+            if key in self.fields:
+                data[key] = int(value)
+
+        data["restrictions"] = {key: data.pop(key) for key in RestrictionSchema().fields}
+        data["time_settings"] = {key: data.pop(key) for key in TimeSettingsSchema().fields}
+
+        return data
 
 
-class ChallengeSchema(ChallengeBaseSchema):
-    type = fields.String(required=True)
-    name = fields.String(required=True)
-
-
-class ChallengeJoinSchema(ChallengeBaseSchema):
-    creator_id = fields.Integer()

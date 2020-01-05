@@ -1,4 +1,4 @@
-from enum import IntEnum
+from enum import Enum, IntEnum
 
 
 # Message result statuses
@@ -6,6 +6,7 @@ OK = 'ok'
 ERROR = 'error'
 
 # Authentication
+AUTH = 'auth'
 LOGIN = 'login'
 LOGOUT = 'logout'
 

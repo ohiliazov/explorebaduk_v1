@@ -4,14 +4,14 @@ from typing import Tuple, Dict, Any
 
 MESSAGE_PATTERNS = {
     "auth": [
-        re.compile(r"^auth (?P<action>login) (?P<username>\w+) (?P<token>\w{64})$"),
+        re.compile(r"^auth (?P<action>login) (?P<user_id>\d+) (?P<token>\w{64})$"),
         re.compile(r"^auth (?P<action>logout)$"),
     ],
     "challenge": [
         re.compile(
-            r"challenge (?P<action>new) (?P<type>\d),(?P<rules>\d),(?P<players>\d+),"
-            r"(?P<board_size>\d{,2}(?::\d{,2})?) "
-            r"F(?P<open>\d)(?P<undo>\d)(?P<pause>\d) "
+            r"challenge (?P<action>new) (?P<game_type>\d),(?P<rules>\d),(?P<players>\d+),"
+            r"(?P<board_width>\d{,2}):(?P<board_height>\d{,2}) "
+            r"F(?P<is_open>\d)(?P<undo>\d)(?P<pause>\d) "
             r"T(?P<tyme_system>\d+),(?P<main_time>\d+),"
             r"(?P<overtime>\d+),(?P<periods>\d+),(?P<stones>\d+),"
             r"(?P<bonus>\d+),(?P<delay>\d+)"

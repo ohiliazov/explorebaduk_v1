@@ -18,6 +18,8 @@ async def start_server(ws: websockets.WebSocketServerProtocol, path: str):
     try:
         async for message in ws:
             logger.info("IN <<< %s", message)
+            logger.info("IN <<< %s", type(message))
+            logger.info("IN <<< %s", len(message))
             await handle_message(ws, message)
     finally:
         await unregister(ws)

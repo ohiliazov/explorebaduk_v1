@@ -1,32 +1,30 @@
 import json
 import logging
 
-from explorebaduk.constants import LOGIN, LOGOUT, CHALLENGE
+from explorebaduk.constants import AUTH, LOGIN, LOGOUT, CHALLENGE
 from explorebaduk.exceptions import AuthenticationError, InvalidMessageError
-from explorebaduk.handlers.auth import handle_login, handle_logout
+from explorebaduk.handlers.auth import handle_auth
 from explorebaduk.handlers.challenge import handle_challenge
-
+from explorebaduk.message import parse_message, InvalidMessageError
 logger = logging.getLogger('explorebaduk')
 
 
 async def handle_message(ws, message: str):
     try:
-        json_data = json.loads(message)
-        message_type = json_data.get('type')
-        data = json_data.get('data') or {}
+        message_type, data = parse_message(message)
 
-        if message_type == LOGIN:
-            await handle_login(ws, data)
+        if message_type == AUTH:
+            return await handle_auth(ws, data)
 
-        elif message_type == LOGOUT:
-            await handle_logout(ws)
-
-        elif message_type in CHALLENGE:
+        if message_type == CHALLENGE:
             action = json_data.get('action')
             await handle_challenge(ws, action, data)
 
         else:
             logger.info("SKIP %s", message)
+
+    except InvalidMessageError as err:
+        return await ws.send(f'ERROR: Invalid message: {err}')
 
     except json.decoder.JSONDecodeError as err:
         errmsg = '%s: line %d column %d (char %d)' % (err.msg, err.lineno, err.colno, err.pos)

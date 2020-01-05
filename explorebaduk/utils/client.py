@@ -1,22 +1,15 @@
 import asyncio
 import json
+import string
 import websockets
 
 
 def login_message(user_id: int = 1):
-    return {
-        'type': 'login',
-        'data': {
-            'user_id': user_id,
-            'token': f'token_{user_id}'
-        }
-    }
+    return f"auth login {user_id} {string.ascii_letters}{user_id:012d}"
 
 
-logout_message = {
-    'type': 'logout',
-    'data': ''
-}
+logout_message = "auth logout"
+
 
 challenge_message = {
     'type': 'challenge',
@@ -87,9 +80,9 @@ async def hello():
             if message.startswith('login'):
                 user_id = message.split(' ')[-1]
                 user_id = int(user_id) if user_id.isdigit() else 1
-                await websocket.send(json.dumps(login_message(user_id)))
+                await websocket.send(login_message(user_id))
             elif message == 'logout':
-                await websocket.send(json.dumps(logout_message))
+                await websocket.send(logout_message)
             elif message == 'challenge':
                 await websocket.send(json.dumps(challenge_message))
             elif message == 'join':
