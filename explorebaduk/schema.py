@@ -1,14 +1,11 @@
 from marshmallow import Schema, fields, pre_load, post_load, validate, validates, validates_schema, ValidationError
 
 from explorebaduk.constants import (
+    GameType,
+    Ruleset,
     TimeSystem,
-    VALID_TIME_SETTINGS,
-    NO_TIME,
-    ABSOLUTE,
-    BYOYOMI,
-    CANADIAN,
-    FISCHER,
 )
+from explorebaduk.models.challenge import Challenge
 
 
 class LoginSchema(Schema):
@@ -35,41 +32,42 @@ class TimeSettingsSchema(Schema):
     @validates_schema
     def validate_time_control(self, data, **kwargs):
         time_system = TimeSystem(data['time_system'])
-        if time_system == TimeSystem.ABSOLUTE and not data['main']:
+        if time_system is TimeSystem.ABSOLUTE and not data['main']:
             raise ValidationError("Absolute time control should have main time.")
 
-        elif time_system == TimeSystem.BYOYOMI and not (data['overtime'] and data['periods']):
+        elif time_system is TimeSystem.BYOYOMI and not (data['overtime'] and data['periods']):
             raise ValidationError("Byoyomi time control should have overtime and periods.")
 
-        elif time_system == TimeSystem.CANADIAN and not (data['overtime'] and data['stones']):
+        elif time_system is TimeSystem.CANADIAN and not (data['overtime'] and data['stones']):
             raise ValidationError("Canadian time control should have overtime and stones.")
 
-        elif time_system == TimeSystem.FISCHER and not data['bonus']:
+        elif time_system is TimeSystem.FISCHER and not data['bonus']:
             raise ValidationError("Fischer time control should have bonus time.")
 
     @post_load
     def set_time_control(self, data, **kwargs):
-        for item in ['main', 'overtime', 'periods', 'stones', 'bonus', 'delay']:
-            data.setdefault(item, 0)
+        time_system = TimeSystem(data['time_system'])
 
-        if data['time_system'] == NO_TIME:
+        data['time_system'] = time_system
+
+        if time_system is TimeSystem.NO_TIME:
             data['main'] = float('+inf')
 
-        if data['time_system'] == ABSOLUTE:
+        if time_system is TimeSystem.ABSOLUTE:
             data['overtime'] = 0
             data['periods'] = 0
             data['stones'] = 0
             data['bonus'] = 0
 
-        elif data['time_system'] == BYOYOMI:
+        elif time_system is TimeSystem.BYOYOMI:
             data['stones'] = 1
             data['bonus'] = 0
 
-        elif data['time_system'] == CANADIAN:
+        elif time_system is TimeSystem.CANADIAN:
             data['periods'] = 1
             data['bonus'] = 0
 
-        elif data['time_system'] == FISCHER:
+        elif time_system is TimeSystem.FISCHER:
             data['overtime'] = 0
             data['periods'] = 0
             data['stones'] = 0
@@ -94,8 +92,22 @@ class NewChallengeSchema(Schema):
     restrictions = fields.Nested(RestrictionSchema, required=True)
     time_settings = fields.Nested(TimeSettingsSchema, required=True)
 
+    @validates('game_type')
+    def validate_game_type(self, value):
+        try:
+            GameType(value)
+        except ValueError:
+            raise ValidationError(f"Invalid game type: {value}")
+
+    @validates('rules')
+    def validate_rules(self, value):
+        try:
+            Ruleset(value)
+        except ValueError:
+            raise ValidationError(f"Invalid rules: {value}")
+
     @pre_load
-    def convert(self, data: dict, **kwargs):
+    def prepare_data(self, data: dict, **kwargs):
         for key, value in data.items():
             if key in self.fields:
                 data[key] = int(value)
@@ -105,4 +117,20 @@ class NewChallengeSchema(Schema):
 
         return data
 
+    @post_load
+    def prepare_object(self, data, **kwargs):
+        game_type = GameType(data['game_type'])
+        data['game_type'] = game_type
+        data['rules'] = Ruleset(data['rules'])
 
+        if game_type in [GameType.RANKED,
+                         GameType.FREE]:
+            data['players'] = 2
+
+        elif game_type in [GameType.DEMO]:
+            data['players'] = 1
+
+        elif game_type in [GameType.RENGO]:
+            data['players'] = 4
+
+        return data

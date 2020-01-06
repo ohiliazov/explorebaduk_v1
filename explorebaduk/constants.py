@@ -1,4 +1,4 @@
-from enum import Enum, IntEnum
+from enum import IntEnum
 
 
 # Message result statuses
@@ -33,13 +33,6 @@ EDIT_JOINED = 'edit'  # TODO
 ACCEPT_EDITS = 'accept_edits'  # TODO
 REVISE_EDITS = 'revise_edits'  # TODO
 
-CHALLENGE_ACTIONS = [
-    NEW_CHALLENGE, UPDATE_CHALLENGE, CANCEL_CHALLENGE,
-    JOIN_CHALLENGE, LEAVE_CHALLENGE,
-    ACCEPT_JOINED, DECLINE_JOINED, EDIT_JOINED,
-    ACCEPT_EDITS, REVISE_EDITS
-]
-
 # Game
 PLAY = 'play'
 UNDO = 'undo'
@@ -50,16 +43,6 @@ REQUESTED = 'requested'
 ACCEPTED = 'accepted'
 CHANGED = 'changed'
 RETURNED = 'returned'
-
-# Time settings
-NO_TIME = 'no_time'
-ABSOLUTE = 'absolute'
-BYOYOMI = 'byoyomi'
-CANADIAN = 'canadian'
-FISCHER = 'fischer'
-CUSTOM = 'custom'
-
-VALID_TIME_SETTINGS = [NO_TIME, ABSOLUTE, BYOYOMI, CANADIAN, FISCHER, CUSTOM]
 
 
 class TimeSystem(IntEnum):
@@ -75,11 +58,7 @@ class GameType(IntEnum):
     RANKED = 0
     FREE = 1
     DEMO = 2
-    TEACHING = 3
-    SIMULTANEOUS = 4
-    BLIND = 5
-    ONE_COLOR = 6
-    RENGO = 7
+    RENGO = 3
 
 
 class Ruleset(IntEnum):

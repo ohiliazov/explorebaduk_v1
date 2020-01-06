@@ -2,7 +2,7 @@ import json
 import logging
 
 from marshmallow import ValidationError
-from explorebaduk.constants import AUTH, LOGIN, LOGOUT, CHALLENGE
+from explorebaduk.constants import AUTH, CHALLENGE
 from explorebaduk.exceptions import AuthenticationError, InvalidMessageError
 from explorebaduk.handlers.auth import handle_auth
 from explorebaduk.handlers.challenge import handle_challenge
