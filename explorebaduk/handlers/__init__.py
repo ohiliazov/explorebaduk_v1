@@ -1,6 +1,7 @@
 import json
 import logging
 
+from marshmallow import ValidationError
 from explorebaduk.constants import AUTH, LOGIN, LOGOUT, CHALLENGE
 from explorebaduk.exceptions import AuthenticationError, InvalidMessageError
 from explorebaduk.handlers.auth import handle_auth
@@ -17,13 +18,15 @@ async def handle_message(ws, message: str):
             return await handle_auth(ws, data)
 
         if message_type == CHALLENGE:
-            action = json_data.get('action')
-            await handle_challenge(ws, action, data)
+            await handle_challenge(ws, data)
 
         else:
             logger.info("SKIP %s", message)
 
     except InvalidMessageError as err:
+        return await ws.send(f'ERROR: Invalid message: {err}')
+
+    except ValidationError as err:
         return await ws.send(f'ERROR: Invalid message: {err}')
 
     except json.decoder.JSONDecodeError as err:

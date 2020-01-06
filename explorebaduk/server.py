@@ -11,8 +11,8 @@ from explorebaduk.models import Player, Challenge, Game
 db = create_session(DATABASE_URI)
 
 PLAYERS: Dict[WebSocketServerProtocol, Player] = {}
-CHALLENGES: Dict[WebSocketServerProtocol, Challenge] = {}
-GAMES: Dict[WebSocketServerProtocol, Game] = {}
+CHALLENGES: Dict[int, Challenge] = {}
+GAMES: Dict[int, Game] = {}
 
 
 def get_by_user_id(user_id: int) -> WebSocketServerProtocol:

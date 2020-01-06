@@ -3,7 +3,7 @@ import logging
 import json
 
 from explorebaduk.constants import (
-    CREATE_CHALLENGE,
+    NEW_CHALLENGE,
     CANCEL_CHALLENGE,
     JOIN_CHALLENGE,
     CHALLENGE, OK, ERROR
@@ -18,6 +18,17 @@ logger = logging.getLogger('challenge_handler')
 
 class ChallengeError(Exception):
     pass
+
+
+def next_id_gen():
+    next_id = 0
+
+    while True:
+        next_id += 1
+        yield next_id
+
+
+id_gen = next_id_gen()
 
 
 def challenge_ok_event(message: str):
@@ -43,9 +54,10 @@ async def create_challenge(ws, data):
     data = NewChallengeSchema().load(data)
     player = PLAYERS[ws]
 
-    CHALLENGES[ws] = Challenge(player, data)
+    challenge_id = next(id_gen)
+    CHALLENGES[challenge_id] = Challenge(challenge_id, player, data)
     logger.info('Challenge created by: %s', PLAYERS[ws].user.full_name)
-    return await asyncio.gather(ws.send(challenge_ok_event('created')), notify_challenges())
+    return await asyncio.gather(ws.send(f"OK challenge new {next(id_gen)}"), notify_challenges())
 
 
 async def cancel_challenge(ws):
@@ -97,12 +109,13 @@ def revise_challenge(ws, data):
     pass
 
 
-async def handle_challenge(ws, action: str, data: dict):
+async def handle_challenge(ws, data: dict):
     player = PLAYERS[ws]
     if not player.logged_in:
         raise AuthenticationError("Player not logged in")
 
-    if action == CREATE_CHALLENGE:
+    action = data.pop('action')
+    if action == NEW_CHALLENGE:
         await create_challenge(ws, data)
 
     elif action == CANCEL_CHALLENGE:

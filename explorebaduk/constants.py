@@ -14,7 +14,7 @@ LOGOUT = 'logout'
 CHALLENGE = 'challenge'
 
 # Step 0. Create challenge
-CREATE_CHALLENGE = 'create'  # TODO
+NEW_CHALLENGE = 'new'  # TODO
 
 # Step 1. Update or cancel (by creator)
 UPDATE_CHALLENGE = 'update'  # TODO
@@ -34,7 +34,7 @@ ACCEPT_EDITS = 'accept_edits'  # TODO
 REVISE_EDITS = 'revise_edits'  # TODO
 
 CHALLENGE_ACTIONS = [
-    CREATE_CHALLENGE, UPDATE_CHALLENGE, CANCEL_CHALLENGE,
+    NEW_CHALLENGE, UPDATE_CHALLENGE, CANCEL_CHALLENGE,
     JOIN_CHALLENGE, LEAVE_CHALLENGE,
     ACCEPT_JOINED, DECLINE_JOINED, EDIT_JOINED,
     ACCEPT_EDITS, REVISE_EDITS
@@ -60,6 +60,15 @@ FISCHER = 'fischer'
 CUSTOM = 'custom'
 
 VALID_TIME_SETTINGS = [NO_TIME, ABSOLUTE, BYOYOMI, CANADIAN, FISCHER, CUSTOM]
+
+
+class TimeSystem(IntEnum):
+    NO_TIME = 0
+    ABSOLUTE = 1
+    BYOYOMI = 2
+    CANADIAN = 3
+    FISCHER = 4
+    CUSTOM = 5
 
 
 class GameType(IntEnum):

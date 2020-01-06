@@ -1,6 +1,7 @@
 from marshmallow import Schema, fields, pre_load, post_load, validate, validates, validates_schema, ValidationError
 
 from explorebaduk.constants import (
+    TimeSystem,
     VALID_TIME_SETTINGS,
     NO_TIME,
     ABSOLUTE,
@@ -26,22 +27,24 @@ class TimeSettingsSchema(Schema):
 
     @validates('time_system')
     def validate_time_system(self, value):
-        if value not in VALID_TIME_SETTINGS:
+        try:
+            TimeSystem(value)
+        except ValueError:
             raise ValidationError(f"Invalid time control setting: {value}")
 
     @validates_schema
     def validate_time_control(self, data, **kwargs):
-        time_system = data['time_system']
-        if time_system == ABSOLUTE and not data['main']:
+        time_system = TimeSystem(data['time_system'])
+        if time_system == TimeSystem.ABSOLUTE and not data['main']:
             raise ValidationError("Absolute time control should have main time.")
 
-        elif time_system == BYOYOMI and not (data['overtime'] and data['periods']):
+        elif time_system == TimeSystem.BYOYOMI and not (data['overtime'] and data['periods']):
             raise ValidationError("Byoyomi time control should have overtime and periods.")
 
-        elif time_system == CANADIAN and not (data['overtime'] and data['stones']):
+        elif time_system == TimeSystem.CANADIAN and not (data['overtime'] and data['stones']):
             raise ValidationError("Canadian time control should have overtime and stones.")
 
-        elif time_system == FISCHER and not data['bonus']:
+        elif time_system == TimeSystem.FISCHER and not data['bonus']:
             raise ValidationError("Fischer time control should have bonus time.")
 
     @post_load
@@ -76,9 +79,9 @@ class TimeSettingsSchema(Schema):
 
 
 class RestrictionSchema(Schema):
-    is_open = fields.Integer(required=True)
-    undo = fields.Integer(required=True)
-    pause = fields.Integer(required=True)
+    is_open = fields.Integer(required=True, validate=validate.Range(min=0, max=1))
+    undo = fields.Integer(required=True, validate=validate.Range(min=0, max=1))
+    pause = fields.Integer(required=True, validate=validate.Range(min=0, max=1))
 
 
 class NewChallengeSchema(Schema):

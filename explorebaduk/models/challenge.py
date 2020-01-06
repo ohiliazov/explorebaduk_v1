@@ -7,16 +7,13 @@ ACCEPTED = 'accepted'
 
 
 class Challenge:
-    def __init__(self, creator: Player, data: dict):
+    def __init__(self, challenge_id: int, creator: Player, data: dict):
+        self.id = challenge_id
         self.creator = creator
         self.data = data
         self.blacklist = set()
 
         self.joined: Dict[Player, Dict[str, str]] = {self.creator: {'status': ACCEPTED}}
-
-    @property
-    def id(self):
-        return self.creator.id
 
     @property
     def status(self):
