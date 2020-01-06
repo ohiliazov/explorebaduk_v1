@@ -1,4 +1,4 @@
-from marshmallow import Schema, fields, pre_load, post_load, validates, validates_schema, ValidationError
+from marshmallow import Schema, fields, pre_load, post_load, validate, validates, validates_schema, ValidationError
 
 from explorebaduk.constants import (
     VALID_TIME_SETTINGS,
@@ -84,20 +84,12 @@ class RestrictionSchema(Schema):
 class NewChallengeSchema(Schema):
     game_type = fields.Integer(required=True)
     rules = fields.Integer(required=True)
-    players = fields.Integer(required=True)
-    board_width = fields.Integer(required=True)
-    board_height = fields.Integer(required=True)
+    players = fields.Integer(required=True, validate=validate.Range(min=1))
+    width = fields.Integer(required=True, validate=validate.Range(min=5, max=52))
+    height = fields.Integer(required=True, validate=validate.Range(min=5, max=52))
 
     restrictions = fields.Nested(RestrictionSchema, required=True)
     time_settings = fields.Nested(TimeSettingsSchema, required=True)
-
-    @validates_schema()
-    def check_board_size(self, data, **kwargs):
-        height = data['board_height']
-        width = data['board_width']
-
-        if any([not (4 < int(value) < 53) for value in [height, width]]):
-            raise ValidationError(f"Board size is out of range: {height}:{width}")
 
     @pre_load
     def convert(self, data: dict, **kwargs):
