@@ -5,19 +5,29 @@ import websockets
 import sys, select
 
 
-def login_message(user_id: int = 1):
-    return f"auth login {user_id} {string.ascii_letters}{user_id:012d}"
+def login_message(user_id: str = "1"):
+    return f"auth login {user_id} {string.ascii_letters}{int(user_id):012d}"
 
 
-logout_message = "auth logout"
+def new_challenge(game_type: str = "0",):
+    pass
 
 
-challenge_message = "challenge new GT0RL0PL2 19:19 F000 T0M3600O0P0S0B0D0"
-challenge_message_bad = "challenge new GT0RL0PL2 55:19 F000 T0M3600O0P0S0B0D0"
+def join_challenge(challenge_id: str = "1"):
+    return f"challenge join {challenge_id}"
 
-join_message = "challenge join 1"
 
-challenge_cancel_message = "challenge cancel 1"
+def cancel_challenge(challenge_id: str = "1"):
+    return f"challenge cancel {challenge_id}"
+
+
+preset_messages = {
+    'login': login_message,
+    'logout': lambda: 'auth logout',
+    'new': lambda: "challenge new GT0RL0PL2 19:19 F000 T0M3600O0P0S0B0D0",
+    "join": join_challenge,
+    "cancel": cancel_challenge,
+}
 
 
 async def hello():
@@ -35,21 +45,12 @@ async def hello():
 
             if read_list:
                 message = sys.stdin.readline().strip()
-                if message.startswith('login'):
-                    user_id = message.split(' ')[-1]
-                    user_id = int(user_id) if user_id.isdigit() else 1
-                    await websocket.send(login_message(user_id))
-                elif message == 'logout':
-                    await websocket.send(logout_message)
-                elif message == 'challenge':
-                    await websocket.send(challenge_message)
-                elif message == 'challenge bad':
-                    await websocket.send(challenge_message_bad)
-                elif message == 'join':
-                    await websocket.send(json.dumps(join_message))
-                elif message == 'cancel':
-                    await websocket.send(json.dumps(challenge_message))
-                else:
-                    await websocket.send(message)
+
+                for cmd, message_func in preset_messages.items():
+                    if message.startswith(cmd):
+                        _, *data = message.split(' ', maxsplit=1)
+                        message = message_func(*data)
+
+                await websocket.send(message)
 
 asyncio.get_event_loop().run_until_complete(hello())

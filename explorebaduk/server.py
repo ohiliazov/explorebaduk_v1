@@ -22,11 +22,7 @@ def get_by_user_id(user_id: int) -> WebSocketServerProtocol:
 
 
 def players_event():
-    return json.dumps({
-        'type': 'players',
-        'data': [player.full_name for player in PLAYERS.values() if
-                 player and player.logged_in]
-    })
+    return f"sync players {json.dumps([str(player) for player in PLAYERS.values() if player.logged_in])}"
 
 
 def challenges_event():

@@ -6,14 +6,16 @@ from explorebaduk.constants import (
     NEW_CHALLENGE,
     CANCEL_CHALLENGE,
     JOIN_CHALLENGE,
-    CHALLENGE, OK, ERROR
+    CHALLENGE,
+    OK,
+    ERROR,
 )
 from explorebaduk.exceptions import AuthenticationError, InvalidMessageError
 from explorebaduk.models import Challenge, Player
 from explorebaduk.server import PLAYERS, CHALLENGES, get_by_user_id, notify_challenges
 from explorebaduk.schema import NewChallengeSchema
 
-logger = logging.getLogger('challenge_handler')
+logger = logging.getLogger("challenge_handler")
 
 
 class ChallengeError(Exception):
@@ -32,24 +34,28 @@ id_gen = next_id_gen()
 
 
 def challenge_ok_event(message: str):
-    return json.dumps({'type': CHALLENGE, 'result': OK, 'message': message})
+    return json.dumps({"type": CHALLENGE, "result": OK, "message": message})
 
 
 def challenge_join_event(challenge: Challenge, player: Player, data: dict = None):
-    return json.dumps({'type': CHALLENGE,
-                       'action': JOIN_CHALLENGE,
-                       'challenge_id': challenge.id,
-                       'player': player.to_dict(),
-                       'data': data})
+    return json.dumps(
+        {
+            "type": CHALLENGE,
+            "action": JOIN_CHALLENGE,
+            "challenge_id": challenge.id,
+            "player": player.to_dict(),
+            "data": data,
+        }
+    )
 
 
 def challenge_error_event(error_message: str):
-    return json.dumps({'type': CHALLENGE, 'result': ERROR, 'message': error_message})
+    return json.dumps({"type": CHALLENGE, "result": ERROR, "message": error_message})
 
 
 async def create_challenge(ws, data):
     if ws in CHALLENGES:
-        return await ws.send(challenge_error_event('Challenge already exists'))
+        return await ws.send(challenge_error_event("Challenge already exists"))
 
     data = NewChallengeSchema().load(data)
     player = PLAYERS[ws]
@@ -64,37 +70,43 @@ async def cancel_challenge(ws):
     logger.info("Cancelling challenge")
 
     if ws not in CHALLENGES:
-        return await ws.send(challenge_error_event('Challenge not exists'))
+        return await ws.send(challenge_error_event("Challenge not exists"))
 
     challenge = CHALLENGES.pop(ws)
 
-    return await asyncio.gather(*[player.send(challenge_ok_event('cancelled')) for player in challenge.joined])
+    return await asyncio.gather(
+        *[player.send(challenge_ok_event("cancelled")) for player in challenge.joined]
+    )
 
 
 async def join_challenge(ws, data):
     data = ChallengeJoinSchema().load(data)
     player = PLAYERS[ws]
 
-    if not data['creator_id']:
-        return await ws.send(challenge_error_event('Challenge ID is not provided'))
+    if not data["creator_id"]:
+        return await ws.send(challenge_error_event("Challenge ID is not provided"))
 
-    creator_ws = get_by_user_id(data['creator_id'])
+    creator_ws = get_by_user_id(data["creator_id"])
 
     if not creator_ws:
-        return await ws.send(challenge_error_event('Player not found'))
+        return await ws.send(challenge_error_event("Player not found"))
 
     if creator_ws not in CHALLENGES:
-        return await ws.send(challenge_error_event('Challenge not found'))
+        return await ws.send(challenge_error_event("Challenge not found"))
 
     challenge = CHALLENGES[creator_ws]
 
     if player in challenge.blacklist:
-        return await ws.send(challenge_error_event('You are in blacklist'))
+        return await ws.send(challenge_error_event("You are in blacklist"))
 
     challenge.join_player(player, data)
 
-    return await asyncio.gather(*[player.send(challenge_join_event(challenge, player, data))
-                                  for player in challenge.joined])
+    return await asyncio.gather(
+        *[
+            player.send(challenge_join_event(challenge, player, data))
+            for player in challenge.joined
+        ]
+    )
 
 
 def accept_challenge(ws, data):

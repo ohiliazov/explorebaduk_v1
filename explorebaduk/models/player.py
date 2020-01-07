@@ -20,6 +20,10 @@ class Player:
     async def send(self, data: str):
         return self.ws.send(json.dumps(data))
 
+    def __str__(self):
+        if self.logged_in:
+            return f"{self.full_name} [{self.rating}]"
+
     @property
     def user(self):
         return self._user
