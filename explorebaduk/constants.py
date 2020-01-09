@@ -45,15 +45,6 @@ CHANGED = 'changed'
 RETURNED = 'returned'
 
 
-class TimeSystem(IntEnum):
-    NO_TIME = 0
-    ABSOLUTE = 1
-    BYOYOMI = 2
-    CANADIAN = 3
-    FISCHER = 4
-    CUSTOM = 5
-
-
 class GameType(IntEnum):
     RANKED = 0
     FREE = 1
@@ -67,3 +58,12 @@ class Ruleset(IntEnum):
     AGA = 2
     ING = 3
     NEW_ZEALAND = 4
+
+
+class TimeSystem(IntEnum):
+    NO_TIME = 0
+    ABSOLUTE = 1
+    BYOYOMI = 2
+    CANADIAN = 3
+    FISCHER = 4
+    CUSTOM = 5

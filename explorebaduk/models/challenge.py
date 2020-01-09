@@ -1,7 +1,6 @@
 from typing import Dict
 
 from explorebaduk.models.player import Player
-
 JOINED = 'joined'
 ACCEPTED = 'accepted'
 

@@ -11,10 +11,9 @@ def rule_set():
 
 @pytest.fixture
 def no_restrictions():
-    return {'no_undo': False,
-            'no_pause': False,
-            'no_analyze': False,
-            'is_private': False}
+    return {'undo': True,
+            'pause': True,
+            'open': True}
 
 
 @pytest.fixture
@@ -56,8 +55,8 @@ def test_challenge_schema(rule_set, time_absolute, no_restrictions):
         'type': 'ranked',
         'name': 'My Challenge Name',
         'rule_set': rule_set,
-        'time_system': time_absolute,
-        'restrictions': no_restrictions,
+        **time_absolute,
+        **no_restrictions,
     }
     print(data)
     result = ChallengeSchema().load(data)
