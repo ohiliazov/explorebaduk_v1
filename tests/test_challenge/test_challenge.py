@@ -1,37 +1,118 @@
 import pytest
-from explorebaduk.message import parse_message
-from explorebaduk.schema import NewChallengeSchema
-from explorebaduk.constants import TimeSystem, Ruleset, GameType
+
+from explorebaduk.schema import ChallengeSchema
+from explorebaduk.constants import TimeSystem
 
 
 @pytest.mark.parametrize(
-    "message, expected",
+    "data, expected",
     [
         (
-            "challenge new GT0RL0PL2 19:19 F101 T1M3600O30P5S1B0D0 My Challenge",
             {
-                "name": "My Challenge",
-                "game_type": GameType.RANKED,
-                "rules": Ruleset.JAPANESE,
-                "players_num": 2,
-                "width": 19,
-                "height": 19,
-                "is_open": True,
+                "undo": "0",
+                "pause": "0",
+                "is_open": "0",
+                "time_system": "0",
+                "main_time": "3600",
+                "overtime": "0",
+                "periods": "0",
+                "stones": "0",
+                "bonus": "0",
+                "delay": "0",
+            },
+            {
+                "time_system": TimeSystem.NO_TIME,
+                "is_open": False,
+                "pause": False,
                 "undo": False,
-                "pause": True,
+                "main_time": float("+inf"),
+                "overtime": 0,
+                "periods": 0,
+                "stones": 0,
+                "bonus": 0,
+                "delay": 0,
+            },
+        ),
+        (
+            {
+                "time_system": "1",
+                "undo": "0",
+                "pause": "1",
+                "is_open": "0",
+                "main_time": "3600",
+                "overtime": "0",
+                "periods": "0",
+                "stones": "0",
+                "bonus": "0",
+                "delay": "0",
+            },
+            {
                 "time_system": TimeSystem.ABSOLUTE,
+                "is_open": False,
+                "pause": True,
+                "undo": False,
                 "main_time": 3600,
                 "overtime": 0,
-                "stones": 0,
                 "periods": 0,
-                "delay": 0,
+                "stones": 0,
                 "bonus": 0,
+                "delay": 0,
             },
-        )
+        ),
+        (
+            {
+                "time_system": "2",
+                "undo": "1",
+                "pause": "1",
+                "is_open": "1",
+                "main_time": "1800",
+                "overtime": "30",
+                "periods": "5",
+                "stones": "9999",
+                "bonus": "9999",
+                "delay": "1",
+            },
+            {
+                "time_system": TimeSystem.BYOYOMI,
+                "is_open": True,
+                "pause": True,
+                "undo": True,
+                "main_time": 1800,
+                "overtime": 30,
+                "periods": 5,
+                "stones": 1,
+                "bonus": 0,
+                "delay": 1,
+            },
+        ),
+        (
+            {
+                "time_system": "3",
+                "undo": "1",
+                "pause": "1",
+                "is_open": "1",
+                "main_time": "1800",
+                "overtime": "300",
+                "periods": "9999",
+                "stones": "20",
+                "bonus": "9999",
+                "delay": "1",
+            },
+            {
+                "time_system": TimeSystem.CANADIAN,
+                "is_open": True,
+                "pause": True,
+                "undo": True,
+                "main_time": 1800,
+                "overtime": 300,
+                "periods": 1,
+                "stones": 20,
+                "bonus": 0,
+                "delay": 1,
+            },
+        ),
     ],
 )
-def test_challenge(message, expected):
-    message_type, parsed = parse_message(message)
-    parsed.pop("action")
-    result = NewChallengeSchema().load(parsed)
+def test_challenge_schema(data, expected):
+    result = ChallengeSchema().load(data)
     assert result == expected
