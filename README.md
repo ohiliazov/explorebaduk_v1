@@ -20,8 +20,8 @@ python -m websockets ws://localhost:8080
 
 #### General TODO:
   - [ ] WebSocket message exchange
-  - [ ] sgf navigation
-  - [ ] board representation
+  - [x] sgf navigation
+  - [x] board representation
   - [ ] game play
   - [ ] time control
   - [ ] counting
@@ -32,11 +32,14 @@ python -m websockets ws://localhost:8080
 - [x] logout
 
 ##### Challenge
-- [ ] create challenge
+- [x] create challenge
+- [ ] cancel challenge
+- [x] join challenge
 - [ ] accept challenge
 - [ ] decline challenge
-- [ ] revise challenge
-    
+- [ ] change request
+- [ ] return change request
+
 ##### Play move
 - [ ] play move
 - [ ] make pass

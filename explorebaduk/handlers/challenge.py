@@ -33,11 +33,11 @@ def next_id_gen():
 id_gen = next_id_gen()
 
 
-def challenge_ok_event(message: str):
-    return json.dumps({"type": CHALLENGE, "result": OK, "message": message})
+def challenge_response(status: str, action: str, message: str = ''):
+    return f"{status} challenge {action} {message}"
 
 
-def challenge_join_event(challenge: Challenge, player: Player, data: dict = None):
+def challenge_join_event(challenge: Challenge, player: Player, data: dict):
     return json.dumps(
         {
             "type": CHALLENGE,
@@ -80,30 +80,21 @@ async def cancel_challenge(ws):
 
 
 async def join_challenge(ws, data):
-    data = ChallengeJoinSchema().load(data)
+    challenge_id = int(data['challenge_id'])
     player = PLAYERS[ws]
 
-    if not data["creator_id"]:
-        return await ws.send(challenge_error_event("Challenge ID is not provided"))
-
-    creator_ws = get_by_user_id(data["creator_id"])
-
-    if not creator_ws:
-        return await ws.send(challenge_error_event("Player not found"))
-
-    if creator_ws not in CHALLENGES:
-        return await ws.send(challenge_error_event("Challenge not found"))
-
-    challenge = CHALLENGES[creator_ws]
+    challenge = CHALLENGES.get(challenge_id)
+    if not challenge:
+        return await ws.send(challenge_error_event(f"Challenge not found: {challenge_id}"))
 
     if player in challenge.blacklist:
-        return await ws.send(challenge_error_event("You are in blacklist"))
+        return await ws.send(challenge_error_event("Not allowed to join"))
 
-    challenge.join_player(player, data)
+    ready = challenge.join_player(player, challenge.data)
 
     return await asyncio.gather(
         *[
-            player.send(challenge_join_event(challenge, player, data))
+            player.send(challenge_join_event(challenge, player, data, ready))
             for player in challenge.joined
         ]
     )

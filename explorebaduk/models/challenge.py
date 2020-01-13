@@ -44,15 +44,15 @@ class Challenge:
         return list(self.status.values()).count(ACCEPTED) == 2
 
     def join_player(self, player: Player, data: dict):
-        if player not in self.blacklist:
-            self.joined[player] = {
+        self.joined[player] = {
                 "status": JOINED,
                 "data": data,
             }
 
+        return self.ready
+
     def accept_player(self, player: Player):
-        if player not in self.blacklist:
-            self.joined[player]["status"] = "accepted"
+        self.joined[player]["status"] = ACCEPTED
 
     def remove_player(self, player: Player):
         self.joined.pop(player)
