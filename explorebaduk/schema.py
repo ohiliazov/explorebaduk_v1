@@ -54,7 +54,7 @@ class ChallengeSchema(Schema):
     @validates_schema
     def validate_time_control(self, data, **kwargs):
         time_system = TimeSystem(data["time_system"])
-        if time_system is TimeSystem.ABSOLUTE and not data["main"] > 0:
+        if time_system is TimeSystem.ABSOLUTE and not data["main_time"] > 0:
             raise ValidationError("Absolute time control should have main time.")
 
         elif time_system is TimeSystem.BYOYOMI and not (data["overtime"] > 0 and data["periods"] > 0):
@@ -92,7 +92,8 @@ class ChallengeSchema(Schema):
 
 class NewChallengeSchema(ChallengeSchema):
     game_type = fields.Integer(required=True, validate=EnumValidator(GameType))
+    name = fields.String(required=True)
     rules = fields.Integer(required=True, validate=EnumValidator(Ruleset))
-    players = fields.Integer(required=True, validate=validate.Range(min=1))
+    players_num = fields.Integer(required=True, validate=validate.Range(min=1))
     width = fields.Integer(required=True, validate=validate.Range(min=5, max=52))
     height = fields.Integer(required=True, validate=validate.Range(min=5, max=52))

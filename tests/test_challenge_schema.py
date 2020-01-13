@@ -1,77 +1,118 @@
 import pytest
+
 from explorebaduk.schema import ChallengeSchema
+from explorebaduk.constants import TimeSystem
 
 
-@pytest.fixture
-def rule_set():
-    return {'rules': 'japanese',
-            'board_height': 19,
-            'to_join': 1}
-
-
-@pytest.fixture
-def no_restrictions():
-    return {'undo': True,
-            'pause': True,
-            'open': True}
-
-
-@pytest.fixture
-def time_absolute():
-    return {'type': 'absolute',
-            'main': 3600}
-
-
-@pytest.fixture
-def time_byoyomi():
-    return {'type': 'byoyomi',
-            'main': 3600,
-            'overtime': 30,
-            'periods': 3}
-
-
-@pytest.fixture
-def time_canadian():
-    return {'type': 'canadian',
-            'main': 3600,
-            'overtime': 600,
-            'stones': 25}
-
-
-@pytest.fixture
-def time_fischer():
-    return {'type': 'fischer',
-            'main': 3600,
-            'bonus': 10}
-
-
-@pytest.fixture
-def time_no_time():
-    return {'type': 'no_time'}
-
-
-def test_challenge_schema(rule_set, time_absolute, no_restrictions):
-    data = {
-        'type': 'ranked',
-        'name': 'My Challenge Name',
-        'rule_set': rule_set,
-        **time_absolute,
-        **no_restrictions,
-    }
-    print(data)
+@pytest.mark.parametrize(
+    "data, expected",
+    [
+        (
+            {
+                "undo": "0",
+                "pause": "0",
+                "is_open": "0",
+                "time_system": "0",
+                "main_time": "3600",
+                "overtime": "0",
+                "periods": "0",
+                "stones": "0",
+                "bonus": "0",
+                "delay": "0",
+            },
+            {
+                "time_system": TimeSystem.NO_TIME,
+                "is_open": False,
+                "pause": False,
+                "undo": False,
+                "main_time": float("+inf"),
+                "overtime": 0,
+                "periods": 0,
+                "stones": 0,
+                "bonus": 0,
+                "delay": 0,
+            },
+        ),
+        (
+            {
+                "time_system": "1",
+                "undo": "0",
+                "pause": "1",
+                "is_open": "0",
+                "main_time": "3600",
+                "overtime": "0",
+                "periods": "0",
+                "stones": "0",
+                "bonus": "0",
+                "delay": "0",
+            },
+            {
+                "time_system": TimeSystem.ABSOLUTE,
+                "is_open": False,
+                "pause": True,
+                "undo": False,
+                "main_time": 3600,
+                "overtime": 0,
+                "periods": 0,
+                "stones": 0,
+                "bonus": 0,
+                "delay": 0,
+            },
+        ),
+        (
+            {
+                "time_system": "2",
+                "undo": "1",
+                "pause": "1",
+                "is_open": "1",
+                "main_time": "1800",
+                "overtime": "30",
+                "periods": "5",
+                "stones": "9999",
+                "bonus": "9999",
+                "delay": "1",
+            },
+            {
+                "time_system": TimeSystem.BYOYOMI,
+                "is_open": True,
+                "pause": True,
+                "undo": True,
+                "main_time": 1800,
+                "overtime": 30,
+                "periods": 5,
+                "stones": 1,
+                "bonus": 0,
+                "delay": 1,
+            },
+        ),
+        (
+            {
+                "time_system": "3",
+                "undo": "1",
+                "pause": "1",
+                "is_open": "1",
+                "main_time": "1800",
+                "overtime": "300",
+                "periods": "9999",
+                "stones": "20",
+                "bonus": "9999",
+                "delay": "1",
+            },
+            {
+                "time_system": TimeSystem.CANADIAN,
+                "is_open": True,
+                "pause": True,
+                "undo": True,
+                "main_time": 1800,
+                "overtime": 300,
+                "periods": 1,
+                "stones": 20,
+                "bonus": 0,
+                "delay": 1,
+            },
+        ),
+    ],
+)
+def test_challenge_schema(data, expected):
     result = ChallengeSchema().load(data)
-
-    expected = {
-        'type': 'ranked',
-        'name': 'My Challenge Name',
-        'rule_set': {**rule_set,
-                     'board_width': 19},
-        'time_system': {**time_absolute,
-                        'overtime': 0,
-                        'periods': 0,
-                        'stones': 0,
-                        'bonus': 0,
-                        'delay': 0},
-        'restrictions': no_restrictions,
-    }
     assert result == expected
