@@ -1,7 +1,7 @@
 import pytest
 from sqlalchemy import create_engine
 
-from explorebaduk.config import TEST_DATABASE_URI
+from config import TEST_DATABASE_URI
 from explorebaduk.database import create_session, BaseModel
 from explorebaduk.utils.database import make_user, make_token
 

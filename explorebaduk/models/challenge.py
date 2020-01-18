@@ -45,9 +45,9 @@ class Challenge:
 
     def join_player(self, player: Player, data: dict):
         self.joined[player] = {
-                "status": JOINED,
-                "data": data,
-            }
+            "status": JOINED,
+            "data": data,
+        }
 
         return self.ready
 
@@ -57,22 +57,17 @@ class Challenge:
     def remove_player(self, player: Player):
         self.joined.pop(player)
 
-    #
-    # def return_player(self, player):
-    #     if player not in self.blacklist:
-    #         self.joined[player] = 'returned'
-    #
-    # def accept_edits(self, player):
-    #     if player not in self.blacklist:
-    #         self.joined[player] = 'accept_edits'
-    #
-    # def revise_edits(self, player):
-    #     if player not in self.blacklist:
-    #         self.joined[player] = 'revise_edits'
-    #
-    # def add_to_blacklist(self, player):
-    #     self.blacklist.add(player)
-    #     self.remove_player(player)
+    def return_player(self, player):
+        raise NotImplementedError
+
+    def accept_edits(self, player):
+        raise NotImplementedError
+
+    def revise_edits(self, player):
+        raise NotImplementedError
+
+    def add_to_blacklist(self, player):
+        raise NotImplementedError
 
     def to_dict(self):
         return {

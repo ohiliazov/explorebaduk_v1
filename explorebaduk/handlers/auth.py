@@ -1,54 +1,78 @@
-import json
 import logging
 import asyncio
-import websockets
 
-from explorebaduk.constants import LOGIN, LOGOUT, OK, ERROR
+from explorebaduk.constants import LoginAction
 from explorebaduk.database import TokenModel, UserModel
-from explorebaduk.schema import LoginSchema
 from explorebaduk.models import Player
+from explorebaduk.schema import LoginSchema
 from explorebaduk.server import PLAYERS, notify_players, db
 
 logger = logging.getLogger("auth")
 
 
-logout_ok_event = "OK auth logout"
+# login messages
+LOGGED_IN = "OK auth login: logged in"
+ALREADY_LOGGED_IN = "ERROR auth login: already logged in"
+USER_NOT_FOUND = "ERROR auth login: user not found"
+INVALID_TOKEN = "ERROR auth login: invalid token"
+
+# logout messages
+LOGGED_OUT = "OK auth logout: logged out"
+NOT_LOGGED_IN = "ERROR auth logout: not logged in"
 
 
-def login_error_event(error_message: str):
-    return json.dumps({'type': LOGIN, 'result': ERROR, 'error_message': error_message})
+async def handle_login(ws, data: dict):
+    """Login player"""
+    logger.info("handle_login")
 
+    player = PLAYERS[ws]
 
-async def handle_login(ws: websockets.WebSocketServerProtocol, data: dict):
-    player: Player = PLAYERS[ws]
-    if player.logged_in:
-        logger.info(f"{ws.remote_address} already logged in as {player.user.full_name}")
-        return await ws.send(f'ERROR auth: already logged in as {player.user.full_name}')
+    if player:
+        return await ws.send(ALREADY_LOGGED_IN)
+
+    signin_data = LoginSchema().load(data)
 
     # Authenticate user
-    signin_data = LoginSchema().load(data)
+    user_id = signin_data["user_id"]
+    user = db.query(UserModel).filter_by(user_id=user_id).first()
+
+    if not user:
+        return await ws.send(USER_NOT_FOUND)
+
     signin_token = db.query(TokenModel).filter_by(**signin_data).first()
 
     if not signin_token:
-        logger.info(f"{ws.remote_address} invalid token")
-        return await ws.send('ERROR auth: invalid token')
+        return await ws.send(INVALID_TOKEN)
 
-    user = db.query(UserModel).filter_by(user_id=signin_token.user_id).first()
-    player.login(user)
-    logger.info(f"{ws.remote_address} logged in as {player.user.full_name}")
-    return await asyncio.gather(ws.send(f"OK auth: logged in as {player.user.full_name}"), notify_players())
+    PLAYERS[ws] = Player(ws, user)
+
+    return await asyncio.gather(ws.send(LOGGED_IN), notify_players())
 
 
-async def handle_logout(ws: websockets.WebSocketServerProtocol):
-    PLAYERS[ws].logout()
-    await asyncio.gather(ws.send("OK auth: logged out"), notify_players())
+async def handle_logout(ws):
+    """Logout player"""
+    logger.info("handle_logout")
+
+    player = PLAYERS[ws]
+
+    if not player:
+        return await ws.send(NOT_LOGGED_IN)
+
+    PLAYERS[ws] = None
+
+    return await asyncio.gather(ws.send(LOGGED_OUT), notify_players())
 
 
-async def handle_auth(ws: websockets.WebSocketServerProtocol, data: dict):
-    action = data.pop('action')
+async def handle_auth(ws, data: dict):
+    logger.info("handle_auth")
 
-    if action == LOGIN:
-        return await handle_login(ws, data)
+    action = LoginAction(data.pop("action"))
 
-    if action == LOGOUT:
-        return await handle_logout(ws)
+    if action is LoginAction.LOGIN:
+        await handle_login(ws, data)
+
+    elif action is LoginAction.LOGOUT:
+        await handle_logout(ws)
+
+    else:
+        await ws.send(f"ERROR auth {action.value}: not implemented")

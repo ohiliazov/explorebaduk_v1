@@ -1,12 +1,12 @@
 import numpy as np
 
-from explorebaduk.gameplay import Board, Location, IllegalMoveError
+from explorebaduk.gameplay.board import Board, Location, IllegalMoveError
 from explorebaduk.gameplay.sgflib import Property, Node
 from explorebaduk.utils.sgf import sgf_coord_to_int, int_coord_to_sgf, create_new_sgf
 
 
 class Game:
-    def __init__(self, shape: tuple = (19, 19), turn: str = 'B'):
+    def __init__(self, shape: tuple = (19, 19), turn: str = "B"):
         self._shape = shape
         self._turn = turn
         self.cursor = create_new_sgf(shape)
@@ -14,8 +14,8 @@ class Game:
 
     def get_root_board(self) -> Board:
         root_node = self.cursor.root_node
-        black = root_node.get('AB') or []
-        white = root_node.get('AW') or []
+        black = root_node.get("AB") or []
+        white = root_node.get("AW") or []
 
         board = np.zeros(self._shape, dtype=int)
 
@@ -44,10 +44,3 @@ class Game:
         self.cursor.next()
 
         return self.board.current
-
-
-g = Game()
-print(g.board)
-g.play_move('B', (0, 1))
-print(g.board)
-print(g.cursor.game.mainline())

@@ -2,34 +2,25 @@ import asyncio
 import json
 from websockets import WebSocketServerProtocol
 
-from typing import Dict, Tuple
-from explorebaduk.config import DATABASE_URI
+from typing import Dict, Optional
+from config import DATABASE_URI
 from explorebaduk.database import create_session
 from explorebaduk.models import Player, Challenge, Game
 
 
 db = create_session(DATABASE_URI)
 
-PLAYERS: Dict[WebSocketServerProtocol, Player] = {}
+PLAYERS: Dict[WebSocketServerProtocol, Optional[Player]] = {}
 CHALLENGES: Dict[int, Challenge] = {}
 GAMES: Dict[int, Game] = {}
 
 
-def get_by_user_id(user_id: int) -> WebSocketServerProtocol:
-    for ws, player in PLAYERS.items():
-        if player.logged_in and player.id == user_id:
-            return ws
+def players_event() -> str:
+    return f"sync players {json.dumps([str(player) for player in PLAYERS.values() if player])}"
 
 
-def players_event():
-    return f"sync players {json.dumps([str(player) for player in PLAYERS.values() if player.logged_in])}"
-
-
-def challenges_event():
-    return json.dumps({
-        'type': 'challenges',
-        'data': [challenge.to_dict() for challenge in CHALLENGES.values()]
-    })
+def challenges_event() -> str:
+    return f"sync challenges {json.dumps([str(challenge) for challenge in CHALLENGES.values()])}"
 
 
 async def notify_players():
@@ -45,11 +36,10 @@ async def notify_challenges():
 
 
 async def register(ws):
-    PLAYERS[ws] = Player(ws)
-    await asyncio.gather(ws.send(players_event()),
-                         ws.send(challenges_event()))
+    PLAYERS[ws] = None
+    await asyncio.gather(ws.send(players_event()), ws.send(challenges_event()))
 
 
 async def unregister(ws):
-    PLAYERS.pop(ws)
+    del PLAYERS[ws]
     await notify_players()

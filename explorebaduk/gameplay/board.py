@@ -25,11 +25,14 @@ CoordinateType = Tuple[Location, tuple]
 
 
 class Board:
-    def __init__(self, shape: tuple = (19, 19),
-                 board: np.ndarray = None,
-                 turn: Location = Location.BLACK,
-                 score: dict = None,
-                 history: List[Tuple[np.ndarray, Location, dict]] = None):
+    def __init__(
+        self,
+        shape: tuple = (19, 19),
+        board: np.ndarray = None,
+        turn: Location = Location.BLACK,
+        score: dict = None,
+        history: List[Tuple[np.ndarray, Location, dict]] = None,
+    ):
         self._shape = shape
         self._board = np.array(board, copy=True, dtype=int)
         self._turn = turn
@@ -42,9 +45,9 @@ class Board:
 
     def __str__(self):
         print_map = {
-            Location.BLACK: '○ ',
-            Location.WHITE: '● ',
-            Location.EMPTY: '. ',
+            Location.BLACK: "○ ",
+            Location.WHITE: "● ",
+            Location.EMPTY: ". ",
         }
         board = ""
         for x in range(self._shape[0]):
@@ -71,7 +74,7 @@ class Board:
     @property
     def turn_color(self):
         """ Current player color """
-        return 'black' if self._turn is Location.BLACK else 'white'
+        return "black" if self._turn is Location.BLACK else "white"
 
     @property
     def next_turn(self) -> int:

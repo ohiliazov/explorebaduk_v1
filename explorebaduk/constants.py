@@ -1,9 +1,20 @@
-from enum import IntEnum
+from enum import Enum, IntEnum
 
 
 # Message result statuses
-OK = 'ok'
 ERROR = 'error'
+
+
+class MessageType(Enum):
+    SYNC = 'sync'
+    AUTH = 'auth'
+    CHALLENGE = 'challenge'
+
+
+class LoginAction(Enum):
+    LOGIN = 'login'
+    LOGOUT = 'logout'
+
 
 # Authentication
 AUTH = 'auth'

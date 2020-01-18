@@ -10,44 +10,50 @@ import re
 from collections import UserList, OrderedDict
 from typing import List
 
-reGameTreeStart = re.compile(r'\s*\(')
-reGameTreeEnd = re.compile(r'\s*\)')
-reGameTreeNext = re.compile(r'\s*([;()])')
-reNodeContents = re.compile(r'\s*([A-Za-z]+(?=\s*\[))')
-rePropertyStart = re.compile(r'\s*\[')
-rePropertyEnd = re.compile(r'\]')
-reEscape = re.compile(r'\\')
-reLineBreak = re.compile(r'\r\n?|\n\r?')  # CR, LF, CR/LF, LF/CR
-reCharsToEscape = re.compile(r'[]\\]')  # characters that need to be \escaped
+reGameTreeStart = re.compile(r"\s*\(")
+reGameTreeEnd = re.compile(r"\s*\)")
+reGameTreeNext = re.compile(r"\s*([;()])")
+reNodeContents = re.compile(r"\s*([A-Za-z]+(?=\s*\[))")
+rePropertyStart = re.compile(r"\s*\[")
+rePropertyEnd = re.compile(r"\]")
+reEscape = re.compile(r"\\")
+reLineBreak = re.compile(r"\r\n?|\n\r?")  # CR, LF, CR/LF, LF/CR
+reCharsToEscape = re.compile(r"[]\\]")  # characters that need to be \escaped
 
 
 class EndOfDataParseError(Exception):
     """Raised by [SGFParser.parse_variations()], [SGFParser.parseNode()]."""
+
     pass
 
 
 class GameTreeParseError(Exception):
     """Raised by [SGFParser.parse_game_tree()]."""
+
     pass
 
 
 class NodePropertyParseError(Exception):
     """Raised by [SGFParser.parseNode()]."""
+
     pass
 
 
 class PropertyValueParseError(Exception):
     """Raised by [SGFParser.parse_property_value()]."""
+
     pass
 
 
 class GameTreeNavigationError(Exception):
     """Raised by [Cursor.next()]."""
+
     pass
 
 
 class GameTreeEndError(Exception):
     """Raised by [Cursor.next()], [Cursor.previous()]."""
+
     pass
 
 
@@ -58,7 +64,7 @@ def _escape_text(text: str):
     match = reCharsToEscape.search(text, index)
 
     while match:
-        output = output + text[index:match.start()] + '\\' + text[match.start()]
+        output = output + text[index : match.start()] + "\\" + text[match.start()]
         index = match.end()
         match = reCharsToEscape.search(text, index)
 
@@ -68,8 +74,13 @@ def _escape_text(text: str):
 
 def _convert_control_chars(text):
     """Converts control characters in [text] to spaces. Override for variant behaviour."""
-    return text.translate(str.maketrans("\000\001\002\003\004\005\006\007\010\011\013\014\016\017\020"
-                                        "\021\022\023\024\025\026\027\030\031\032\033\034\035\036\037", " " * 30))
+    return text.translate(
+        str.maketrans(
+            "\000\001\002\003\004\005\006\007\010\011\013\014\016\017\020"
+            "\021\022\023\024\025\026\027\030\031\032\033\034\035\036\037",
+            " " * 30,
+        )
+    )
 
 
 class Collection(UserList):
@@ -96,8 +107,8 @@ class Property(UserList):
         self.label = label
         super().__init__(data)
 
-        while '' in self.data:
-            self.data.remove('')
+        while "" in self.data:
+            self.data.remove("")
 
     def __str__(self):
         if not self.data:
@@ -153,7 +164,7 @@ class Node(OrderedDict):
                 self.remove_prop_value(setup_label, value)
 
     def add_comment(self, new_comment: str) -> None:
-        self.append_prop_value('C', new_comment)
+        self.append_prop_value("C", new_comment)
 
     def add_stone(self, label: str, coord):
         self.add_setup_prop(label, coord)
@@ -178,7 +189,7 @@ class GameTree(UserList):
     def __str__(self):
         """SGF representation of game tree, with line breaks between nodes."""
         if len(self):
-            return "(" + '\n'.join([str(x) for x in self + self.variations]) + ")"
+            return "(" + "\n".join([str(x) for x in self + self.variations]) + ")"
         else:
             return ""
 
@@ -331,7 +342,7 @@ class SGFParser:
                 # Scan for escaped characters (using '\'), unescape them (remove linebreaks)
                 while match_escape and match_end and (match_escape.end() < match_end.end()):
                     # Copy everything up to '\', but remove '\'
-                    value = value + self.data[self.index:match_escape.start()]
+                    value = value + self.data[self.index : match_escape.start()]
                     match_break = reLineBreak.match(self.data, match_escape.end())
                     if match_break:
                         # Skip linebreak
@@ -343,7 +354,7 @@ class SGFParser:
                     match_end = self._search_regex(rePropertyEnd)
                     match_escape = self._search_regex(reEscape)
                 if match_end:
-                    value = value + self.data[self.index:match_end.start()]
+                    value = value + self.data[self.index : match_end.start()]
                     self.index = match_end.end()
                     pv_list.append(_convert_control_chars(value))
                 else:

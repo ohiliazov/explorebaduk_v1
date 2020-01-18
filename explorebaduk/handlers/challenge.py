@@ -7,12 +7,11 @@ from explorebaduk.constants import (
     CANCEL_CHALLENGE,
     JOIN_CHALLENGE,
     CHALLENGE,
-    OK,
     ERROR,
 )
 from explorebaduk.exceptions import AuthenticationError, InvalidMessageError
 from explorebaduk.models import Challenge, Player
-from explorebaduk.server import PLAYERS, CHALLENGES, get_by_user_id, notify_challenges
+from explorebaduk.server import PLAYERS, CHALLENGES, notify_challenges
 from explorebaduk.schema import NewChallengeSchema
 
 logger = logging.getLogger("challenge_handler")
@@ -113,6 +112,8 @@ def revise_challenge(ws, data):
 
 
 async def handle_challenge(ws, data: dict):
+    logger.info('handle_challenge')
+
     player = PLAYERS[ws]
     if not player.logged_in:
         raise AuthenticationError("Player not logged in")

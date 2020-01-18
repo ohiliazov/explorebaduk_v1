@@ -1,6 +1,13 @@
 from typing import Type, Any
 from enum import Enum
-from marshmallow import Schema, fields, pre_load, post_load, validate, validates, validates_schema, ValidationError
+from marshmallow import (
+    Schema,
+    fields,
+    post_load,
+    validate,
+    validates_schema,
+    ValidationError,
+)
 
 
 from explorebaduk.constants import (
@@ -57,11 +64,19 @@ class ChallengeSchema(Schema):
         if time_system is TimeSystem.ABSOLUTE and not data["main_time"] > 0:
             raise ValidationError("Absolute time control should have main time.")
 
-        elif time_system is TimeSystem.BYOYOMI and not (data["overtime"] > 0 and data["periods"] > 0):
-            raise ValidationError("Byoyomi time control should have overtime and periods.")
+        elif time_system is TimeSystem.BYOYOMI and not (
+            data["overtime"] > 0 and data["periods"] > 0
+        ):
+            raise ValidationError(
+                "Byoyomi time control should have overtime and periods."
+            )
 
-        elif time_system is TimeSystem.CANADIAN and not (data["overtime"] > 0 and data["stones"] > 0):
-            raise ValidationError("Canadian time control should have overtime and stones.")
+        elif time_system is TimeSystem.CANADIAN and not (
+            data["overtime"] > 0 and data["stones"] > 0
+        ):
+            raise ValidationError(
+                "Canadian time control should have overtime and stones."
+            )
 
         elif time_system is TimeSystem.FISCHER and not data["bonus"] > 0:
             raise ValidationError("Fischer time control should have bonus time.")

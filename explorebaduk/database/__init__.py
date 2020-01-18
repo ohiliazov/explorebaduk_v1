@@ -9,7 +9,7 @@ BaseModel = declarative_base()
 
 
 class UserModel(BaseModel):
-    __tablename__ = 'users'
+    __tablename__ = "users"
 
     user_id = Column(Integer, primary_key=True)
     first_name = Column(String(60))
@@ -18,7 +18,7 @@ class UserModel(BaseModel):
     rating = Column(String(10))
     puzzle_rating = Column(String(10))
 
-    tokens = relationship('TokenModel', back_populates='user')
+    tokens = relationship("TokenModel", back_populates="user")
 
     @property
     def full_name(self):
@@ -26,14 +26,14 @@ class UserModel(BaseModel):
 
 
 class TokenModel(BaseModel):
-    __tablename__ = 'signin_tokens'
+    __tablename__ = "signin_tokens"
 
-    token_id = Column(Integer, primary_key=True, name='SignIn_Token_ID')
-    user_id = Column(Integer, ForeignKey('users.user_id'))
+    token_id = Column(Integer, primary_key=True, name="SignIn_Token_ID")
+    user_id = Column(Integer, ForeignKey("users.user_id"))
     token = Column(String(64))
     expired_at = Column(DateTime)
 
-    user = relationship('UserModel', back_populates='tokens')
+    user = relationship("UserModel", back_populates="tokens")
 
     @property
     def is_active(self):
@@ -41,7 +41,7 @@ class TokenModel(BaseModel):
 
 
 class GameModel(BaseModel):
-    __tablename__ = 'games'
+    __tablename__ = "games"
 
     game_id = Column(Integer, primary_key=True)
     started_at = Column(DateTime, default=datetime.datetime.utcnow)
@@ -49,7 +49,7 @@ class GameModel(BaseModel):
 
     game_type = Column(String(255))
 
-    sgf = Column(Text, name='SGF')
+    sgf = Column(Text, name="SGF")
 
 
 def create_session(database_uri, expire_on_commit=True):

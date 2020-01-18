@@ -2,7 +2,7 @@ import asyncio
 import websockets
 import logging
 
-from explorebaduk import config
+import config
 from explorebaduk.server import register, unregister
 from explorebaduk.handlers import handle_message
 
@@ -10,16 +10,14 @@ from explorebaduk.handlers import handle_message
 FORMAT = "%(asctime)s [%(name)s] %(levelname)s: %(message)s"
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 logging.basicConfig(level=logging.INFO, format=FORMAT, datefmt=DATE_FORMAT)
-logger = logging.getLogger('explorebaduk')
+logger = logging.getLogger("explorebaduk")
 
 
 async def start_server(ws: websockets.WebSocketServerProtocol, path: str):
     await register(ws)
     try:
         async for message in ws:
-            logger.info("IN <<< %s", message)
-            logger.info("IN <<< %s", type(message))
-            logger.info("IN <<< %s", len(message))
+            logger.info(message)
             await handle_message(ws, message)
     finally:
         await unregister(ws)

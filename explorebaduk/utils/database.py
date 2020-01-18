@@ -1,7 +1,7 @@
 import random
 import string
 import datetime
-from explorebaduk.config import DATABASE_URI
+from config import DATABASE_URI
 from explorebaduk.database import BaseModel, UserModel, TokenModel, create_session
 
 

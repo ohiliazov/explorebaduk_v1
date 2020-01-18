@@ -1,4 +1,4 @@
-from explorebaduk.config import APP_NAME, APP_VERSION
+from config import APP_NAME, APP_VERSION
 from explorebaduk.gameplay.sgflib import Property, Node, GameTree, Cursor
 
 SGF_COORDINATES = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"

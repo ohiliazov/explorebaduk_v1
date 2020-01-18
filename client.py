@@ -1,8 +1,8 @@
 import asyncio
-import json
 import string
 import websockets
-import sys, select
+import sys
+import select
 
 
 def login_message(user_id: str = "1"):
@@ -22,9 +22,9 @@ def cancel_challenge(challenge_id: str = "1"):
 
 
 preset_messages = {
-    'login': login_message,
-    'logout': lambda: 'auth logout',
-    'new': lambda: "challenge new GT0RL0PL2 19:19 F000 T0M3600O0P0S0B0D0",
+    "login": login_message,
+    "logout": lambda: "auth logout",
+    "new": lambda: "challenge new GT0RL0PL2 19:19 F000 T0M3600O0P0S0B0D0",
     "join": join_challenge,
     "cancel": cancel_challenge,
 }
@@ -37,7 +37,7 @@ async def hello():
             try:
                 while True:
                     response = await asyncio.wait_for(websocket.recv(), timeout=0.5)
-                    print('<', response)
+                    print("<", response)
             except asyncio.TimeoutError:
                 pass
 
@@ -48,9 +48,10 @@ async def hello():
 
                 for cmd, message_func in preset_messages.items():
                     if message.startswith(cmd):
-                        _, *data = message.split(' ', maxsplit=1)
+                        _, *data = message.split(" ", maxsplit=1)
                         message = message_func(*data)
 
                 await websocket.send(message)
+
 
 asyncio.get_event_loop().run_until_complete(hello())
