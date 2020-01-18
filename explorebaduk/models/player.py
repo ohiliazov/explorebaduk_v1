@@ -15,17 +15,6 @@ class Player:
         self.user = user
         self.status = PlayerStatus.IDLE
 
-    async def send(self, data: str):
-        return self.ws.send(json.dumps(data))
-
-    def __str__(self):
-        if self.logged_in:
-            return f"{self.id} {self.rating} {self.full_name}"
-
-    @property
-    def logged_in(self):
-        return self.user is not None
-
     @property
     def id(self):
         return self.user.user_id
@@ -38,6 +27,5 @@ class Player:
     def rating(self):
         return self.user.rating
 
-    @property
-    def data(self):
-        return self.id, self.full_name, self.rating
+    def __str__(self):
+        return f"{self.id} {self.rating} {self.full_name}"
