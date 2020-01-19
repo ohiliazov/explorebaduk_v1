@@ -17,8 +17,19 @@ from explorebaduk.schema import NewChallengeSchema
 logger = logging.getLogger("challenge_handler")
 
 
-class ChallengeError(Exception):
-    pass
+CHALLENGE_CREATED = 'OK challenge new: created'
+NOT_LOGGED_IN = 'ERROR challenge new: not logged in'
+
+CHALLENGE_CANCEL = 'OK challenge cancel: cancelled'
+
+
+def sync_add_challenge(challenge: Challenge):
+    message = f'SYNC challenge add {challenge}'
+    return await asyncio.gather(message)
+
+
+def sync_del_challenge(challenge: Challenge):
+    return f'SYNC challenge del {challenge}'
 
 
 def next_id_gen():
@@ -53,11 +64,12 @@ def challenge_error_event(error_message: str):
 
 
 async def create_challenge(ws, data):
-    if ws in CHALLENGES:
-        return await ws.send(challenge_error_event("Challenge already exists"))
+    player = PLAYERS[ws]
+
+    if not player:
+        return await ws.send(NOT_LOGGED_IN)
 
     data = NewChallengeSchema().load(data)
-    player = PLAYERS[ws]
 
     challenge_id = next(id_gen)
     CHALLENGES[challenge_id] = Challenge(challenge_id, player, data)

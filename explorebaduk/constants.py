@@ -78,3 +78,10 @@ class TimeSystem(IntEnum):
     CANADIAN = 3
     FISCHER = 4
     CUSTOM = 5
+
+
+class RequestStatus(IntEnum):
+    JOINED = 0
+    CHANGED = 1
+    RETURNED = 2
+    ACCEPTED = 3

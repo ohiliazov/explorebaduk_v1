@@ -4,3 +4,7 @@ class AuthenticationError(Exception):
 
 class InvalidMessageError(Exception):
     pass
+
+
+class JoinRequestError(Exception):
+    pass

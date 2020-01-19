@@ -1,9 +1,24 @@
 from typing import Dict
 
 from explorebaduk.models.player import Player
+from explorebaduk.constants import RequestStatus
+from explorebaduk.exceptions import JoinRequestError
+
 
 JOINED = "joined"
 ACCEPTED = "accepted"
+
+
+class JoinRequest:
+    def __init__(self, data: dict, status: RequestStatus):
+        self.data = data
+        self.status = status
+
+    def join(self):
+        self.status = RequestStatus.JOINED
+
+    def accept(self):
+        self.status = RequestStatus.ACCEPTED
 
 
 class Challenge:
@@ -19,7 +34,7 @@ class Challenge:
         self.players_num = data.pop("players_num")
         self.data = data
 
-        self.joined: Dict[Player, Dict[str, str]] = {self.creator: {"status": ACCEPTED}}
+        self.joined: Dict[Player, JoinRequest] = {self.creator: JoinRequest(data, RequestStatus.ACCEPTED)}
 
     @property
     def board_size(self):
@@ -36,41 +51,36 @@ class Challenge:
         )
 
     @property
-    def status(self):
-        return {player.id: data["status"] for player, data in self.joined.items()}
-
-    @property
     def ready(self):
-        return list(self.status.values()).count(ACCEPTED) == 2
+        return sum([r.status is RequestStatus.ACCEPTED for r in self.joined.values()]) == self.players_num
 
     def join_player(self, player: Player, data: dict):
-        self.joined[player] = {
-            "status": JOINED,
-            "data": data,
-        }
+        status = RequestStatus.JOINED if data == self.data else RequestStatus.CHANGED
+        join_request = JoinRequest(data, status)
+
+        self.joined[player] = join_request
 
         return self.ready
 
     def accept_player(self, player: Player):
-        self.joined[player]["status"] = ACCEPTED
+        join_request = self.joined.get(player)
+
+        if join_request.data != self.data:
+            raise JoinRequestError("Data not equal")
+
+        join_request.status = RequestStatus.ACCEPTED
+
+    def change_data(self, new_data: dict):
+        if self.data != new_data:
+            self.data = new_data
+
+            to_return = []
+            for player, join_request in self.joined.items():
+                if join_request.data != self.data:
+                    join_request.status = RequestStatus.RETURNED
+                    to_return.append(player.ws)
+
+            return to_return
 
     def remove_player(self, player: Player):
         self.joined.pop(player)
-
-    def return_player(self, player):
-        raise NotImplementedError
-
-    def accept_edits(self, player):
-        raise NotImplementedError
-
-    def revise_edits(self, player):
-        raise NotImplementedError
-
-    def add_to_blacklist(self, player):
-        raise NotImplementedError
-
-    def to_dict(self):
-        return {
-            "data": self.data,
-            "status": self.status,
-        }
