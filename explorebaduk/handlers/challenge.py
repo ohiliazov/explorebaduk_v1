@@ -1,35 +1,27 @@
 import asyncio
 import logging
-import json
 
-from explorebaduk.constants import (
-    NEW_CHALLENGE,
-    CANCEL_CHALLENGE,
-    JOIN_CHALLENGE,
-    CHALLENGE,
-    ERROR,
-)
-from explorebaduk.exceptions import AuthenticationError, InvalidMessageError
-from explorebaduk.models import Challenge, Player
-from explorebaduk.server import PLAYERS, CHALLENGES, notify_challenges
+from explorebaduk.constants import ChallengeAction
+from explorebaduk.exceptions import InvalidMessageError
+from explorebaduk.models import Challenge
+from explorebaduk.server import PLAYERS, CHALLENGES, send_everyone
 from explorebaduk.schema import NewChallengeSchema
 
 logger = logging.getLogger("challenge_handler")
 
 
-CHALLENGE_CREATED = 'OK challenge new: created'
+CHALLENGE_CREATED = 'OK challenge new: created {}'
 NOT_LOGGED_IN = 'ERROR challenge new: not logged in'
 
 CHALLENGE_CANCEL = 'OK challenge cancel: cancelled'
 
 
 async def sync_add_challenge(challenge: Challenge):
-    message = f'SYNC challenge add {challenge}'
-    return await asyncio.gather(message)
+    return await send_everyone(f'SYNC challenge add {challenge}')
 
 
-def sync_del_challenge(challenge: Challenge):
-    return f'SYNC challenge del {challenge}'
+async def sync_del_challenge(challenge: Challenge):
+    return await send_everyone(f'SYNC challenge del {challenge}')
 
 
 def next_id_gen():
@@ -43,27 +35,8 @@ def next_id_gen():
 id_gen = next_id_gen()
 
 
-def challenge_response(status: str, action: str, message: str = ''):
-    return f"{status} challenge {action} {message}"
-
-
-def challenge_join_event(challenge: Challenge, player: Player, data: dict):
-    return json.dumps(
-        {
-            "type": CHALLENGE,
-            "action": JOIN_CHALLENGE,
-            "challenge_id": challenge.id,
-            "player": player.to_dict(),
-            "data": data,
-        }
-    )
-
-
-def challenge_error_event(error_message: str):
-    return json.dumps({"type": CHALLENGE, "result": ERROR, "message": error_message})
-
-
 async def create_challenge(ws, data):
+    logger.info('create_challenge')
     player = PLAYERS[ws]
 
     if not player:
@@ -72,15 +45,19 @@ async def create_challenge(ws, data):
     data = NewChallengeSchema().load(data)
 
     challenge_id = next(id_gen)
-    CHALLENGES[challenge_id] = Challenge(challenge_id, player, data)
-    logger.info('Challenge created by: %s', PLAYERS[ws].user.full_name)
-    return await asyncio.gather(ws.send(f"OK challenge new {next(id_gen)}"), notify_challenges())
+    challenge = Challenge(challenge_id, player, data)
+    CHALLENGES[challenge_id] = challenge
+
+    return await asyncio.gather(ws.send(CHALLENGE_CREATED.format(challenge_id)),
+                                sync_add_challenge(challenge))
 
 
-async def cancel_challenge(ws):
-    logger.info("Cancelling challenge")
+async def cancel_challenge(ws, data: dict):
+    logger.info("cancel_challenge")
 
-    if ws not in CHALLENGES:
+    challenge = CHALLENGES.get(int(data['challenge_id']))
+
+    if not challenge:
         return await ws.send(challenge_error_event("Challenge not exists"))
 
     challenge = CHALLENGES.pop(ws)
@@ -127,18 +104,19 @@ async def handle_challenge(ws, data: dict):
     logger.info('handle_challenge')
 
     player = PLAYERS[ws]
-    if not player.logged_in:
-        raise AuthenticationError("Player not logged in")
 
-    action = data.pop('action')
-    if action == NEW_CHALLENGE:
+    if not player:
+        return ws.send(NOT_LOGGED_IN)
+
+    action = ChallengeAction(data.pop('action'))
+    if action is ChallengeAction.NEW:
         await create_challenge(ws, data)
 
-    elif action == CANCEL_CHALLENGE:
-        await cancel_challenge(ws)
+    elif action is ChallengeAction.CANCEL:
+        await cancel_challenge(ws, data)
 
-    elif action == JOIN_CHALLENGE:
+    elif action is ChallengeAction.JOIN:
         await join_challenge(ws, data)
 
     else:
-        raise InvalidMessageError(f"Invalid action: {action}")
+        raise InvalidMessageError(f"ERROR challenge {action}: not implemented")
