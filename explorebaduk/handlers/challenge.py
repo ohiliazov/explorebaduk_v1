@@ -23,7 +23,7 @@ NOT_LOGGED_IN = 'ERROR challenge new: not logged in'
 CHALLENGE_CANCEL = 'OK challenge cancel: cancelled'
 
 
-def sync_add_challenge(challenge: Challenge):
+async def sync_add_challenge(challenge: Challenge):
     message = f'SYNC challenge add {challenge}'
     return await asyncio.gather(message)
 
