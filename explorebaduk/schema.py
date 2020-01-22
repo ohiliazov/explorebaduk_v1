@@ -43,20 +43,35 @@ class LoginSchema(Schema):
     token = fields.String(required=True)
 
 
-class ChallengeSchema(Schema):
-    challenge_id = fields.Integer()
+class GameInfoSchema(Schema):
+    game_type = fields.Integer(required=True, validate=EnumValidator(GameType))
+    rules = fields.Integer(required=True, validate=EnumValidator(Ruleset))
+    width = fields.Integer(required=True, validate=validate.Range(min=5, max=52))
+    height = fields.Integer(required=True, validate=validate.Range(min=5, max=52))
+    rank_lower = fields.Integer(validate=validate.Range(min=0, max=3000))
+    rank_upper = fields.Integer(validate=validate.Range(min=0, max=3000))
 
+    @post_load
+    def convert_game_info_enums(self, data, **kwargs):
+        data["game_type"] = GameType(data["game_type"])
+        data["rules"] = Ruleset(data["rules"])
+        return data
+
+
+class FlagsSchema(Schema):
     is_open = fields.Boolean(required=True)
     undo = fields.Boolean(required=True)
     pause = fields.Boolean(required=True)
 
+
+class TimeSystemSchema(Schema):
     time_system = fields.Integer(required=True, validate=EnumValidator(TimeSystem))
-    main_time = fields.Integer(required=True)
-    overtime = fields.Integer(required=True)
-    periods = fields.Integer(required=True)
-    stones = fields.Integer(required=True)
-    bonus = fields.Integer(required=True)
-    delay = fields.Integer(required=True)
+    main_time = fields.Integer()
+    overtime = fields.Integer()
+    periods = fields.Integer()
+    stones = fields.Integer()
+    bonus = fields.Integer()
+    delay = fields.Integer()
 
     @validates_schema
     def validate_time_control(self, data, **kwargs):
@@ -64,51 +79,25 @@ class ChallengeSchema(Schema):
         if time_system is TimeSystem.ABSOLUTE and not data["main_time"] > 0:
             raise ValidationError("Absolute time control should have main time.")
 
-        elif time_system is TimeSystem.BYOYOMI and not (
-            data["overtime"] > 0 and data["periods"] > 0
-        ):
-            raise ValidationError(
-                "Byoyomi time control should have overtime and periods."
-            )
+        elif time_system is TimeSystem.BYOYOMI and not (data["overtime"] > 0 and data["periods"] > 0):
+            raise ValidationError("Byoyomi time control should have overtime and periods.")
 
-        elif time_system is TimeSystem.CANADIAN and not (
-            data["overtime"] > 0 and data["stones"] > 0
-        ):
-            raise ValidationError(
-                "Canadian time control should have overtime and stones."
-            )
+        elif time_system is TimeSystem.CANADIAN and not (data["overtime"] > 0 and data["stones"] > 0):
+            raise ValidationError("Canadian time control should have overtime and stones.")
 
         elif time_system is TimeSystem.FISCHER and not data["bonus"] > 0:
             raise ValidationError("Fischer time control should have bonus time.")
 
     @post_load
-    def set_time_control(self, data, **kwargs):
-        time_system = TimeSystem(data["time_system"])
-        data["time_system"] = time_system
-
-        time_overrides = {
-            TimeSystem.NO_TIME: {
-                "main_time": float("+inf"),
-                "overtime": 0,
-                "periods": 0,
-                "stones": 0,
-                "bonus": 0,
-                "delay": 0,
-            },
-            TimeSystem.ABSOLUTE: {"overtime": 0, "periods": 0, "stones": 0, "bonus": 0},
-            TimeSystem.BYOYOMI: {"stones": 1, "bonus": 0},
-            TimeSystem.CANADIAN: {"periods": 1, "bonus": 0},
-            TimeSystem.FISCHER: {"overtime": 0, "periods": 0, "stones": 0},
-        }
-        data.update(time_overrides[time_system])
+    def convert_time_system_enums(self, data, **kwargs):
+        data["time_system"] = TimeSystem(data["time_system"])
 
         return data
 
 
-class NewChallengeSchema(ChallengeSchema):
-    game_type = fields.Integer(required=True, validate=EnumValidator(GameType))
+class NewChallengeSchema(GameInfoSchema, FlagsSchema, TimeSystemSchema):
     name = fields.String(required=True)
-    rules = fields.Integer(required=True, validate=EnumValidator(Ruleset))
-    players_num = fields.Integer(required=True, validate=validate.Range(min=1))
-    width = fields.Integer(required=True, validate=validate.Range(min=5, max=52))
-    height = fields.Integer(required=True, validate=validate.Range(min=5, max=52))
+
+
+class JoinChallengeSchema(GameInfoSchema, FlagsSchema, TimeSystemSchema):
+    challenge_id = fields.Integer(required=True)
