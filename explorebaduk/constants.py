@@ -16,44 +16,16 @@ class LoginAction(Enum):
     LOGOUT = 'logout'
 
 
-# Authentication
-AUTH = 'auth'
-LOGIN = 'login'
-LOGOUT = 'logout'
-
-# Challenge
-CHALLENGE = 'challenge'
-
-# Step 0. Create challenge
-NEW_CHALLENGE = 'new'  # TODO
-
-# Step 1. Update or cancel (by creator)
-UPDATE_CHALLENGE = 'update'  # TODO
-CANCEL_CHALLENGE = 'cancel'  # TODO
-
-# Step 2. Join or leave challenge (by joined player)
-JOIN_CHALLENGE = 'join'  # TODO
-LEAVE_CHALLENGE = 'leave'  # TODO
-
-# Step 3. Accept, decline or return joined player (by creator)
-ACCEPT_JOINED = 'accept'  # TODO
-DECLINE_JOINED = 'decline'  # TODO
-EDIT_JOINED = 'edit'  # TODO
-
-# Step 4. Accept returned challenge (by joined player)
-ACCEPT_EDITS = 'accept_edits'  # TODO
-REVISE_EDITS = 'revise_edits'  # TODO
-
-# Game
-PLAY = 'play'
-UNDO = 'undo'
-
-
-# challenge statuses
-REQUESTED = 'requested'
-ACCEPTED = 'accepted'
-CHANGED = 'changed'
-RETURNED = 'returned'
+class ChallengeAction(Enum):
+    NEW = 'new'
+    UPDATE = 'update'
+    CANCEL = 'cancel'
+    JOIN = 'join'
+    LEAVE = 'leave'
+    ACCEPT = 'accept'
+    DECLINE = 'decline'
+    REVISE = 'revise'
+    RETURN = 'return'
 
 
 class GameType(IntEnum):

@@ -23,7 +23,7 @@ def challenges_event() -> str:
     return f"sync challenges {json.dumps([str(challenge) for challenge in CHALLENGES.values()])}"
 
 
-async def sync_players(message: str):
+async def send_everyone(message: str):
     if PLAYERS:
         await asyncio.gather(*[ws.send(message) for ws in PLAYERS.keys()])
 
