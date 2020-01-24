@@ -7,22 +7,22 @@ from explorebaduk.database import BaseModel, UserModel, TokenModel, create_sessi
 
 def make_user(num: int):
     user_data = {
-        'user_id': num,
-        'first_name': "John",
-        'last_name': f"Doe#{num}",
-        'email': f'johndoe{num}@explorebaduk.com',
-        'rating': random.randint(0, 3000),
-        'puzzle_rating': random.randint(0, 3000),
+        "user_id": num,
+        "first_name": "John",
+        "last_name": f"Doe#{num}",
+        "email": f"johndoe{num}@explorebaduk.com",
+        "rating": random.randint(0, 3000),
+        "puzzle_rating": random.randint(0, 3000),
     }
     return UserModel(**user_data)
 
 
 def make_token(num: int, user_id: int, minutes: int = 10):
     token_data = {
-        'token_id': num,
-        'user_id': user_id,
-        'token': f'{string.ascii_letters}{user_id:012d}',
-        'expired_at': datetime.datetime.utcnow() + datetime.timedelta(minutes=minutes),
+        "token_id": num,
+        "user_id": user_id,
+        "token": f"{string.ascii_letters}{user_id:012d}",
+        "expired_at": datetime.datetime.utcnow() + datetime.timedelta(minutes=minutes),
     }
     return TokenModel(**token_data)
 
@@ -46,5 +46,5 @@ def create_db():
     populate_database_with_data(session, 1000)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     create_db()

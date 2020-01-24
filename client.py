@@ -50,7 +50,7 @@ async def hello():
                     if message.startswith(cmd):
                         _, *data = message.split(" ", maxsplit=1)
                         message = message_func(*data)
-                print(f'> {message}')
+                print(f"> {message}")
                 await websocket.send(message)
 
 
