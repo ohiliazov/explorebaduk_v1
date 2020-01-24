@@ -1,12 +1,12 @@
 from typing import Set
 
-from explorebaduk.models.player import Player
+from explorebaduk.models.user import User
 
 
 class Game:
-    def __init__(self, players: Set[Player] = None):
-        self.players: Set[Player] = players or set()
-        self.joined: Set[Player] = set()
+    def __init__(self, players: Set[User] = None):
+        self.players: Set[User] = players or set()
+        self.joined: Set[User] = set()
 
     @property
     def players_joined(self):

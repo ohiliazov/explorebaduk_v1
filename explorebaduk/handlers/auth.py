@@ -3,9 +3,9 @@ import asyncio
 
 from explorebaduk.constants import LoginAction
 from explorebaduk.database import TokenModel, UserModel
-from explorebaduk.models import Player
+from explorebaduk.models import User
 from explorebaduk.schema import LoginSchema
-from explorebaduk.server import PLAYERS, notify_players, db
+from explorebaduk.server import USERS, notify_users, db
 
 logger = logging.getLogger("auth")
 
@@ -13,6 +13,7 @@ logger = logging.getLogger("auth")
 # login messages
 LOGGED_IN = "OK auth login: logged in"
 ALREADY_LOGGED_IN = "ERROR auth login: already logged in"
+ALREADY_ONLINE = "ERROR auth login: already online from on another device"
 USER_NOT_FOUND = "ERROR auth login: user not found"
 INVALID_TOKEN = "ERROR auth login: invalid token"
 
@@ -25,9 +26,7 @@ async def handle_login(ws, data: dict):
     """Login player"""
     logger.info("handle_login")
 
-    player = PLAYERS[ws]
-
-    if player:
+    if ws in USERS:
         return await ws.send(ALREADY_LOGGED_IN)
 
     signin_data = LoginSchema().load(data)
@@ -39,28 +38,29 @@ async def handle_login(ws, data: dict):
     if not user:
         return await ws.send(USER_NOT_FOUND)
 
+    if any([user.id == user_id for user in USERS.values() if user]):
+        return await ws.send(ALREADY_ONLINE)
+
     signin_token = db.query(TokenModel).filter_by(**signin_data).first()
 
     if not signin_token:
         return await ws.send(INVALID_TOKEN)
 
-    PLAYERS[ws] = Player(ws, user)
+    USERS[ws] = User(ws, user)
 
-    return await asyncio.gather(ws.send(LOGGED_IN), notify_players())
+    return await asyncio.gather(ws.send(LOGGED_IN), notify_users())
 
 
 async def handle_logout(ws):
     """Logout player"""
     logger.info("handle_logout")
 
-    player = PLAYERS[ws]
-
-    if not player:
+    if ws not in USERS:
         return await ws.send(NOT_LOGGED_IN)
 
-    PLAYERS[ws] = None
+    del USERS[ws]
 
-    return await asyncio.gather(ws.send(LOGGED_OUT), notify_players())
+    return await asyncio.gather(ws.send(LOGGED_OUT), notify_users())
 
 
 async def handle_auth(ws, data: dict):

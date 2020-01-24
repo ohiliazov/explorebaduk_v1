@@ -1,6 +1,6 @@
 from typing import Dict
 
-from explorebaduk.models.player import Player
+from explorebaduk.models.user import User
 from explorebaduk.constants import RequestStatus
 from explorebaduk.exceptions import JoinRequestError
 
@@ -22,7 +22,7 @@ class JoinRequest:
 
 
 class Challenge:
-    def __init__(self, challenge_id: int, creator: Player, data: dict):
+    def __init__(self, challenge_id: int, creator: User, data: dict):
 
         self.id = challenge_id
         self.creator = creator
@@ -34,7 +34,7 @@ class Challenge:
         self.players_num = data.pop("players_num")
         self.data = data
 
-        self.joined: Dict[Player, JoinRequest] = {self.creator: JoinRequest(data, RequestStatus.ACCEPTED)}
+        self.joined: Dict[User, JoinRequest] = {self.creator: JoinRequest(data, RequestStatus.ACCEPTED)}
 
     @property
     def board_size(self):
@@ -54,7 +54,7 @@ class Challenge:
     def ready(self):
         return sum([r.status is RequestStatus.ACCEPTED for r in self.joined.values()]) == self.players_num
 
-    def join_player(self, player: Player, data: dict):
+    def join_player(self, player: User, data: dict):
         status = RequestStatus.JOINED if data == self.data else RequestStatus.CHANGED
         join_request = JoinRequest(data, status)
 
@@ -62,7 +62,7 @@ class Challenge:
 
         return self.ready
 
-    def accept_player(self, player: Player):
+    def accept_player(self, player: User):
         join_request = self.joined.get(player)
 
         if join_request.data != self.data:
@@ -82,5 +82,5 @@ class Challenge:
 
             return to_return
 
-    def remove_player(self, player: Player):
+    def remove_player(self, player: User):
         self.joined.pop(player)

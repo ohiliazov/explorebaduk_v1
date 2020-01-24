@@ -8,7 +8,7 @@ class PlayerStatus(Enum):
     PLAYING = "playing"
 
 
-class Player:
+class User:
     def __init__(self, ws, user: UserModel):
         self.ws = ws
         self.user = user
@@ -27,4 +27,4 @@ class Player:
         return self.user.rating
 
     def __str__(self):
-        return f"{self.id} {self.rating} {self.full_name}"
+        return f"ID[{self.id}]NM[{self.full_name}]RT[{self.rating}]"

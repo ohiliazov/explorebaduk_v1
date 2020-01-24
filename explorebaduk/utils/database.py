@@ -44,3 +44,7 @@ def create_db():
     BaseModel.metadata.drop_all(session.bind)
     BaseModel.metadata.create_all(session.bind)
     populate_database_with_data(session, 1000)
+
+
+if __name__ == '__main__':
+    create_db()

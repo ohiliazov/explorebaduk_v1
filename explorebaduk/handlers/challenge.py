@@ -4,7 +4,7 @@ import logging
 from explorebaduk.constants import ChallengeAction
 from explorebaduk.exceptions import InvalidMessageError
 from explorebaduk.models import Challenge
-from explorebaduk.server import PLAYERS, CHALLENGES, send_everyone
+from explorebaduk.server import USERS, CHALLENGES, send_everyone
 from explorebaduk.schema import NewChallengeSchema
 
 logger = logging.getLogger("challenge_handler")
@@ -37,7 +37,7 @@ id_gen = next_id_gen()
 
 async def create_challenge(ws, data):
     logger.info('create_challenge')
-    player = PLAYERS[ws]
+    player = USERS[ws]
 
     if not player:
         return await ws.send(NOT_LOGGED_IN)
@@ -69,7 +69,7 @@ async def cancel_challenge(ws, data: dict):
 
 async def join_challenge(ws, data):
     challenge_id = int(data['challenge_id'])
-    player = PLAYERS[ws]
+    player = USERS[ws]
 
     challenge = CHALLENGES.get(challenge_id)
     if not challenge:
@@ -103,7 +103,7 @@ def revise_challenge(ws, data):
 async def handle_challenge(ws, data: dict):
     logger.info('handle_challenge')
 
-    player = PLAYERS[ws]
+    player = USERS[ws]
 
     if not player:
         return ws.send(NOT_LOGGED_IN)
