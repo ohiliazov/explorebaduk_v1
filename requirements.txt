@@ -1,4 +1,5 @@
 asyncio
+black
 flake8
 marshmallow
 numpy

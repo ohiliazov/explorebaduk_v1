@@ -2,30 +2,30 @@ from enum import Enum, IntEnum
 
 
 # Message result statuses
-ERROR = 'error'
+ERROR = "error"
 
 
 class MessageType(Enum):
-    SYNC = 'sync'
-    AUTH = 'auth'
-    CHALLENGE = 'challenge'
+    SYNC = "sync"
+    AUTH = "auth"
+    CHALLENGE = "challenge"
 
 
 class LoginAction(Enum):
-    LOGIN = 'login'
-    LOGOUT = 'logout'
+    LOGIN = "login"
+    LOGOUT = "logout"
 
 
 class ChallengeAction(Enum):
-    NEW = 'new'
-    UPDATE = 'update'
-    CANCEL = 'cancel'
-    JOIN = 'join'
-    LEAVE = 'leave'
-    ACCEPT = 'accept'
-    DECLINE = 'decline'
-    REVISE = 'revise'
-    RETURN = 'return'
+    NEW = "new"
+    UPDATE = "update"
+    CANCEL = "cancel"
+    JOIN = "join"
+    LEAVE = "leave"
+    ACCEPT = "accept"
+    DECLINE = "decline"
+    REVISE = "revise"
+    RETURN = "return"
 
 
 class GameType(IntEnum):

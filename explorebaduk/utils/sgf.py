@@ -33,11 +33,11 @@ def create_new_sgf(board_size: tuple = (19, 19)) -> Cursor:
         size = ":".join(board_size)
 
     root_properties = [
-        Property('FF', ['4']),
-        Property('GM', ['1']),
-        Property('SZ', [size]),
-        Property('AP', [f'{APP_NAME}:{APP_VERSION}']),
-        Property('CA', ['UTF-8']),
+        Property("FF", ["4"]),
+        Property("GM", ["1"]),
+        Property("SZ", [size]),
+        Property("AP", [f"{APP_NAME}:{APP_VERSION}"]),
+        Property("CA", ["UTF-8"]),
     ]
 
     root_node = Node(root_properties)

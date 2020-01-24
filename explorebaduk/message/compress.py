@@ -38,13 +38,13 @@ decompress_map = {
 
 def compress(string: str) -> str:
     if len(string) % 4:
-        string += '0' * (4 - len(string) % 4)
+        string += "0" * (4 - len(string) % 4)
 
     compressed = ""
 
     i = 0
     while i < len(string):
-        compressed += compress_map[string[i:i + 4]]
+        compressed += compress_map[string[i : i + 4]]
 
         i += 4
 
