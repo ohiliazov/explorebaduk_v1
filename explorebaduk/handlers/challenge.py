@@ -13,15 +13,22 @@ logger = logging.getLogger("challenge_handler")
 CHALLENGE_CREATED = "OK challenge new: created {}"
 NOT_LOGGED_IN = "ERROR challenge new: not logged in"
 
-CHALLENGE_CANCEL = "OK challenge cancel: cancelled"
+CHALLENGE_CANCEL = "OK challenge cancel: cancelled {}"
+CANCEL_NOT_FOUND = "ERROR challenge cancel: not found"
+
+CHALLENGE_JOINED = "OK challenge joined: joined {}"
+JOIN_NOT_FOUND = "ERROR challenge join: not found"
+JOIN_NOT_ALLOWED = "ERROR challenge join: not allowed"
+
+CHALLENGE_JOINED_SYNC = "sync challenge {} {} {}"
 
 
 async def sync_add_challenge(challenge: Challenge):
-    return await send_everyone(f"SYNC challenge add {challenge}")
+    return await send_everyone(f'SYNC challenge add {challenge}')
 
 
 async def sync_del_challenge(challenge: Challenge):
-    return await send_everyone(f"SYNC challenge del {challenge}")
+    return await send_everyone(f'SYNC challenge del {challenge}')
 
 
 def next_id_gen():
@@ -54,14 +61,16 @@ async def create_challenge(ws, data):
 async def cancel_challenge(ws, data: dict):
     logger.info("cancel_challenge")
 
-    challenge = CHALLENGES.get(int(data["challenge_id"]))
+    challenge_id = int(data["challenge_id"])
+    challenge = CHALLENGES.get(challenge_id)
 
-    if not challenge:
-        return await ws.send(challenge_error_event("Challenge not exists"))
+    if challenge_id not in CHALLENGES:
+        return await ws.send(CANCEL_NOT_FOUND)
 
-    challenge = CHALLENGES.pop(ws)
+    CHALLENGES.pop(ws)
 
-    return await asyncio.gather(*[player.send(challenge_ok_event("cancelled")) for player in challenge.joined])
+    message = CHALLENGE_CANCEL.format(challenge_id)
+    return await challenge.send_all(message)
 
 
 async def join_challenge(ws, data):
@@ -70,16 +79,16 @@ async def join_challenge(ws, data):
 
     challenge = CHALLENGES.get(challenge_id)
     if not challenge:
-        return await ws.send(challenge_error_event(f"Challenge not found: {challenge_id}"))
+        return await ws.send(JOIN_NOT_FOUND)
 
     if player in challenge.blacklist:
-        return await ws.send(challenge_error_event("Not allowed to join"))
+        return await ws.send(JOIN_NOT_ALLOWED)
 
-    ready = challenge.join_player(player, challenge.data)
+    is_ready = challenge.join_player(player, challenge.data)
+    message = CHALLENGE_JOINED.format(challenge_id)
+    sync_message = CHALLENGE_JOINED_SYNC.format(challenge_id, int(is_ready), challenge)
 
-    return await asyncio.gather(
-        *[player.send(challenge_join_event(challenge, player, data, ready)) for player in challenge.joined]
-    )
+    return await asyncio.gather(ws.send(message), challenge.send_all(sync_message))
 
 
 def accept_challenge(ws, data):

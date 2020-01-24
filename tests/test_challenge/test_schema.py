@@ -22,18 +22,8 @@ from explorebaduk.constants import TimeSystem
             },
         ),
         (
-            {
-                "time_system": "3",
-                "main_time": "1800",
-                "overtime": "300",
-                "stones": "20",
-            },
-            {
-                "time_system": TimeSystem.CANADIAN,
-                "main_time": 1800,
-                "overtime": 300,
-                "stones": 20,
-            },
+            {"time_system": "3", "main_time": "1800", "overtime": "300", "stones": "20",},
+            {"time_system": TimeSystem.CANADIAN, "main_time": 1800, "overtime": 300, "stones": 20,},
         ),
     ],
 )

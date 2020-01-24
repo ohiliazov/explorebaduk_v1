@@ -28,3 +28,6 @@ class User:
 
     def __str__(self):
         return f"ID[{self.id}]NM[{self.full_name}]RT[{self.rating}]"
+
+    async def send(self, message: str):
+        return self.ws.send(message)

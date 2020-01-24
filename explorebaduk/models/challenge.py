@@ -1,3 +1,5 @@
+import asyncio
+
 from typing import Dict
 
 from explorebaduk.models.user import User
@@ -84,3 +86,6 @@ class Challenge:
 
     def remove_player(self, player: User):
         self.joined.pop(player)
+
+    async def send_all(self, message: str):
+        return asyncio.gather(*[user.send(message) for user in self.joined])
