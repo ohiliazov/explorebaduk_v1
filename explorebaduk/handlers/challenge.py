@@ -24,11 +24,11 @@ CHALLENGE_JOINED_SYNC = "sync challenge {} {} {}"
 
 
 async def sync_add_challenge(challenge: Challenge):
-    return await send_everyone(f'SYNC challenge add {challenge}')
+    return await send_everyone(f"SYNC challenge add {challenge}")
 
 
 async def sync_del_challenge(challenge: Challenge):
-    return await send_everyone(f'SYNC challenge del {challenge}')
+    return await send_everyone(f"SYNC challenge del {challenge}")
 
 
 def next_id_gen():
