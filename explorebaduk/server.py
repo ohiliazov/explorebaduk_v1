@@ -12,6 +12,7 @@ db = create_session(DATABASE_URI)
 
 CONNECTED: Set[WebSocketServerProtocol] = set()
 USERS: Dict[WebSocketServerProtocol, Optional[User]] = {}
+LOBBY: Dict[WebSocketServerProtocol, Dict] = {}
 CHALLENGES: Dict[int, Challenge] = {}
 GAMES: Dict[int, Game] = {}
 

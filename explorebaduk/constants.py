@@ -1,6 +1,9 @@
 from enum import Enum, IntEnum
 
 
+# Time to wait for match making
+AUTO_MATCH_DELAY = 3
+
 # Message result statuses
 ERROR = "error"
 
