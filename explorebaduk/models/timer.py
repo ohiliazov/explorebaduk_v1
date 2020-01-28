@@ -1,4 +1,3 @@
-import asyncio
 import time
 
 from abc import ABCMeta, abstractmethod
@@ -36,6 +35,9 @@ class Timer(metaclass=ABCMeta):
 
 
 class NoTimeTimer(Timer):
+    """
+    No time limit
+    """
     def __init__(self):
         time_left = float("+inf")
         super().__init__(time_left, 0)
@@ -46,7 +48,8 @@ class NoTimeTimer(Timer):
 
 class AbsoluteTimer(Timer):
     """
-    Simple absolute timer
+    Each player is assigned a fixed amount of time for the whole game.
+    If a player's main time expires, they generally lose the game.
     """
     def __init__(self, main_time: float, delay: float = MOVE_DELAY):
         super().__init__(main_time, delay)
@@ -56,6 +59,11 @@ class AbsoluteTimer(Timer):
 
 
 class ByoyomiTimer(Timer):
+    """
+    After the main time is depleted, a player has a certain number of periods.
+    If a move is completed before the time expires, the time period resets and restarts the next turn.
+    If a move is not completed within a time period, the time period will expire, and the next time period begins.
+    """
     def __init__(self, main_time: float, overtime: float, periods: int, delay: float = MOVE_DELAY):
         time_left = main_time + overtime * periods
         super().__init__(time_left, delay)
@@ -73,6 +81,9 @@ class ByoyomiTimer(Timer):
 
 
 class CanadianTimer(Timer):
+    """
+    After the main time is depleted, a player must make a certain number of moves within a certain period of time.
+    """
     def __init__(self, main_time: float, overtime: float, stones: int, delay: float = MOVE_DELAY):
         time_left = main_time + overtime
         super().__init__(time_left, delay)
@@ -96,6 +107,10 @@ class CanadianTimer(Timer):
 
 
 class FischerTimer(Timer):
+    """
+    A specified amount of time is added to the players main time each move,
+    unless the player's main time ran out before they completed their move.
+    """
     def __init__(self, main_time: float, bonus: float, delay: float = MOVE_DELAY):
         super().__init__(main_time, delay)
 
@@ -110,15 +125,15 @@ def create_timer(time_system: TimeSystem, data: dict) -> Timer:
         return NoTimeTimer()
 
     if time_system is TimeSystem.ABSOLUTE:
-        return AbsoluteTimer(data['main_time'])
+        return AbsoluteTimer(data["main_time"])
 
     if time_system is TimeSystem.BYOYOMI:
-        return ByoyomiTimer(data['main_time'], data['overtime'], data['periods'])
+        return ByoyomiTimer(data["main_time"], data["overtime"], data["periods"])
 
     if time_system is TimeSystem.CANADIAN:
-        return ByoyomiTimer(data['main_time'], data['overtime'], data['stones'])
+        return ByoyomiTimer(data["main_time"], data["overtime"], data["stones"])
 
     if time_system is TimeSystem.FISCHER:
-        return FischerTimer(data['main_time'], data['bonus'])
+        return FischerTimer(data["main_time"], data["bonus"])
 
     raise NotImplementedError

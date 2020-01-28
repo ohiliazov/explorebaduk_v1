@@ -35,10 +35,10 @@ class ChallengeAction(Enum):
 
 
 class GameAction(Enum):
-    START = 'start'
-    LOAD = 'load'
-    PLAY = 'play'
-    UNDO = 'undo'
+    START = "start"
+    LOAD = "load"
+    PLAY = "play"
+    UNDO = "undo"
 
 
 class GameType(IntEnum):
