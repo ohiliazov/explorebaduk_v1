@@ -20,6 +20,7 @@ async def start_game(ws, data: dict):
     if not challenge.ready:
         return await ws.send('challenge not ready to start')
 
+    # TODO: implement
     game = Game
 
 
