@@ -8,3 +8,7 @@ class InvalidMessageError(Exception):
 
 class JoinRequestError(Exception):
     pass
+
+
+class OutOfTimeError(Exception):
+    pass

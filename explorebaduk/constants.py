@@ -4,6 +4,9 @@ from enum import Enum, IntEnum
 # Time to wait for match making
 AUTO_MATCH_DELAY = 3
 
+# Delay before making a move
+MOVE_DELAY = 1
+
 # Message result statuses
 ERROR = "error"
 
@@ -29,6 +32,13 @@ class ChallengeAction(Enum):
     DECLINE = "decline"
     REVISE = "revise"
     RETURN = "return"
+
+
+class GameAction(Enum):
+    START = 'start'
+    LOAD = 'load'
+    PLAY = 'play'
+    UNDO = 'undo'
 
 
 class GameType(IntEnum):
