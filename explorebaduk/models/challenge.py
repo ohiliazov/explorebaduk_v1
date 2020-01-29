@@ -20,8 +20,17 @@ class JoinRequest:
 
 
 class GameInfo:
-    def __init__(self, name: str, game_type: GameType, rules: Ruleset, width: int, height: int, min_rating: int = 0,
-                 max_rating: int = 3000, **kwargs):
+    def __init__(
+        self,
+        name: str,
+        game_type: GameType,
+        rules: Ruleset,
+        width: int,
+        height: int,
+        min_rating: int = 0,
+        max_rating: int = 3000,
+        **kwargs,
+    ):
         self.name = name
         self.game_type = game_type
         self.rules = rules
