@@ -1,13 +1,8 @@
-from typing import Set
-
-from explorebaduk.models.user import User
+from explorebaduk.gameplay.kifu import Kifu
 
 
 class Game:
-    def __init__(self, players: Set[User] = None):
-        self.players: Set[User] = players or set()
-        self.joined: Set[User] = set()
-
-    @property
-    def players_joined(self):
-        return all([player in self.joined for player in self.players])
+    def __init__(self, width: int, height: int, turn: str, handicap: int, komi: float):
+        self.kifu = Kifu(width, height, turn)
+        self.handicap = handicap
+        self.komi = komi

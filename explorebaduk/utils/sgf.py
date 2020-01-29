@@ -26,18 +26,17 @@ def int_coord_to_sgf(coord: tuple) -> str:
     return f"{x}{y}"
 
 
-def create_new_sgf(board_size: tuple = (19, 19)) -> Cursor:
-    if board_size[0] == board_size[1]:
-        size = str(board_size[0])
-    else:
-        size = ":".join(board_size)
+def create_new_sgf(width: int, height: int, handicap: int, komi: float) -> Cursor:
+    size = f'{width}' if width == height else f"{width}:{height}"
 
     root_properties = [
         Property("FF", ["4"]),
         Property("GM", ["1"]),
-        Property("SZ", [size]),
         Property("AP", [f"{APP_NAME}:{APP_VERSION}"]),
         Property("CA", ["UTF-8"]),
+        Property("SZ", [size]),
+        Property("HA", [str(handicap)]),
+        Property("KM", [str(komi)]),
     ]
 
     root_node = Node(root_properties)

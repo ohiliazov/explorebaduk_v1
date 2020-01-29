@@ -5,11 +5,11 @@ from explorebaduk.gameplay.sgflib import Property, Node
 from explorebaduk.utils.sgf import sgf_coord_to_int, int_coord_to_sgf, create_new_sgf
 
 
-class Game:
-    def __init__(self, shape: tuple = (19, 19), turn: str = "B"):
-        self._shape = shape
+class Kifu:
+    def __init__(self, width: int, height: int, handicap: int, komi: float, turn: str = "B"):
+        self._shape = (width, height)
         self._turn = turn
-        self.cursor = create_new_sgf(shape)
+        self.cursor = create_new_sgf(width, height, handicap, komi)
         self.board = self.get_root_board()
 
     def get_root_board(self) -> Board:
@@ -38,8 +38,12 @@ class Game:
         except IllegalMoveError as err:
             raise err
 
-        move_prop = Property(turn, [int_coord_to_sgf(coord)])
+        if coord != "pass":
+            coord = int_coord_to_sgf(coord)
+
+        move_prop = Property(turn, [coord])
         node = Node([move_prop])
+
         self.cursor.append_node(node)
         self.cursor.next()
 

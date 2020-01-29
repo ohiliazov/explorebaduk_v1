@@ -23,9 +23,9 @@ python -m websockets ws://localhost:8080
   - [x] sgf navigation
   - [x] board representation
   - [ ] game play
-  - [ ] time control
+  - [x] time control
   - [ ] counting
-  
+
 #### WebSocket message exchange
 ##### Authorization
 - [x] login 
