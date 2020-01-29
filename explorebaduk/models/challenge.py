@@ -3,12 +3,8 @@ import asyncio
 from typing import Dict
 
 from explorebaduk.models.user import User
-from explorebaduk.constants import RequestStatus
+from explorebaduk.constants import RequestStatus, GameType, Ruleset
 from explorebaduk.exceptions import JoinRequestError
-
-
-JOINED = "joined"
-ACCEPTED = "accepted"
 
 
 class JoinRequest:
@@ -23,6 +19,18 @@ class JoinRequest:
         self.status = RequestStatus.ACCEPTED
 
 
+class GameInfo:
+    def __init__(self, name: str, game_type: GameType, rules: Ruleset, width: int, height: int, min_rating: int = 0,
+                 max_rating: int = 3000, **kwargs):
+        self.name = name
+        self.game_type = game_type
+        self.rules = rules
+        self.width = width
+        self.height = height
+        self.min_rating = min_rating
+        self.max_rating = max_rating
+
+
 class Challenge:
     def __init__(self, challenge_id: int, creator: User, data: dict):
 
@@ -30,19 +38,21 @@ class Challenge:
         self.creator = creator
         self.blacklist = set()
 
+        self.game_info = GameInfo(**data)
+        self.joined: Dict[User, JoinRequest] = {self.creator: JoinRequest(data, RequestStatus.ACCEPTED)}
+
+        # TODO: remove
         self.name = data.pop("name")
         self.game_type = data.pop("game_type")
         self.rules = data.pop("rules")
-        self.players_num = data.pop("players_num")
         self.data = data
-
-        self.joined: Dict[User, JoinRequest] = {self.creator: JoinRequest(data, RequestStatus.ACCEPTED)}
 
     @property
     def board_size(self):
         return f"{self.data['width']}:{self.data['height']}"
 
     def __str__(self):
+        # TODO: update
         return (
             f"{self.id} {self.name} "
             f"GT{self.game_type.value}RL{self.rules.value}PL{self.players_num} {self.board_size} "

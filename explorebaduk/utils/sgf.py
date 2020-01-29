@@ -27,7 +27,7 @@ def int_coord_to_sgf(coord: tuple) -> str:
 
 
 def create_new_sgf(width: int, height: int, handicap: int, komi: float) -> Cursor:
-    size = f'{width}' if width == height else f"{width}:{height}"
+    size = f"{width}" if width == height else f"{width}:{height}"
 
     root_properties = [
         Property("FF", ["4"]),

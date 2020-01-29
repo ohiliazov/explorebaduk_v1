@@ -19,10 +19,12 @@ class GamePlayer:
 
 
 class Game:
-    def __init__(self, players: List[GamePlayer], width: int, height: int, turn: str, handicap: int, komi: float):
+    def __init__(self, players: List[GamePlayer], info: dict, width: int, height: int, turn: str, handicap: int, komi: float):
         self._players = itertools.cycle(players)
         self._next_player = next(self._players)
         self.kifu = Kifu(width, height, handicap, komi, turn)
+
+        self.info = info
 
     @property
     def current_player(self) -> GamePlayer:
