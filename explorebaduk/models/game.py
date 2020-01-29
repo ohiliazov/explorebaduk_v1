@@ -1,4 +1,4 @@
-from itertools import repeat
+import itertools
 from typing import List
 
 from explorebaduk.gameplay.board import Location
@@ -20,16 +20,14 @@ class GamePlayer:
 
 class Game:
     def __init__(self, players: List[GamePlayer], width: int, height: int, turn: str, handicap: int, komi: float):
-        self._players = repeat(players)
+        self._players = itertools.cycle(players)
         self._next_player = next(self._players)
         self.kifu = Kifu(width, height, handicap, komi, turn)
-        self.handicap = handicap
-        self.komi = komi
 
     @property
-    def whose_turn(self) -> GamePlayer:
+    def current_player(self) -> GamePlayer:
         return self._next_player
 
     @property
     def turn_color(self) -> Location:
-        return self.whose_turn.color
+        return self.current_player.color
