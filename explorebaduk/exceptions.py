@@ -10,5 +10,5 @@ class JoinRequestError(Exception):
     pass
 
 
-class OutOfTimeError(Exception):
+class TimerError(Exception):
     pass

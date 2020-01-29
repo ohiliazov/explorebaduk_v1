@@ -1,7 +1,6 @@
 from enum import IntEnum
 from itertools import product
-from typing import List
-from typing import Tuple, Set, FrozenSet, Union
+from typing import Dict, List, Tuple, Set, FrozenSet, Union
 
 import numpy as np
 
@@ -57,6 +56,11 @@ class Board:
             board += "\n"
 
         return board
+
+    @property
+    def score(self) -> Dict[Location, int]:
+        """ Current player """
+        return self._score
 
     @property
     def current(self):
