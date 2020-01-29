@@ -6,7 +6,7 @@ from explorebaduk.exceptions import GameError
 from explorebaduk.gameplay.board import Location
 from explorebaduk.gameplay.kifu import Kifu
 
-logger = logging.getLogger('game')
+logger = logging.getLogger("game")
 
 
 class GamePlayer:
