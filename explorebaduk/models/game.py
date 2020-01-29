@@ -1,14 +1,8 @@
-from typing import List
-
-from explorebaduk.models.user import User
-from explorebaduk.models.challenge import Challenge
+from explorebaduk.gameplay.kifu import Kifu
 
 
 class Game:
-    def __init__(self, black_players: List[User], white_players: List[User], time_settings: dict):
-        self.black_players = black_players
-        self.white_players = white_players
-
-    @classmethod
-    def from_challenge(cls, challenge: Challenge):
-        pass
+    def __init__(self, width: int, height: int, turn: str, handicap: int, komi: float):
+        self.kifu = Kifu(width, height, turn)
+        self.handicap = handicap
+        self.komi = komi
