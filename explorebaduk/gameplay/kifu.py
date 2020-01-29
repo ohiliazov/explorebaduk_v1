@@ -32,9 +32,9 @@ class Kifu:
     def add_comment(self, new_comment: str):
         self.cursor.node.add_comment(new_comment)
 
-    def play_move(self, turn, coord) -> None:
+    def play_move(self, turn, coord, flip_turn: bool = True) -> None:
         try:
-            self.board.move(coord)
+            self.board.move(coord, flip_turn)
         except IllegalMoveError as err:
             raise err
 

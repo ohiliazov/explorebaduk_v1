@@ -12,3 +12,7 @@ class JoinRequestError(Exception):
 
 class TimerError(Exception):
     pass
+
+
+class GameError(Exception):
+    pass

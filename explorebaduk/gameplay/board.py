@@ -245,7 +245,14 @@ class Board:
 
         self._illegal = illegal
 
-    def move(self, coord: tuple, update_illegal: bool = True):
+    def move(self, coord: tuple, flip_turn: bool = True, update_illegal: bool = True):
+        """
+        Make a move
+        :param coord: (int, int) coordinates
+        :param flip_turn: change color after making a move
+        :param update_illegal:
+        :return:
+        """
         if coord in self._illegal:
             raise IllegalMoveError("Illegal move")
         loc = self._get_loc(coord)
@@ -263,7 +270,9 @@ class Board:
             self._check_suicide(coord)
 
         self._check_ko()
-        self._flip_turn()
+
+        if flip_turn:
+            self._flip_turn()
 
         if update_illegal:
             self._set_illegal()

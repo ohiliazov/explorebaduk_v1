@@ -26,6 +26,8 @@ class Timer(metaclass=ABCMeta):
 
         self._started_at = time.monotonic() + self.delay
 
+        return self.time_left
+
     def stop(self):
         if not self.started:
             raise TimerError("Not started")
@@ -39,6 +41,8 @@ class Timer(metaclass=ABCMeta):
                 raise TimerError(f"Out of time")
 
         self._reset()
+
+        return self.time_left
 
     @abstractmethod
     async def process_time(self, time_used: float) -> None:
