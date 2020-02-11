@@ -8,20 +8,7 @@ from explorebaduk.exceptions import JoinRequestError
 
 
 class ChallengeData:
-    def __init__(
-        self,
-        data: dict,
-    ):
-        self.name = data['name']
-
-        # game info
-        self.game_type = data['game_type'].value
-        self.rules = data['rules'].value
-        self.width = data['width']
-        self.height = data['height']
-        self.rank_lower = data['rank_lower']
-        self.rank_upper = data['rank_upper']
-
+    def __init__(self, data: dict):
         # flags
         self.is_open = data["is_open"]
         self.undo = data["undo"]
@@ -38,8 +25,6 @@ class ChallengeData:
 
     def __str__(self):
         return (
-            f"GN[{self.name}]"
-            f"GI[{self.game_type}R{self.rules}W{self.width}H{self.height}MIN{self.rank_lower}MAX{self.rank_upper}]"
             f"FL[{self.is_open:d}{self.undo:d}{self.pause:d}]"
             f"TS[{self.time_system}M{self.main_time}"
             f"O{self.overtime}P{self.periods}S{self.stones}B{self.bonus}D{self.delay}]"
@@ -71,13 +56,22 @@ class Challenge:
         self.creator = creator
         self.blacklist = set()
 
+        # game info
+        self.name = data['name']
+        self.game_type = data['game_type'].value
+        self.rules = data['rules'].value
+        self.width = data['width']
+        self.height = data['height']
+        self.rank_lower = data['rank_lower']
+        self.rank_upper = data['rank_upper']
+
         self.data = ChallengeData(data)
 
         self.joined: List[JoinRequest] = [JoinRequest(creator, data, RequestStatus.ACCEPTED)]
 
     @property
     def board_size(self):
-        return f"{self.data.width}:{self.data.height}"
+        return f"{self.width}:{self.height}"
 
     def __str__(self):
         """ Returns string representation of challenge
@@ -86,7 +80,12 @@ class Challenge:
         FL[<is_open><undo><pause>]
         TS[<time_system>M<main_time>O<overtime>P<periods>S<stones>B<bonus>D<delay>]
         """
-        return f"ID[{self.id}]{self.data}"
+        return (
+            f"ID[{self.id}]GN[{self.name}]"
+            f"GI[{self.game_type}R{self.rules}W{self.width}H{self.height}MIN{self.rank_lower}MAX{self.rank_upper}]"
+            f"{self.data}"
+        )
+
 
     @property
     def accepted_players(self):
@@ -102,7 +101,8 @@ class Challenge:
         if join_request:
             raise JoinRequestError("Already joined")
 
-        status = RequestStatus.JOINED if data == self.data else RequestStatus.CHANGED
+        request_data = ChallengeData(data)
+        status = RequestStatus.JOINED if request_data == self.data else RequestStatus.CHANGED
         join_request = JoinRequest(player, data, status)
 
         self.joined.append(join_request)

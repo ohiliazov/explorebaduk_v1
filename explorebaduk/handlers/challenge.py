@@ -5,7 +5,7 @@ from explorebaduk.constants import ChallengeAction
 from explorebaduk.exceptions import InvalidMessageError
 from explorebaduk.models import Challenge
 from explorebaduk.server import USERS, CHALLENGES, send_everyone
-from explorebaduk.schema import NewChallengeSchema
+from explorebaduk.schema import NewChallengeSchema, JoinChallengeSchema
 
 logger = logging.getLogger("challenge_handler")
 
@@ -74,6 +74,7 @@ async def cancel_challenge(ws, data: dict):
 
 
 async def join_challenge(ws, data):
+    logger.info("join_challenge")
     challenge_id = int(data["challenge_id"])
     player = USERS[ws]
 
@@ -84,7 +85,10 @@ async def join_challenge(ws, data):
     if player in challenge.blacklist:
         return await ws.send(JOIN_NOT_ALLOWED)
 
-    is_ready = challenge.join_player(player, challenge.data)
+    data = JoinChallengeSchema().load(data)
+
+    is_ready = challenge.join_player(player, data)
+
     message = CHALLENGE_JOINED.format(challenge_id)
     sync_message = CHALLENGE_JOINED_SYNC.format(challenge_id, int(is_ready), challenge)
 

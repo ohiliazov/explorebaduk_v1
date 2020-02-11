@@ -99,5 +99,5 @@ class NewChallengeSchema(GameInfoSchema, FlagsSchema, TimeSystemSchema):
     name = fields.String(required=True)
 
 
-class JoinChallengeSchema(GameInfoSchema, FlagsSchema, TimeSystemSchema):
+class JoinChallengeSchema(FlagsSchema, TimeSystemSchema):
     challenge_id = fields.Integer(required=True)

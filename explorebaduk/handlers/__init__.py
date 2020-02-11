@@ -12,10 +12,12 @@ logger = logging.getLogger("explorebaduk")
 
 
 async def handle_message(ws, message: str):
-    logger.info("handle_message")
+    logger.info("handle_message: %s", message)
 
     try:
         message_type, data = parse_message(message)
+        logger.info("message_type: %s, data: %s", message_type, data)
+
         message_type = MessageType(message_type)
 
         if message_type is MessageType.AUTH:
