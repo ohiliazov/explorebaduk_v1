@@ -48,8 +48,8 @@ class GameInfoSchema(Schema):
     rules = fields.Integer(required=True, validate=EnumValidator(Ruleset))
     width = fields.Integer(required=True, validate=validate.Range(min=5, max=52))
     height = fields.Integer(required=True, validate=validate.Range(min=5, max=52))
-    rank_lower = fields.Integer(validate=validate.Range(min=0, max=3000))
-    rank_upper = fields.Integer(validate=validate.Range(min=0, max=3000))
+    rank_lower = fields.Integer(missing=0, validate=validate.Range(min=0, max=3000))
+    rank_upper = fields.Integer(missing=3000, validate=validate.Range(min=0, max=3000))
 
     @post_load
     def convert_game_info_enums(self, data, **kwargs):
@@ -66,12 +66,12 @@ class FlagsSchema(Schema):
 
 class TimeSystemSchema(Schema):
     time_system = fields.Integer(required=True, validate=EnumValidator(TimeSystem))
-    main_time = fields.Integer()
-    overtime = fields.Integer()
-    periods = fields.Integer()
-    stones = fields.Integer()
-    bonus = fields.Integer()
-    delay = fields.Integer()
+    main_time = fields.Integer(missing=0)
+    overtime = fields.Integer(missing=0)
+    periods = fields.Integer(missing=0)
+    stones = fields.Integer(missing=0)
+    bonus = fields.Integer(missing=0)
+    delay = fields.Integer(missing=0)
 
     @validates_schema
     def validate_time_control(self, data, **kwargs):

@@ -24,7 +24,7 @@ def cancel_challenge(challenge_id: str = "1"):
 preset_messages = {
     "login": login_message,
     "logout": lambda: "auth logout",
-    "new": lambda: "challenge new GT0RL0PL2 19:19 F000 T0M3600O0P0S0B0D0",
+    "new": lambda: "challenge new GN[my game]GI[0R0W19H19]FL[000]TS[0M3600O0P0S0B0D0]",
     "join": join_challenge,
     "cancel": cancel_challenge,
 }

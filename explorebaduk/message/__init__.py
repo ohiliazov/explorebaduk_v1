@@ -2,13 +2,6 @@ import re
 from typing import Tuple, Dict, Any
 from explorebaduk.message.challenge import CHALLENGE_STRING, JOIN_CHALLENGE_STRING
 
-GAME_INFO_STRING = r"GT(?P<game_type>\d)RL(?P<rules>\d)PL(?P<players_num>\d+) (?P<width>\d{,2}):(?P<height>\d{,2})"
-GAME_SETTINGS_STRING = (
-    r"F(?P<is_open>\d)(?P<undo>\d)(?P<pause>\d) "
-    r"T(?P<time_system>\d+)M(?P<main_time>\d+)"
-    r"O(?P<overtime>\d+)P(?P<periods>\d+)S(?P<stones>\d+)"
-    r"B(?P<bonus>\d+)D(?P<delay>\d+)"
-)
 
 MESSAGE_PATTERNS = {
     "auth": [

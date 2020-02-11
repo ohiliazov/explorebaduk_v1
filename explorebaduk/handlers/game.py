@@ -22,7 +22,7 @@ async def start_game(ws, data: dict):
         return await ws.send("challenge not ready to start")
 
     # TODO: implement
-    game = Game
+    game = Game.from_challenge(challenge)
 
 
 async def handle_game(ws, data: dict):
