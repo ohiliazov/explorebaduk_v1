@@ -1,5 +1,6 @@
 asyncio
 black
+coverage
 flake8
 marshmallow
 numpy

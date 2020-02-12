@@ -26,7 +26,8 @@ async def start_test_server(event_loop):
 @pytest.fixture
 def client_factory(event_loop):
     async def wrapped():
-        return await websockets.connect(f'ws://{TEST_SERVER_HOST}:{TEST_SERVER_PORT}', loop=event_loop)
+        return await websockets.connect(f"ws://{TEST_SERVER_HOST}:{TEST_SERVER_PORT}", loop=event_loop)
+
     return wrapped
 
 

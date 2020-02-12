@@ -4,7 +4,7 @@ import logging
 from explorebaduk.server import register, unregister
 from explorebaduk.handlers import handle_message
 
-logger = logging.getLogger('app')
+logger = logging.getLogger("app")
 
 
 async def start_server(ws: websockets.WebSocketServerProtocol, path: str):

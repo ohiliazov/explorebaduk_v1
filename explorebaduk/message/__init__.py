@@ -4,10 +4,7 @@ from explorebaduk.message.challenge import CHALLENGE_STRING, JOIN_CHALLENGE_STRI
 
 
 MESSAGE_PATTERNS = {
-    "auth": [
-        re.compile(r"^auth (?P<action>login) (?P<token>\w{64})$"),
-        re.compile(r"^auth (?P<action>logout)$"),
-    ],
+    "auth": [re.compile(r"^auth (?P<action>login) (?P<token>\w{64})$"), re.compile(r"^auth (?P<action>logout)$"),],
     "challenge": [
         re.compile(fr"^challenge (?P<action>new) {CHALLENGE_STRING}$"),
         re.compile(r"^challenge (?P<action>cancel) (?P<challenge_id>\d+)$"),

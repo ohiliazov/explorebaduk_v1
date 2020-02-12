@@ -15,13 +15,13 @@ class ChallengeData:
         self.pause = data["pause"]
 
         # time system
-        self.time_system = data['time_system'].value
-        self.main_time = data['main_time']
-        self.overtime = data['overtime']
-        self.periods = data['periods']
-        self.stones = data['stones']
-        self.bonus = data['bonus']
-        self.delay = data['delay']
+        self.time_system = data["time_system"].value
+        self.main_time = data["main_time"]
+        self.overtime = data["overtime"]
+        self.periods = data["periods"]
+        self.stones = data["stones"]
+        self.bonus = data["bonus"]
+        self.delay = data["delay"]
 
     def __str__(self):
         return (
@@ -57,13 +57,13 @@ class Challenge:
         self.blacklist = set()
 
         # game info
-        self.name = data['name']
-        self.game_type = data['game_type'].value
-        self.rules = data['rules'].value
-        self.width = data['width']
-        self.height = data['height']
-        self.rank_lower = data['rank_lower']
-        self.rank_upper = data['rank_upper']
+        self.name = data["name"]
+        self.game_type = data["game_type"].value
+        self.rules = data["rules"].value
+        self.width = data["width"]
+        self.height = data["height"]
+        self.rank_lower = data["rank_lower"]
+        self.rank_upper = data["rank_upper"]
 
         self.data = ChallengeData(data)
 
@@ -85,7 +85,6 @@ class Challenge:
             f"GI[{self.game_type}R{self.rules}W{self.width}H{self.height}MIN{self.rank_lower}MAX{self.rank_upper}]"
             f"{self.data}"
         )
-
 
     @property
     def accepted_players(self):
