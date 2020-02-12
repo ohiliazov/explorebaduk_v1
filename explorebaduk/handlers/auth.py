@@ -29,22 +29,17 @@ async def handle_login(ws, data: dict):
     if ws in USERS:
         return await ws.send(ALREADY_LOGGED_IN)
 
-    signin_data = LoginSchema().load(data)
-
     # Authenticate user
-    user_id = signin_data["user_id"]
-    user = db.query(UserModel).filter_by(user_id=user_id).first()
-
-    if not user:
-        return await ws.send(USER_NOT_FOUND)
-
-    if any([user.id == user_id for user in USERS.values() if user]):
-        return await ws.send(ALREADY_ONLINE)
-
-    signin_token = db.query(TokenModel).filter_by(**signin_data).first()
+    signin_token = db.query(TokenModel).filter_by(token=data["token"]).first()
 
     if not signin_token:
         return await ws.send(INVALID_TOKEN)
+
+    user_id = signin_token.user_id
+    user = db.query(UserModel).filter_by(user_id=user_id).first()
+
+    if any([user.id == user_id for user in USERS.values() if user]):
+        return await ws.send(ALREADY_ONLINE)
 
     USERS[ws] = User(ws, user)
 

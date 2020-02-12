@@ -1,14 +1,17 @@
 PYTHON=python3.7
-PYFLAGS=-W ignore::DeprecationWarning
 VERSION=`python setup.py --version`
 
 install:
 	python -m pip install -r requirements.txt
-	echo "black . --line-length=120" > .git/hooks/pre-commit
-	chmod u+x .git/hooks/pre-commit
-
-test: install flake
-	pytest tests
 
 flake:
 	flake8
+
+black: flake
+	black . --line-length=120
+
+test: install black
+	pytest tests
+
+init_db:
+	python explorebaduk/utils/database.py

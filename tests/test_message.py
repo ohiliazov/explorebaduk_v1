@@ -12,11 +12,10 @@ bad_token = good_token
 
 def test_auth_login_ok():
     for i in range(100):
-        user_id = "".join([random.choice(string.digits) for _ in range(i + 1)])
         token = "".join([random.choice(string.ascii_letters + string.digits) for _ in range(64)])
-        message_type, data = parse_message(f"auth login {user_id} {token}")
+        message_type, data = parse_message(f"auth login {token}")
 
-        assert data == {"action": "login", "user_id": user_id, "token": token}
+        assert data == {"action": "login", "token": token}
 
 
 @pytest.mark.parametrize(

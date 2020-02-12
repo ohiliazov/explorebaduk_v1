@@ -4,5 +4,6 @@ flake8
 marshmallow
 numpy
 pytest
+pytest-asyncio
 sqlalchemy
 websockets

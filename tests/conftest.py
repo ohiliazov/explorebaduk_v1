@@ -6,7 +6,11 @@ from sqlalchemy import create_engine
 from config import TEST_DATABASE_URI, TEST_SERVER_HOST, TEST_SERVER_PORT
 from explorebaduk.database import create_session, BaseModel
 from explorebaduk.utils.database import make_user, make_token
+from explorebaduk.server import db
 from app import start_server
+
+
+db.bind = create_engine(TEST_DATABASE_URI)
 
 
 @pytest.fixture
@@ -28,41 +32,40 @@ def client_factory(event_loop):
 
 @pytest.fixture(scope="session")
 def engine():
-    return create_engine(TEST_DATABASE_URI)
+    db.bind = create_engine(TEST_DATABASE_URI)
+    return db.bind
 
 
 @pytest.yield_fixture(scope="session")
-def db(engine):
+def db_session(engine):
     BaseModel.metadata.drop_all(engine)
     BaseModel.metadata.create_all(engine)
-
-    db = create_session(TEST_DATABASE_URI, expire_on_commit=True)
 
     return db
 
 
 @pytest.fixture(scope="session")
-def user1(db):
+def user1(db_session):
     user = make_user(1)
 
-    db.add(user)
+    db_session.add(user)
 
     return user
 
 
 @pytest.fixture(scope="session")
-def token1(db, user1):
+def token1(db_session, user1):
     token = make_token(user1.user_id, user1.user_id, 60)
 
-    db.add(token)
+    db_session.add(token)
 
     return token
 
 
 @pytest.fixture(scope="session")
-def token_expired(db, user1):
+def token_expired(db_session, user1):
     token = make_token(666, user1.user_id, 0)
 
-    db.add(token)
+    db_session.add(token)
 
     return token

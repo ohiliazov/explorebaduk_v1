@@ -18,7 +18,7 @@ GAMES: Dict[int, Game] = {}
 
 
 def players_event() -> str:
-    return f"sync players {json.dumps([str(player) for player in USERS.values() if player])}"
+    return f"sync players {json.dumps([str(player) for player in USERS.values()])}"
 
 
 def challenges_event() -> str:
