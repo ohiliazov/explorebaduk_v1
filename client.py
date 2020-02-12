@@ -31,7 +31,7 @@ preset_messages = {
 
 
 async def hello():
-    uri = "ws://localhost:8080"
+    uri = "ws://localhost:8083"
     async with websockets.connect(uri) as websocket:
         while True:
             try:

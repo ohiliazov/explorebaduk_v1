@@ -18,6 +18,8 @@ SQLALCHEMY_ECHO = True
 SQLALCHEMY_ENCODING = "utf8"
 
 # test
+TEST_SERVER_HOST = "localhost"
+TEST_SERVER_PORT = 8083
 
 TEST_DATABASE_PATH = os.path.join(BASE_PATH, "explorebaduk_test.db")
 TEST_DATABASE_URI = "sqlite:///" + TEST_DATABASE_PATH
