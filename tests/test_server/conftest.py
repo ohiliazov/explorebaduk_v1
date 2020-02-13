@@ -1,9 +1,8 @@
 import asyncio
 import websockets
 import pytest
-from sqlalchemy import create_engine
 
-from config import TEST_DATABASE_URI, TEST_SERVER_HOST, TEST_SERVER_PORT
+from config import TEST_SERVER_HOST, TEST_SERVER_PORT
 from app import start_server
 
 
