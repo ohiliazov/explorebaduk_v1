@@ -7,7 +7,7 @@ from explorebaduk.utils.database import make_user, make_token, populate_database
 from explorebaduk.server import db
 
 
-@pytest.yield_fixture(scope="session", autouse=True)
+@pytest.fixture(scope="session", autouse=True)
 def db_session():
     engine = create_engine(TEST_DATABASE_URI)
 

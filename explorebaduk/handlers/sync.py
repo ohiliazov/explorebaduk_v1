@@ -1,6 +1,3 @@
-import asyncio
-import json
-
 from typing import List
 from explorebaduk.server import CONNECTED, PLAYERS, CHALLENGES
 from explorebaduk.handlers.auth import player_joined, player_left
