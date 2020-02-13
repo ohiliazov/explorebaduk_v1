@@ -6,7 +6,7 @@ import select
 
 
 def login_message(user_id: str = "1"):
-    return f"auth login {user_id} {string.ascii_letters}{int(user_id):012d}"
+    return f"auth login {string.ascii_letters}{int(user_id):012d}"
 
 
 def new_challenge(game_type: str = "0",):
@@ -31,7 +31,7 @@ preset_messages = {
 
 
 async def hello():
-    uri = "ws://localhost:8083"
+    uri = "ws://localhost:8080"
     async with websockets.connect(uri) as websocket:
         while True:
             try:

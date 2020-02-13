@@ -4,8 +4,8 @@ import asyncio
 from explorebaduk.constants import LoginAction
 from explorebaduk.database import TokenModel, UserModel
 from explorebaduk.models import User
-from explorebaduk.schema import LoginSchema
 from explorebaduk.server import USERS, notify_users, db
+
 
 logger = logging.getLogger("auth")
 
