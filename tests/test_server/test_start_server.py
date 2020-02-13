@@ -1,17 +1,29 @@
 import pytest
+import random
 
+from explorebaduk.database import UserModel, TokenModel
 
 CONNECTED_CLIENTS = 10
 
 
-def login_message(token):
-    return f"auth login {token.token}"
+def get_user(db, user_id):
+    user = db.query(UserModel).filter_by(user_id=user_id).first()
+    return user
+
+
+def random_token(db):
+    user = random.choice(list(db.query(TokenModel).all()))
+    return user
 
 
 @pytest.mark.asyncio
-async def test_auth_login(client_factory, user1, token1):
+async def test_auth_login(db_session, client_factory):
+    token = random_token(db_session)
+    user = get_user(db_session, token.user_id)
+    print(token.token)
+    print(user.full_name)
     ws1 = await client_factory()
-    await ws1.send(login_message(token1))
+    await ws1.send(f"auth login {token.token}")
     print(await ws1.recv())
     print(await ws1.recv())
     print(await ws1.recv())
