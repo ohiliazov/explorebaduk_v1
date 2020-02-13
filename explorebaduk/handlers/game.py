@@ -3,7 +3,7 @@ import logging
 
 from explorebaduk.constants import GameAction
 from explorebaduk.models import Game
-from explorebaduk.server import USERS, CHALLENGES, GAMES
+from explorebaduk.server import PLAYERS, CHALLENGES, GAMES
 
 logger = logging.getLogger("matchmaker")
 

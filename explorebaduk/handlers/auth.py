@@ -3,59 +3,62 @@ import asyncio
 
 from explorebaduk.constants import LoginAction
 from explorebaduk.database import TokenModel, UserModel
-from explorebaduk.models import User
-from explorebaduk.server import USERS, notify_users, db
-
+from explorebaduk.models import Player
+from explorebaduk.server import PLAYERS, db
+from explorebaduk.helpers import send_messages, send_sync_messages
 
 logger = logging.getLogger("auth")
 
 
-# login messages
-LOGGED_IN = "OK auth login: logged in"
-ALREADY_LOGGED_IN = "ERROR auth login: already logged in"
-ALREADY_ONLINE = "ERROR auth login: already online from on another device"
-USER_NOT_FOUND = "ERROR auth login: user not found"
-INVALID_TOKEN = "ERROR auth login: invalid token"
+def player_joined(player: Player):
+    return f"sync player joined {str(player)}"
 
-# logout messages
-LOGGED_OUT = "OK auth logout: logged out"
-NOT_LOGGED_IN = "ERROR auth logout: not logged in"
+
+def player_left(player: Player):
+    return f"sync player left {str(player)}"
 
 
 async def handle_login(ws, data: dict):
     """Login player"""
     logger.info("handle_login")
 
-    if ws in USERS:
-        return await ws.send(ALREADY_LOGGED_IN)
+    if ws in PLAYERS:
+        return await ws.send("auth login ERROR already logged in")
 
     # Authenticate user
     signin_token = db.query(TokenModel).filter_by(token=data["token"]).first()
 
     if not signin_token:
-        return await ws.send(INVALID_TOKEN)
+        return await ws.send("auth login ERROR invalid token")
 
     user_id = signin_token.user_id
     user = db.query(UserModel).filter_by(user_id=user_id).first()
 
-    if any([user.id == user_id for user in USERS.values() if user]):
-        return await ws.send(ALREADY_ONLINE)
+    if any([user.id == user_id for user in PLAYERS.values() if user]):
+        return await ws.send("auth login ERROR online from other device")
 
-    USERS[ws] = User(ws, user)
+    player = Player(ws, user)
+    message = f"auth login OK {str(player)}"
+    sync_message = player_joined(player)
 
-    return await asyncio.gather(ws.send(LOGGED_IN), notify_users())
+    PLAYERS[ws] = player
+
+    return await asyncio.gather(send_messages(ws, message), send_sync_messages(sync_message))
 
 
 async def handle_logout(ws):
     """Logout player"""
     logger.info("handle_logout")
 
-    if ws not in USERS:
-        return await ws.send(NOT_LOGGED_IN)
+    if ws not in PLAYERS:
+        return await ws.send("auth logout OK")
 
-    del USERS[ws]
+    player = PLAYERS[ws]
+    message = player_left(player)
 
-    return await asyncio.gather(ws.send(LOGGED_OUT), notify_users())
+    del PLAYERS[ws]
+
+    return await asyncio.gather(ws.send("auth logout OK"), send_sync_messages(message))
 
 
 async def handle_auth(ws, data: dict):

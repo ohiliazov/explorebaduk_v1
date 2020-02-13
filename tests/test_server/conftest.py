@@ -11,9 +11,11 @@ def event_loop():
     return asyncio.get_event_loop()
 
 
-@pytest.fixture(autouse=True)
+@pytest.yield_fixture(autouse=True)
 async def start_test_server(event_loop):
-    await websockets.serve(start_server, TEST_SERVER_HOST, TEST_SERVER_PORT, loop=event_loop)
+    server = await websockets.serve(start_server, TEST_SERVER_HOST, TEST_SERVER_PORT, loop=event_loop)
+    yield
+    server.close()
 
 
 @pytest.fixture

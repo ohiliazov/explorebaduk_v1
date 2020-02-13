@@ -2,7 +2,7 @@ import asyncio
 
 from typing import List
 
-from explorebaduk.models.user import User
+from explorebaduk.models.player import Player
 from explorebaduk.constants import RequestStatus
 from explorebaduk.exceptions import JoinRequestError
 
@@ -32,7 +32,7 @@ class ChallengeData:
 
 
 class JoinRequest:
-    def __init__(self, user: User, data: dict, status: RequestStatus, color: str = None):
+    def __init__(self, user: Player, data: dict, status: RequestStatus, color: str = None):
         self.user = user
         self.data = ChallengeData(data)
         self.status = status
@@ -50,7 +50,7 @@ class JoinRequest:
 
 
 class Challenge:
-    def __init__(self, challenge_id: int, creator: User, data: dict):
+    def __init__(self, challenge_id: int, creator: Player, data: dict):
 
         self.id = challenge_id
         self.creator = creator
@@ -94,7 +94,7 @@ class Challenge:
     def ready(self):
         return sum([r.status is RequestStatus.ACCEPTED for r in self.joined]) == 2
 
-    def join_player(self, player: User, data: dict):
+    def join_player(self, player: Player, data: dict):
         join_request = [user for user in self.joined if user == player]
 
         if join_request:
@@ -108,7 +108,7 @@ class Challenge:
 
         return self.ready
 
-    def accept_player(self, player: User):
+    def accept_player(self, player: Player):
         join_request = [user for user in self.joined if user == player]
 
         if not join_request:
@@ -131,7 +131,7 @@ class Challenge:
 
             return to_return
 
-    def remove_player(self, player: User):
+    def remove_player(self, player: Player):
         join_request = [user for user in self.joined if user == player]
 
         if not join_request:

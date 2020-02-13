@@ -4,11 +4,12 @@ import logging
 from explorebaduk.constants import ChallengeAction
 from explorebaduk.exceptions import InvalidMessageError
 from explorebaduk.models import Challenge
-from explorebaduk.server import USERS, CHALLENGES, send_everyone
+from explorebaduk.server import CONNECTED, PLAYERS, CHALLENGES
 from explorebaduk.schema import NewChallengeSchema, JoinChallengeSchema
 
 logger = logging.getLogger("challenge_handler")
 
+NEXT_CHALLENGE_ID = 0
 
 CHALLENGE_CREATED = "OK challenge new: created {}"
 NOT_LOGGED_IN = "ERROR challenge new: not logged in"
@@ -23,39 +24,40 @@ JOIN_NOT_ALLOWED = "ERROR challenge join: not allowed"
 CHALLENGE_JOINED_SYNC = "sync challenge {} {} {}"
 
 
-async def sync_add_challenge(challenge: Challenge):
-    return await send_everyone(f"SYNC challenge add {challenge}")
+def challenge_created(challenge: Challenge) -> str:
+    return f"sync challenge created {str(challenge)}"
 
 
-async def sync_del_challenge(challenge: Challenge):
-    return await send_everyone(f"SYNC challenge del {challenge}")
+def challenge_removed(challenge: Challenge) -> str:
+    return f"sync challenge removed {str(challenge)}"
 
 
-def next_id_gen():
-    next_id = 0
-
-    while True:
-        next_id += 1
-        yield next_id
+async def sync_message(message: str):
+    if CONNECTED:
+        await asyncio.gather(*[ws.send(message) for ws in CONNECTED])
 
 
-id_gen = next_id_gen()
+def next_challenge_id():
+    global NEXT_CHALLENGE_ID
+    NEXT_CHALLENGE_ID += 1
+    return NEXT_CHALLENGE_ID
 
 
 async def create_challenge(ws, data):
     logger.info("create_challenge")
-    player = USERS[ws]
+    player = PLAYERS[ws]
 
     if not player:
         return await ws.send(NOT_LOGGED_IN)
 
     data = NewChallengeSchema().load(data)
 
-    challenge_id = next(id_gen)
+    challenge_id = next_challenge_id()
     challenge = Challenge(challenge_id, player, data)
+    message = challenge_created(challenge)
     CHALLENGES[challenge_id] = challenge
 
-    return await asyncio.gather(ws.send(CHALLENGE_CREATED.format(challenge_id)), sync_add_challenge(challenge))
+    return await asyncio.gather(ws.send(CHALLENGE_CREATED.format(challenge_id)), sync_message(message))
 
 
 async def cancel_challenge(ws, data: dict):
@@ -76,7 +78,7 @@ async def cancel_challenge(ws, data: dict):
 async def join_challenge(ws, data):
     logger.info("join_challenge")
     challenge_id = int(data["challenge_id"])
-    player = USERS[ws]
+    player = PLAYERS[ws]
 
     challenge = CHALLENGES.get(challenge_id)
     if not challenge:
@@ -110,7 +112,7 @@ def revise_challenge(ws, data):
 async def handle_challenge(ws, data: dict):
     logger.info("handle_challenge")
 
-    player = USERS[ws]
+    player = PLAYERS[ws]
 
     if not player:
         return ws.send(NOT_LOGGED_IN)

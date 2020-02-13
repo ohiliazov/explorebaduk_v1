@@ -8,7 +8,7 @@ class PlayerStatus(Enum):
     PLAYING = "playing"
 
 
-class User:
+class Player:
     def __init__(self, ws, user: UserModel):
         self.ws = ws
         self.user = user
