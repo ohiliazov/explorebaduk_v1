@@ -32,21 +32,24 @@ class ChallengeData:
 
 
 class JoinRequest:
-    def __init__(self, user: Player, data: dict, status: RequestStatus, color: str = None):
+    def __init__(self, user: Player, data: dict, status: RequestStatus):
         self.user = user
         self.data = ChallengeData(data)
         self.status = status
+        self.color = None
+        self.handicap = None
+        self.komi = None
+
+    def set_color(self, color: str):
+        assert color in {"black", "white", None}, f"Invalid color: {color}"
         self.color = color
 
-    def join(self):
-        self.status = RequestStatus.JOINED
+    def set_handicap(self, handicap: int):
+        assert 0 <= handicap <= 9, f"Invalid handicap: {handicap}"
+        self.handicap = handicap
 
-    def accept(self):
-        self.status = RequestStatus.ACCEPTED
-
-    def set_color(self, color):
-        assert color in {"black", "white", None}
-        self.color = color
+    def set_komi(self, komi: float):
+        self.komi = round(komi, 2)
 
 
 class Challenge:
