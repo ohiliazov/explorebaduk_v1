@@ -1,20 +1,38 @@
-import asyncio
-
-from typing import List
+from typing import Dict
 
 from explorebaduk.models.player import Player
-from explorebaduk.constants import RequestStatus
-from explorebaduk.exceptions import JoinRequestError
+from explorebaduk.constants import PlayerRequestStatus
 
 
-class ChallengeData:
-    def __init__(self, data: dict):
+class PlayerRequest:
+    def __init__(self, status: PlayerRequestStatus, data: dict):
+        self.status = status
+        self.color = data["color"].value
+        self.handicap = data["handicap"]
+        self.komi = data["komi"]
+
+
+class Challenge:
+    def __init__(self, challenge_id, creator: Player, data: dict):
+        self.challenge_id = challenge_id
+        self.creator = creator
+
+        self.name = data["name"]
+
+        # game info
+        self.game_type = data["game_type"].value
+        self.rules = data["rules"].value
+        self.width = data["width"]
+        self.height = data["height"]
+        self.rank_lower = data["rank_lower"]
+        self.rank_upper = data["rank_upper"]
+
         # flags
         self.is_open = data["is_open"]
         self.undo = data["undo"]
         self.pause = data["pause"]
 
-        # time system
+        # time control
         self.time_system = data["time_system"].value
         self.main_time = data["main_time"]
         self.overtime = data["overtime"]
@@ -23,124 +41,41 @@ class ChallengeData:
         self.bonus = data["bonus"]
         self.delay = data["delay"]
 
+        self.pending: Dict[Player, PlayerRequest] = {}
+
     def __str__(self):
         return (
+            f"ID[{self.challenge_id}]GN[{self.name}]"
+            f"GI[{self.game_type}R{self.rules}W{self.width}H{self.height}MIN{self.rank_lower}MAX{self.rank_upper}]"
             f"FL[{self.is_open:d}{self.undo:d}{self.pause:d}]"
             f"TS[{self.time_system}M{self.main_time}"
             f"O{self.overtime}P{self.periods}S{self.stones}B{self.bonus}D{self.delay}]"
         )
 
+    def join_player(self, player: Player, data: dict) -> bool:
+        if player in self.pending:
+            return False
 
-class JoinRequest:
-    def __init__(self, user: Player, data: dict, status: RequestStatus):
-        self.user = user
-        self.data = ChallengeData(data)
-        self.status = status
-        self.color = None
-        self.handicap = None
-        self.komi = None
+        player_request = PlayerRequest(PlayerRequestStatus.PENDING, data)
+        self.pending[player] = player_request
 
-    def set_color(self, color: str):
-        assert color in {"black", "white", None}, f"Invalid color: {color}"
-        self.color = color
+        return True
 
-    def set_handicap(self, handicap: int):
-        assert 0 <= handicap <= 9, f"Invalid handicap: {handicap}"
-        self.handicap = handicap
+    def set_player_status(self, player: Player, status: PlayerRequestStatus) -> bool:
+        if player not in self.pending:
+            return False
 
-    def set_komi(self, komi: float):
-        self.komi = round(komi, 2)
+        if self.pending[player].status == status:
+            return False
 
+        self.pending[player].status = status
+        return True
 
-class Challenge:
-    def __init__(self, challenge_id: int, creator: Player, data: dict):
+    def accept_player(self, player: Player) -> bool:
+        return self.set_player_status(player, PlayerRequestStatus.ACCEPTED)
 
-        self.id = challenge_id
-        self.creator = creator
-        self.blacklist = set()
+    def cancel_player(self, player: Player) -> bool:
+        return self.set_player_status(player, PlayerRequestStatus.PENDING)
 
-        # game info
-        self.name = data["name"]
-        self.game_type = data["game_type"].value
-        self.rules = data["rules"].value
-        self.width = data["width"]
-        self.height = data["height"]
-        self.rank_lower = data["rank_lower"]
-        self.rank_upper = data["rank_upper"]
-
-        self.data = ChallengeData(data)
-
-        self.joined: List[JoinRequest] = [JoinRequest(creator, data, RequestStatus.ACCEPTED)]
-
-    @property
-    def board_size(self):
-        return f"{self.width}:{self.height}"
-
-    def __str__(self):
-        """ Returns string representation of challenge
-        ID[<game_id>]GN[<name>]
-        GI[<game_type>R<rules>W<width>H<height>MIN<rank_lower>MAX<rank_upper]
-        FL[<is_open><undo><pause>]
-        TS[<time_system>M<main_time>O<overtime>P<periods>S<stones>B<bonus>D<delay>]
-        """
-        return (
-            f"ID[{self.id}]GN[{self.name}]"
-            f"GI[{self.game_type}R{self.rules}W{self.width}H{self.height}MIN{self.rank_lower}MAX{self.rank_upper}]"
-            f"{self.data}"
-        )
-
-    @property
-    def accepted_players(self):
-        return [player for player in self.joined]
-
-    @property
-    def ready(self):
-        return sum([r.status is RequestStatus.ACCEPTED for r in self.joined]) == 2
-
-    def join_player(self, player: Player, data: dict):
-        join_request = [user for user in self.joined if user == player]
-
-        if join_request:
-            raise JoinRequestError("Already joined")
-
-        request_data = ChallengeData(data)
-        status = RequestStatus.JOINED if request_data == self.data else RequestStatus.CHANGED
-        join_request = JoinRequest(player, data, status)
-
-        self.joined.append(join_request)
-
-        return self.ready
-
-    def accept_player(self, player: Player):
-        join_request = [user for user in self.joined if user == player]
-
-        if not join_request:
-            raise JoinRequestError("Player not found")
-
-        if join_request[0].data != self.data:
-            raise JoinRequestError("Data not equal")
-
-        join_request[0].status = RequestStatus.ACCEPTED
-
-    def change_data(self, new_data: dict):
-        if self.data != new_data:
-            self.data = new_data
-
-            to_return = []
-            for join_request in self.joined:
-                if join_request.data != self.data:
-                    join_request.status = RequestStatus.RETURNED
-                    to_return.append(join_request.user)
-
-            return to_return
-
-    def remove_player(self, player: Player):
-        join_request = [user for user in self.joined if user == player]
-
-        if not join_request:
-            raise JoinRequestError("Player not found")
-
-        self.joined.remove(join_request[0])
-
-    async def send_all(self, message: str):
-        return asyncio.gather(*[j.user.ws.send(message) for j in self.joined])
+    def decline_player(self, player: Player) -> bool:
+        return self.set_player_status(player, PlayerRequestStatus.DECLINED)

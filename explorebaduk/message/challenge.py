@@ -39,7 +39,7 @@ TIME_SYSTEM = fr"TS\[{TIME_CONTROL}{MAIN_TIME}{OVERTIME}{PERIODS}{STONES}{BONUS}
 # CL[even]              -> nigiri, no handicap, default komi
 # CL[black]HN[3]KM[0.5] -> black, 3 stones, komi 0.5
 # CL[white]HN[9]KM[0]   -> white, 9 stones, no komi (jigo is possible)
-COLOR = r"CL\[(?P<color>auto|even|black|white)\]"
+COLOR = r"CL\[(?P<color>\d)\]"
 HANDICAP = r"(HN\[(?P<handicap>\d)\])?"
 KOMI = r"(KM\[(?P<komi>\d+(\.5)?)\])?"
 

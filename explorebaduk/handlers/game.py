@@ -18,7 +18,7 @@ async def start_game(ws, data: dict):
     challenge_id = data["challenge_id"]
     challenge = CHALLENGES.get(challenge_id)
 
-    if not challenge.ready:
+    if not challenge.is_ready:
         return await ws.send("challenge not ready to start")
 
     # TODO: implement

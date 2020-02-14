@@ -14,6 +14,7 @@ from explorebaduk.constants import (
     GameType,
     Ruleset,
     TimeSystem,
+    PlayerColor,
 )
 
 
@@ -38,12 +39,9 @@ class EnumValidator(validate.Validator):
         return value
 
 
-class LoginSchema(Schema):
-    user_id = fields.Integer(required=True)
-    token = fields.String(required=True)
+class ChallengeSchema(Schema):
+    name = fields.String(required=True)
 
-
-class GameInfoSchema(Schema):
     game_type = fields.Integer(required=True, validate=EnumValidator(GameType))
     rules = fields.Integer(required=True, validate=EnumValidator(Ruleset))
     width = fields.Integer(required=True, validate=validate.Range(min=5, max=52))
@@ -51,20 +49,10 @@ class GameInfoSchema(Schema):
     rank_lower = fields.Integer(missing=0, validate=validate.Range(min=0, max=3000))
     rank_upper = fields.Integer(missing=3000, validate=validate.Range(min=0, max=3000))
 
-    @post_load
-    def convert_game_info_enums(self, data, **kwargs):
-        data["game_type"] = GameType(data["game_type"])
-        data["rules"] = Ruleset(data["rules"])
-        return data
-
-
-class FlagsSchema(Schema):
     is_open = fields.Boolean(required=True)
     undo = fields.Boolean(required=True)
     pause = fields.Boolean(required=True)
 
-
-class TimeSystemSchema(Schema):
     time_system = fields.Integer(required=True, validate=EnumValidator(TimeSystem))
     main_time = fields.Integer(missing=0)
     overtime = fields.Integer(missing=0)
@@ -89,15 +77,19 @@ class TimeSystemSchema(Schema):
             raise ValidationError("Fischer time control should have bonus time.")
 
     @post_load
-    def convert_time_system_enums(self, data, **kwargs):
+    def convert_enums(self, data, **kwargs):
+        data["game_type"] = GameType(data["game_type"])
+        data["rules"] = Ruleset(data["rules"])
         data["time_system"] = TimeSystem(data["time_system"])
-
         return data
 
 
-class NewChallengeSchema(GameInfoSchema, FlagsSchema, TimeSystemSchema):
-    name = fields.String(required=True)
+class PlayerRequestSchema(Schema):
+    color = fields.String(required=True)
+    handicap = fields.Integer()
+    komi = fields.Float()
 
-
-class JoinChallengeSchema(FlagsSchema, TimeSystemSchema):
-    challenge_id = fields.Integer(required=True)
+    @post_load
+    def convert_enums(self, data):
+        data["color"] = PlayerColor(data["color"])
+        return data

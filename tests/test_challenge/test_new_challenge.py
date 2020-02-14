@@ -1,6 +1,6 @@
 import pytest
 from explorebaduk.message import parse_message
-from explorebaduk.schema import NewChallengeSchema
+from explorebaduk.schema import ChallengeSchema
 from explorebaduk.constants import TimeSystem, Ruleset, GameType
 
 
@@ -33,5 +33,5 @@ def test_challenge(message, expected):
     message_type, parsed = parse_message(message)
 
     parsed.pop("action")
-    result = NewChallengeSchema().load(parsed)
+    result = ChallengeSchema().load(parsed)
     assert result == expected

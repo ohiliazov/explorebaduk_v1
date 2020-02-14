@@ -65,8 +65,14 @@ class TimeSystem(IntEnum):
     CUSTOM = 5
 
 
-class RequestStatus(IntEnum):
-    JOINED = 0
-    CHANGED = 1
-    RETURNED = 2
-    ACCEPTED = 3
+class PlayerRequestStatus(IntEnum):
+    PENDING = 0
+    ACCEPTED = 1
+    DECLINED = 2
+
+
+class PlayerColor(IntEnum):
+    AUTO = 0
+    NIGIRI = 1
+    BLACK = 2
+    WHITE = 3

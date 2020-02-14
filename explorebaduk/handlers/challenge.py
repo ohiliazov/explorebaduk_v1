@@ -3,9 +3,11 @@ import logging
 
 from explorebaduk.constants import ChallengeAction
 from explorebaduk.exceptions import InvalidMessageError
-from explorebaduk.models import Challenge
+from explorebaduk.models import Player, Challenge
 from explorebaduk.server import CONNECTED, PLAYERS, CHALLENGES
-from explorebaduk.schema import NewChallengeSchema, JoinChallengeSchema
+from explorebaduk.schema import ChallengeSchema, PlayerRequestSchema
+
+from explorebaduk.helpers import send_messages, send_sync_messages
 
 logger = logging.getLogger("challenge_handler")
 
@@ -25,11 +27,15 @@ CHALLENGE_JOINED_SYNC = "sync challenge {} {} {}"
 
 
 def challenge_created(challenge: Challenge) -> str:
-    return f"sync challenge created {str(challenge)}"
+    return f"sync challenge created {challenge}"
 
 
 def challenge_removed(challenge: Challenge) -> str:
-    return f"sync challenge removed {str(challenge)}"
+    return f"sync challenge removed {challenge}"
+
+
+def joined_challenge(challenge: Challenge) -> str:
+    return f"challenge joined {str(challenge)}"
 
 
 async def sync_message(message: str):
@@ -50,14 +56,15 @@ async def create_challenge(ws, data):
     if not player:
         return await ws.send(NOT_LOGGED_IN)
 
-    data = NewChallengeSchema().load(data)
+    data = ChallengeSchema().load(data)
 
     challenge_id = next_challenge_id()
     challenge = Challenge(challenge_id, player, data)
+
     message = challenge_created(challenge)
     CHALLENGES[challenge_id] = challenge
 
-    return await asyncio.gather(ws.send(CHALLENGE_CREATED.format(challenge_id)), sync_message(message))
+    return await send_sync_messages(message)
 
 
 async def cancel_challenge(ws, data: dict):
@@ -71,8 +78,8 @@ async def cancel_challenge(ws, data: dict):
 
     CHALLENGES.pop(ws)
 
-    message = CHALLENGE_CANCEL.format(challenge_id)
-    return await challenge.send_all(message)
+    message = challenge_removed(challenge)
+    return await send_sync_messages(message)
 
 
 async def join_challenge(ws, data):
@@ -84,17 +91,18 @@ async def join_challenge(ws, data):
     if not challenge:
         return await ws.send(JOIN_NOT_FOUND)
 
-    if player in challenge.blacklist:
-        return await ws.send(JOIN_NOT_ALLOWED)
+    data = PlayerRequestSchema().load(data)
 
-    data = JoinChallengeSchema().load(data)
+    joined = challenge.join_player(player, data)
 
-    is_ready = challenge.join_player(player, data)
+    if not joined:
+        return await player.send("challenge join FAILED")
 
-    message = CHALLENGE_JOINED.format(challenge_id)
-    sync_message = CHALLENGE_JOINED_SYNC.format(challenge_id, int(is_ready), challenge)
+    message = joined_challenge(challenge)
+    to_creator = f"challenge joined {challenge} {player}"
 
-    return await asyncio.gather(ws.send(message), challenge.send_all(sync_message))
+    return await asyncio.gather(player.send(message),
+                                challenge.creator.send(to_creator))
 
 
 def accept_challenge(ws, data):
