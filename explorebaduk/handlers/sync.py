@@ -23,9 +23,8 @@ async def register(ws):
 
 
 async def unregister(ws):
+    CONNECTED.remove(ws)
     if ws in PLAYERS:
         player = PLAYERS[ws]
         del PLAYERS[ws]
         await send_sync_messages([player_left(player)])
-
-    CONNECTED.remove(ws)

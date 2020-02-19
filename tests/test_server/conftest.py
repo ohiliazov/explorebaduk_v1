@@ -18,8 +18,14 @@ async def start_test_server(event_loop):
     server.close()
 
 
-@pytest.fixture
-def client_factory(event_loop):
-    async def wrapped():
-        return await websockets.connect(f'ws://{TEST_SERVER_HOST}:{TEST_SERVER_PORT}', loop=event_loop)
-    return wrapped
+@pytest.yield_fixture
+async def ws1(event_loop):
+    ws = await websockets.connect(f'ws://{TEST_SERVER_HOST}:{TEST_SERVER_PORT}', loop=event_loop)
+    yield ws
+    await ws.close()
+
+@pytest.yield_fixture
+async def ws2(event_loop):
+    ws = await websockets.connect(f'ws://{TEST_SERVER_HOST}:{TEST_SERVER_PORT}', loop=event_loop)
+    yield ws
+    await ws.close()

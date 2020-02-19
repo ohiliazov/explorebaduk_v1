@@ -10,12 +10,9 @@ from explorebaduk.server import db
 @pytest.fixture(scope="session", autouse=True)
 def db_session():
     engine = create_engine(TEST_DATABASE_URI)
-
+    db.bind = engine
     BaseModel.metadata.drop_all(engine)
     BaseModel.metadata.create_all(engine)
-
-    db.bind = engine
-
     populate_database_with_data(db, 20)
 
     return db
