@@ -14,6 +14,12 @@ class Player:
         self.user = user
         self.status = PlayerStatus.IDLE
 
+    async def send(self, message: str):
+        return await self.ws.send(message)
+
+    async def send_message(self, message: str):
+        return await self.ws.send(message)
+
     @property
     def id(self):
         return self.user.user_id
@@ -28,6 +34,3 @@ class Player:
 
     def __str__(self):
         return f"ID[{self.id}]NM[{self.full_name}]RT[{self.rating}]"
-
-    async def send(self, message: str):
-        return self.ws.send(message)

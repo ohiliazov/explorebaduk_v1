@@ -3,6 +3,10 @@ from typing import List, Union
 from explorebaduk.server import CONNECTED
 
 
+def error_message(message_type, action, reason):
+    return f"{message_type} {action} ERROR ({reason})"
+
+
 async def send_messages(ws, messages: Union[str, List[str]]):
     if isinstance(messages, str):
         messages = [messages]

@@ -49,8 +49,8 @@ class GameType(IntEnum):
 
 
 class Ruleset(IntEnum):
-    JAPANESE = 0
-    CHINESE = 1
+    CHINESE = 0
+    JAPANESE = 1
     AGA = 2
     ING = 3
     NEW_ZEALAND = 4
@@ -65,14 +65,13 @@ class TimeSystem(IntEnum):
     CUSTOM = 5
 
 
-class PlayerRequestStatus(IntEnum):
-    PENDING = 0
-    ACCEPTED = 1
-    DECLINED = 2
-
-
 class PlayerColor(IntEnum):
     AUTO = 0
     NIGIRI = 1
     BLACK = 2
     WHITE = 3
+
+
+DEFAULT_RULESET = Ruleset.CHINESE
+DEFAULT_KOMI = 7.5
+

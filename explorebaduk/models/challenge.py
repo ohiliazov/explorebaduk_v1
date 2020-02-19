@@ -1,15 +1,20 @@
+import asyncio
+
 from typing import Dict
 
 from explorebaduk.models.player import Player
-from explorebaduk.constants import PlayerRequestStatus
+from explorebaduk.constants import PlayerColor
 
 
 class PlayerRequest:
-    def __init__(self, status: PlayerRequestStatus, data: dict):
-        self.status = status
-        self.color = data["color"].value
-        self.handicap = data["handicap"]
-        self.komi = data["komi"]
+    def __init__(self, player: Player, data: dict):
+        self.player: Player = player
+        self.color: PlayerColor = data["color"]
+        self.handicap: int = data["handicap"]
+        self.komi: float = data["komi"]
+
+    def __str__(self):
+        return f"{self.player}CL[{self.color.value}]HN[{self.handicap}]KM[{self.komi}]"
 
 
 class Challenge:
@@ -52,30 +57,11 @@ class Challenge:
             f"O{self.overtime}P{self.periods}S{self.stones}B{self.bonus}D{self.delay}]"
         )
 
-    def join_player(self, player: Player, data: dict) -> bool:
-        if player in self.pending:
-            return False
+    async def notify_creator(self, message):
+        await self.creator.send(message)
 
-        player_request = PlayerRequest(PlayerRequestStatus.PENDING, data)
+    def join_player(self, player: Player, data: dict):
+        player_request = PlayerRequest(player, data)
         self.pending[player] = player_request
 
-        return True
-
-    def set_player_status(self, player: Player, status: PlayerRequestStatus) -> bool:
-        if player not in self.pending:
-            return False
-
-        if self.pending[player].status == status:
-            return False
-
-        self.pending[player].status = status
-        return True
-
-    def accept_player(self, player: Player) -> bool:
-        return self.set_player_status(player, PlayerRequestStatus.ACCEPTED)
-
-    def cancel_player(self, player: Player) -> bool:
-        return self.set_player_status(player, PlayerRequestStatus.PENDING)
-
-    def decline_player(self, player: Player) -> bool:
-        return self.set_player_status(player, PlayerRequestStatus.DECLINED)
+        return player_request

@@ -9,10 +9,6 @@ MESSAGE_PATTERNS = {
         re.compile(fr"^challenge (?P<action>new) {CHALLENGE_STRING}$"),
         re.compile(r"^challenge (?P<action>cancel) (?P<challenge_id>\d+)$"),
         re.compile(fr"^challenge (?P<action>join) (?P<challenge_id>\d+) {JOIN_CHALLENGE_STRING}$"),
-        re.compile(r"^challenge (?P<action>leave) (?P<challenge_id>\d+)$"),
-        re.compile(r"^challenge (?P<action>accept) (?P<challenge_id>\d+) (?P<player_id>\d+)$"),
-        re.compile(fr"^challenge (?P<action>return) (?P<player_id>\d+) {JOIN_CHALLENGE_STRING}$"),
-        re.compile(r"^challenge (?P<action>confirm) (?P<challenge_id>\d+)$"),
     ],
 }
 

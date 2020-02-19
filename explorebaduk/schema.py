@@ -85,11 +85,13 @@ class ChallengeSchema(Schema):
 
 
 class PlayerRequestSchema(Schema):
-    color = fields.String(required=True)
-    handicap = fields.Integer()
-    komi = fields.Float()
+    challenge_id = fields.Integer(required=True)
+
+    color = fields.Integer(required=True)
+    handicap = fields.Integer(missing=0)
+    komi = fields.Float(missing=None)
 
     @post_load
-    def convert_enums(self, data):
+    def convert_enums(self, data, **kwargs):
         data["color"] = PlayerColor(data["color"])
         return data
