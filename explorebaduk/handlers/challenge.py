@@ -80,6 +80,9 @@ async def join_challenge(ws, data):
 
     data = PlayerRequestSchema().load(data)
 
+    if player == challenge.creator:
+        return await ws.send(challenge_error("join", "self join attempt"))
+
     if player in challenge.pending:
         return await ws.send(challenge_error("join", "already joined"))
 
@@ -87,6 +90,33 @@ async def join_challenge(ws, data):
 
     message_to_joined = f"challenge join OK {challenge}"
     message_to_creator = f"challenge joined {player_request}"
+
+    return await asyncio.gather(
+        player.send(message_to_joined),
+        challenge.creator.send(message_to_creator)
+    )
+
+
+async def leave_challenge(ws, data):
+    logger.info("leave_challenge")
+
+    challenge_id = data["challenge_id"]
+    player = PLAYERS[ws]
+
+    challenge = CHALLENGES.get(challenge_id)
+    if not challenge:
+        return await ws.send(challenge_error("join", "not found"))
+
+    if player == challenge.creator:
+        return await ws.send(challenge_error("join", "self leave attempt"))
+
+    if player not in challenge.pending:
+        return await ws.send(challenge_error("join", "not joined"))
+
+    player_request = challenge.leave_player(player)
+
+    message_to_joined = f"challenge leave OK {challenge}"
+    message_to_creator = f"challenge left {player_request}"
 
     return await asyncio.gather(
         player.send(message_to_joined),

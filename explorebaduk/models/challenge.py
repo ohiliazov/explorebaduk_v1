@@ -65,3 +65,6 @@ class Challenge:
         self.pending[player] = player_request
 
         return player_request
+
+    def leave_player(self, player: Player):
+        return self.pending.pop(player)
