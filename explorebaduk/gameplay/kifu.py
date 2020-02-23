@@ -6,7 +6,7 @@ from explorebaduk.utils.sgf import sgf_coord_to_int, int_coord_to_sgf, create_ne
 
 
 class Kifu:
-    def __init__(self, width: int, height: int, handicap: int, komi: float, turn: str = "B"):
+    def __init__(self, width: int, height: int, handicap: int = 0, komi: float = 7.5, turn: str = "B"):
         self._shape = (width, height)
         self._turn = turn
         self.cursor = create_new_sgf(width, height, handicap, komi)

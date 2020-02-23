@@ -57,6 +57,17 @@ class Challenge:
             f"O{self.overtime}P{self.periods}S{self.stones}B{self.bonus}D{self.delay}]"
         )
 
+    @property
+    def time_control(self):
+        return {
+            "main_time": self.main_time,
+            "overtime": self.overtime,
+            "periods": self.periods,
+            "stones": self.stones,
+            "bonus": self.bonus,
+            "delay": self.delay,
+        }
+
     async def notify_creator(self, message):
         await self.creator.send(message)
 

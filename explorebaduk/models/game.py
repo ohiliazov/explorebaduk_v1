@@ -1,14 +1,15 @@
-from itertools import repeat
-from typing import List
+import random
 
 from explorebaduk.gameplay.board import Location
 from explorebaduk.gameplay.kifu import Kifu
+from explorebaduk.models.player import Player
 from explorebaduk.models.challenge import Challenge
+from explorebaduk.models.timer import create_timers
 
 
 class GamePlayer:
-    def __init__(self, user, color: Location, timer):
-        self.user = user
+    def __init__(self, player: Player, color: Location, timer):
+        self.player = player
         self.timer = timer
         self.color = color
 
@@ -20,12 +21,11 @@ class GamePlayer:
 
 
 class Game:
-    def __init__(self, players: List[GamePlayer], width: int, height: int, turn: str, handicap: int, komi: float):
-        self._players = repeat(players)
-        self._next_player = next(self._players)
-        self.kifu = Kifu(width, height, handicap, komi, turn)
-        self.handicap = handicap
-        self.komi = komi
+    def __init__(self, black: GamePlayer, white: GamePlayer, width: int, height: int):
+        self.black = black
+        self.white = white
+        self._next_player = self.black
+        self.kifu = Kifu(width, height)
 
     @property
     def whose_turn(self) -> GamePlayer:
@@ -36,8 +36,9 @@ class Game:
         return self.whose_turn.color
 
     @classmethod
-    def from_challenge(cls, challenge: "Challenge"):
-        color = "B"
-        players = []
-        for p in challenge.players:
-            pass
+    def from_challenge(cls, challenge: "Challenge", against: Player):
+        black, white = random.sample([challenge.creator, against])
+        black_timer, white_timer = create_timers(challenge.time_system, 2, **challenge.time_control)
+        black = GamePlayer(black, Location.BLACK, black_timer)
+        white = GamePlayer(white, Location.BLACK, white_timer)
+        return cls(black, white, challenge.width, challenge.height)
