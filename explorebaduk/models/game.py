@@ -4,7 +4,7 @@ from explorebaduk.gameplay.board import Location
 from explorebaduk.gameplay.kifu import Kifu
 from explorebaduk.models.player import Player
 from explorebaduk.models.challenge import Challenge
-from explorebaduk.models.timer import create_timers
+from explorebaduk.models.timer import create_timer
 
 
 class GamePlayer:
@@ -38,7 +38,14 @@ class Game:
     @classmethod
     def from_challenge(cls, challenge: "Challenge", against: Player):
         black, white = random.sample([challenge.creator, against])
-        black_timer, white_timer = create_timers(challenge.time_system, 2, **challenge.time_control)
+
+        black_timer = create_timer(challenge.time_system, **challenge.time_control)
+        white_timer = create_timer(challenge.time_system, **challenge.time_control)
+
         black = GamePlayer(black, Location.BLACK, black_timer)
-        white = GamePlayer(white, Location.BLACK, white_timer)
+        white = GamePlayer(white, Location.WHITE, white_timer)
+
         return cls(black, white, challenge.width, challenge.height)
+
+    def play_move(self, color, coords):
+        pass

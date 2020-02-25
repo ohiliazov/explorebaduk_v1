@@ -6,6 +6,7 @@ from explorebaduk.constants import MessageType
 from explorebaduk.exceptions import AuthenticationError, InvalidMessageError
 from explorebaduk.handlers.auth import handle_auth
 from explorebaduk.handlers.challenge import handle_challenge
+from explorebaduk.handlers.game import handle_game
 from explorebaduk.message import parse_message, InvalidMessageError
 
 logger = logging.getLogger("explorebaduk")
@@ -25,6 +26,9 @@ async def handle_message(ws, message: str):
 
         elif message_type is MessageType.CHALLENGE:
             await handle_challenge(ws, data)
+
+        elif message_type is MessageType.GAME:
+            await handle_game(ws, data)
 
         else:
             await ws.send(f"ERROR {message_type}: not implemented")

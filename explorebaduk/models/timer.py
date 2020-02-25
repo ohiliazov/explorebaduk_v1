@@ -1,5 +1,4 @@
 import time
-from typing import List
 
 from abc import ABCMeta, abstractmethod
 from explorebaduk.constants import MOVE_DELAY, TimeSystem
@@ -7,7 +6,7 @@ from explorebaduk.exceptions import TimerError
 
 
 class Timer(metaclass=ABCMeta):
-    def __init__(self, time_left: float, delay: float = MOVE_DELAY):
+    def __init__(self, time_left: float, delay: float = MOVE_DELAY, **kwargs):
         self._started_at = None
 
         self.time_left = time_left
@@ -54,9 +53,9 @@ class NoTimeTimer(Timer):
     No time limit
     """
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         time_left = float("+inf")
-        super().__init__(time_left, 0)
+        super().__init__(time_left, **kwargs)
 
     def process_time(self, time_used: float) -> None:
         return None
@@ -68,8 +67,8 @@ class AbsoluteTimer(Timer):
     If a player's main time expires, they generally lose the game.
     """
 
-    def __init__(self, *, main_time: float, delay: float = MOVE_DELAY):
-        super().__init__(main_time, delay)
+    def __init__(self, *, main_time: float, **kwargs):
+        super().__init__(main_time, **kwargs)
 
     def process_time(self, time_used: float) -> None:
         self.time_left -= time_used
@@ -82,9 +81,9 @@ class ByoyomiTimer(Timer):
     If a move is not completed within a time period, the time period will expire, and the next time period begins.
     """
 
-    def __init__(self, *, main_time: float, overtime: float, periods: int, delay: float = MOVE_DELAY):
+    def __init__(self, *, main_time: float, overtime: float, periods: int, **kwargs):
         time_left = main_time + overtime * periods
-        super().__init__(time_left, delay)
+        super().__init__(time_left, **kwargs)
 
         self.overtime = overtime
         self.periods = periods
@@ -103,9 +102,9 @@ class CanadianTimer(Timer):
     After the main time is depleted, a player must make a certain number of moves within a certain period of time.
     """
 
-    def __init__(self, *, main_time: float, overtime: float, stones: int, delay: float = MOVE_DELAY):
+    def __init__(self, *, main_time: float, overtime: float, stones: int, delay: float = MOVE_DELAY, **kwargs):
         time_left = main_time + overtime
-        super().__init__(time_left, delay)
+        super().__init__(time_left, **kwargs)
 
         self.overtime = overtime
         self.stones = self.stones_left = stones
@@ -131,8 +130,8 @@ class FischerTimer(Timer):
     unless the player's main time ran out before they completed their move.
     """
 
-    def __init__(self, *, main_time: float, bonus: float, delay: float = MOVE_DELAY):
-        super().__init__(main_time, delay)
+    def __init__(self, *, main_time: float, bonus: float, **kwargs):
+        super().__init__(main_time, **kwargs)
 
         self.bonus = bonus
 
@@ -149,14 +148,13 @@ TIMERS = {
 }
 
 
-def create_timers(time_system: TimeSystem, number: int = 2, **data) -> List[Timer]:
+def create_timer(time_system: TimeSystem, **time_control_data) -> Timer:
     """
-    Creates list of timers
+    Create timer for
     :param time_system:
-    :param number: number of timers to create (for each color)
-    :param data:
+    :param time_control_data: main_time, overtime,
     :return:
     """
     timer_class = TIMERS[time_system]
 
-    return [timer_class(**data) for _ in range(number)]
+    return timer_class(**time_control_data)

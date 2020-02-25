@@ -15,6 +15,7 @@ class MessageType(Enum):
     SYNC = "sync"
     AUTH = "auth"
     CHALLENGE = "challenge"
+    GAME = "game"
 
 
 class LoginAction(Enum):

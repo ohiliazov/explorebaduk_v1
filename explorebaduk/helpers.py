@@ -1,6 +1,12 @@
 import asyncio
 from typing import List, Union
-from explorebaduk.server import CONNECTED
+from explorebaduk.server import CONNECTED, PLAYERS
+
+
+def get_player_by_id(player_id):
+    for player in PLAYERS.values():
+        if player.id == player_id:
+            return player
 
 
 def error_message(message_type, action, reason):

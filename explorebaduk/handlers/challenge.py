@@ -127,11 +127,11 @@ async def leave_challenge(ws, data):
 async def handle_challenge(ws, data: dict):
     logger.info("handle_challenge")
 
-    player = PLAYERS[ws]
+    player = PLAYERS.get(ws)
     action = ChallengeAction(data.pop("action"))
 
     if not player:
-        return ws.send(challenge_error(action, "not logged in"))
+        return await ws.send(challenge_error(action, "not logged in"))
 
     if action is ChallengeAction.NEW:
         await create_challenge(ws, data)
