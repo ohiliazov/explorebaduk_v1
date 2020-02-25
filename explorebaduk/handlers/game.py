@@ -5,6 +5,7 @@ from explorebaduk.constants import GameAction
 from explorebaduk.models import Game
 from explorebaduk.server import PLAYERS, CHALLENGES, GAMES
 from explorebaduk.helpers import get_player_by_id
+from explorebaduk.schema import GameStartSchema
 
 logger = logging.getLogger("matchmaker")
 
@@ -16,8 +17,8 @@ async def validate_user(ws):
 async def start_game(ws, data: dict):
     logger.info("start_game")
     # Step 1. Validate users
-    challenge_id = data["challenge_id"]
-    challenge = CHALLENGES.get(challenge_id)
+    data = GameStartSchema().load(data)
+    challenge = CHALLENGES.get(data["challenge_id"])
 
     if not challenge:
         return await ws.send("Challenge does not exist")

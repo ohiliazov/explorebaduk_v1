@@ -71,14 +71,15 @@ async def cancel_challenge(ws, data: dict):
 
 async def join_challenge(ws, data):
     logger.info("join_challenge")
-    challenge_id = int(data["challenge_id"])
-    player = PLAYERS[ws]
+    data = PlayerRequestSchema().load(data)
+
+    challenge_id = data["challenge_id"]
 
     challenge = CHALLENGES.get(challenge_id)
     if not challenge:
         return await ws.send(challenge_error("join", "not found"))
 
-    data = PlayerRequestSchema().load(data)
+    player = PLAYERS[ws]
 
     if player == challenge.creator:
         return await ws.send(challenge_error("join", "self join attempt"))
@@ -131,7 +132,7 @@ async def handle_challenge(ws, data: dict):
     action = ChallengeAction(data.pop("action"))
 
     if not player:
-        return await ws.send(challenge_error(action, "not logged in"))
+        return await ws.send(challenge_error(action.value, "not logged in"))
 
     if action is ChallengeAction.NEW:
         await create_challenge(ws, data)
@@ -141,6 +142,9 @@ async def handle_challenge(ws, data: dict):
 
     elif action is ChallengeAction.JOIN:
         await join_challenge(ws, data)
+
+    elif action is ChallengeAction.LEAVE:
+        await leave_challenge(ws, data)
 
     else:
         raise InvalidMessageError(f"ERROR challenge {action}: not implemented")

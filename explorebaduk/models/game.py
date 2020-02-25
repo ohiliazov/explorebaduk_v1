@@ -37,7 +37,7 @@ class Game:
 
     @classmethod
     def from_challenge(cls, challenge: "Challenge", against: Player):
-        black, white = random.sample([challenge.creator, against])
+        black, white = random.sample([challenge.creator, against], 2)
 
         black_timer = create_timer(challenge.time_system, **challenge.time_control)
         white_timer = create_timer(challenge.time_system, **challenge.time_control)

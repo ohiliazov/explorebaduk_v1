@@ -1,6 +1,6 @@
 import re
 from typing import Tuple, Dict, Any
-from explorebaduk.message.challenge import CHALLENGE_STRING, JOIN_CHALLENGE_STRING
+from explorebaduk.message.challenge import CHALLENGE_STRING
 
 
 MESSAGE_PATTERNS = {
@@ -8,11 +8,18 @@ MESSAGE_PATTERNS = {
     "challenge": [
         re.compile(fr"^challenge (?P<action>new) {CHALLENGE_STRING}$"),
         re.compile(r"^challenge (?P<action>cancel) (?P<challenge_id>\d+)$"),
-        re.compile(fr"^challenge (?P<action>join) (?P<challenge_id>\d+) {JOIN_CHALLENGE_STRING}$"),
+        re.compile(r"^challenge (?P<action>join) (?P<challenge_id>\d+)$"),
+        re.compile(r"^challenge (?P<action>leave) (?P<challenge_id>\d+)$"),
     ],
     "game": [
-        re.compile(fr"^game (?P<action>start) (?P<challenge_id>\d+)$")
-    ]
+        re.compile(r"^game (?P<action>start) (?P<challenge_id>\d+) (?P<opponent_id>\d+)$"),
+        re.compile(r"^game (?P<action>play) (?P<game_id>\d+) (?P<move>[a-zA-Z]{2})$"),
+        re.compile(r"^game (?P<action>undo) (?P<game_id>\d+)$"),
+        re.compile(r"^game (?P<action>pass) (?P<game_id>\d+)$"),
+        re.compile(r"^game (?P<action>resign) (?P<game_id>\d+)$"),
+        re.compile(r"^game (?P<action>join) (?P<game_id>\d+)$"),
+        re.compile(r"^game (?P<action>leave) (?P<game_id>\d+)$"),
+    ],
 }
 
 
