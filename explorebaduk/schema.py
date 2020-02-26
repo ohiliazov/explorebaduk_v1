@@ -39,15 +39,15 @@ class EnumValidator(validate.Validator):
         return value
 
 
-class ChallengeSchema(Schema):
+class ChallengeNewSchema(Schema):
     name = fields.String(required=True)
 
     game_type = fields.Integer(required=True, validate=EnumValidator(GameType))
     rules = fields.Integer(required=True, validate=EnumValidator(Ruleset))
     width = fields.Integer(required=True, validate=validate.Range(min=5, max=52))
     height = fields.Integer(required=True, validate=validate.Range(min=5, max=52))
-    rank_lower = fields.Integer(missing=0, validate=validate.Range(min=0, max=3000))
-    rank_upper = fields.Integer(missing=3000, validate=validate.Range(min=0, max=3000))
+    rank_lower = fields.Integer(missing=0, allow_none=True, validate=validate.Range(min=0, max=3000))
+    rank_upper = fields.Integer(missing=3000, allow_none=True, validate=validate.Range(min=0, max=3000))
 
     is_open = fields.Boolean(required=True)
     undo = fields.Boolean(required=True)
@@ -84,9 +84,11 @@ class ChallengeSchema(Schema):
         return data
 
 
-class PlayerRequestSchema(Schema):
+class ChallengeIdSchema(Schema):
     challenge_id = fields.Integer(required=True)
 
+
+class PlayerRequestSchema(ChallengeIdSchema):
     color = fields.Integer(missing=0)
     handicap = fields.Integer(missing=0)
     komi = fields.Float(missing=None)
@@ -97,6 +99,5 @@ class PlayerRequestSchema(Schema):
         return data
 
 
-class GameStartSchema(Schema):
-    challenge_id = fields.Integer(required=True)
+class ChallengeStartSchema(ChallengeIdSchema):
     opponent_id = fields.Integer(required=True)

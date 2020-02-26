@@ -21,11 +21,13 @@ async def start_test_server(event_loop):
 @pytest.fixture
 def ws_factory(event_loop):
     async def gen(i):
-        return [await websockets.connect(f'ws://{TEST_SERVER_HOST}:{TEST_SERVER_PORT}', loop=event_loop)
-                for _ in range(i)]
+        return [
+            await websockets.connect(f"ws://{TEST_SERVER_HOST}:{TEST_SERVER_PORT}", loop=event_loop) for _ in range(i)
+        ]
+
     return gen
 
 
 @pytest.yield_fixture
 async def ws(event_loop):
-    return await websockets.connect(f'ws://{TEST_SERVER_HOST}:{TEST_SERVER_PORT}', loop=event_loop)
+    return await websockets.connect(f"ws://{TEST_SERVER_HOST}:{TEST_SERVER_PORT}", loop=event_loop)

@@ -1,7 +1,6 @@
 import logging
 import asyncio
 
-from explorebaduk.constants import LoginAction
 from explorebaduk.database import TokenModel, UserModel
 from explorebaduk.models import Player
 from explorebaduk.server import PLAYERS, db
@@ -18,7 +17,7 @@ def player_left(player: Player):
     return f"sync player left {str(player)}"
 
 
-async def handle_login(ws, data: dict):
+async def handle_auth_login(ws, data: dict):
     """Login player"""
     logger.info("handle_login")
 
@@ -46,7 +45,7 @@ async def handle_login(ws, data: dict):
     return await asyncio.gather(send_messages(ws, message), send_sync_messages(sync_message))
 
 
-async def handle_logout(ws):
+async def handle_auth_logout(ws, data):
     """Logout player"""
     logger.info("handle_logout")
 
@@ -59,18 +58,3 @@ async def handle_logout(ws):
     del PLAYERS[ws]
 
     return await asyncio.gather(ws.send("auth logout OK"), send_sync_messages(message))
-
-
-async def handle_auth(ws, data: dict):
-    logger.info("handle_auth")
-
-    action = LoginAction(data.pop("action"))
-
-    if action is LoginAction.LOGIN:
-        await handle_login(ws, data)
-
-    elif action is LoginAction.LOGOUT:
-        await handle_logout(ws)
-
-    else:
-        await ws.send(f"ERROR auth {action.value}: not implemented")

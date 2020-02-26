@@ -1,4 +1,4 @@
-from enum import Enum, IntEnum
+from enum import IntEnum
 
 
 # Time to wait for match making
@@ -6,40 +6,6 @@ AUTO_MATCH_DELAY = 3
 
 # Delay before making a move
 MOVE_DELAY = 1
-
-# Message result statuses
-ERROR = "error"
-
-
-class MessageType(Enum):
-    SYNC = "sync"
-    AUTH = "auth"
-    CHALLENGE = "challenge"
-    GAME = "game"
-
-
-class LoginAction(Enum):
-    LOGIN = "login"
-    LOGOUT = "logout"
-
-
-class ChallengeAction(Enum):
-    NEW = "new"
-    UPDATE = "update"
-    CANCEL = "cancel"
-    JOIN = "join"
-    LEAVE = "leave"
-    ACCEPT = "accept"
-    DECLINE = "decline"
-    REVISE = "revise"
-    RETURN = "return"
-
-
-class GameAction(Enum):
-    START = "start"
-    LOAD = "load"
-    PLAY = "play"
-    UNDO = "undo"
 
 
 class GameType(IntEnum):
@@ -75,4 +41,3 @@ class PlayerColor(IntEnum):
 
 DEFAULT_RULESET = Ruleset.CHINESE
 DEFAULT_KOMI = 7.5
-

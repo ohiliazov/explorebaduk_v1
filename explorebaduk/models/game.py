@@ -21,11 +21,15 @@ class GamePlayer:
 
 
 class Game:
-    def __init__(self, black: GamePlayer, white: GamePlayer, width: int, height: int):
+    def __init__(self, game_id, black: GamePlayer, white: GamePlayer, width: int, height: int):
+        self.game_id = game_id
         self.black = black
         self.white = white
         self._next_player = self.black
         self.kifu = Kifu(width, height)
+
+    def __str__(self):
+        return f"ID[{self.game_id}]B[{self.black.player}]W[{self.white.player}]"
 
     @property
     def whose_turn(self) -> GamePlayer:
@@ -36,7 +40,7 @@ class Game:
         return self.whose_turn.color
 
     @classmethod
-    def from_challenge(cls, challenge: "Challenge", against: Player):
+    def from_challenge(cls, game_id, challenge: "Challenge", against: Player):
         black, white = random.sample([challenge.creator, against], 2)
 
         black_timer = create_timer(challenge.time_system, **challenge.time_control)
@@ -45,7 +49,7 @@ class Game:
         black = GamePlayer(black, Location.BLACK, black_timer)
         white = GamePlayer(white, Location.WHITE, white_timer)
 
-        return cls(black, white, challenge.width, challenge.height)
+        return cls(game_id, black, white, challenge.width, challenge.height)
 
     def play_move(self, color, coords):
         pass

@@ -3,7 +3,11 @@ from sqlalchemy import create_engine
 
 from config import TEST_DATABASE_URI
 from explorebaduk.database import BaseModel
-from explorebaduk.utils.database import make_user, make_token, populate_database_with_data
+from explorebaduk.utils.database import (
+    make_user,
+    make_token,
+    populate_database_with_data,
+)
 from explorebaduk.server import db
 
 

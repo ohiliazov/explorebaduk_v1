@@ -1,40 +1,38 @@
-import json
 import logging
 
-from marshmallow import ValidationError
-from explorebaduk.constants import MessageType
-from explorebaduk.exceptions import AuthenticationError, InvalidMessageError
-from explorebaduk.handlers.auth import handle_auth
-from explorebaduk.handlers.challenge import handle_challenge
-from explorebaduk.handlers.game import handle_game
-from explorebaduk.message import parse_message, InvalidMessageError
+from explorebaduk.exceptions import InvalidMessageError
+from explorebaduk.handlers.auth import (
+    handle_auth_login,
+    handle_auth_logout,
+)
+from explorebaduk.handlers.challenge import (
+    handle_challenge_new,
+    handle_challenge_cancel,
+    handle_challenge_join,
+    handle_challenge_leave,
+    handle_challenge_start,
+)
+from explorebaduk.message import parse_message_v2
 
 logger = logging.getLogger("explorebaduk")
 
+MESSAGE_HANDLERS = {
+    "auth": {"login": handle_auth_login, "logout": handle_auth_logout,},
+    "challenge": {
+        "new": handle_challenge_new,
+        "cancel": handle_challenge_cancel,
+        "join": handle_challenge_join,
+        "leave": handle_challenge_leave,
+        "start": handle_challenge_start,
+    },
+}
 
-async def handle_message(ws, message: str):
-    logger.info("handle_message: %s", message)
 
+async def handle_message_v2(ws, message: str):
+    logger.info("handle_message_v2")
     try:
-        message_type, data = parse_message(message)
-        logger.info("message_type: %s, data: %s", message_type, data)
-
-        message_type = MessageType(message_type)
-
-        if message_type is MessageType.AUTH:
-            await handle_auth(ws, data)
-
-        elif message_type is MessageType.CHALLENGE:
-            await handle_challenge(ws, data)
-
-        elif message_type is MessageType.GAME:
-            await handle_game(ws, data)
-
-        else:
-            await ws.send(f"ERROR {message_type}: not implemented")
-
-    except (AuthenticationError, InvalidMessageError, ValidationError) as err:
-        return await ws.send(f"ERROR {err}")
-
-    except json.decoder.JSONDecodeError as err:
-        return await ws.send(f"ERROR {err.msg}: line {err.lineno} column {err.colno} (char {err.pos})")
+        message_type, action, data = parse_message_v2(message)
+        message_handler = MESSAGE_HANDLERS[message_type][action]
+        await message_handler(ws, data)
+    except InvalidMessageError as err:
+        await ws.send(f"invalid message: {err}")

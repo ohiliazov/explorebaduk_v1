@@ -102,7 +102,9 @@ class CanadianTimer(Timer):
     After the main time is depleted, a player must make a certain number of moves within a certain period of time.
     """
 
-    def __init__(self, *, main_time: float, overtime: float, stones: int, delay: float = MOVE_DELAY, **kwargs):
+    def __init__(
+        self, *, main_time: float, overtime: float, stones: int, delay: float = MOVE_DELAY, **kwargs,
+    ):
         time_left = main_time + overtime
         super().__init__(time_left, **kwargs)
 

@@ -5,28 +5,34 @@ import sys
 import select
 
 
-def login_message(user_id: str = "1"):
+def auth_login(user_id: str = "1", *args):
     return f"auth login {string.ascii_letters}{int(user_id):012d}"
 
 
-def new_challenge(game_type: str = "0",):
-    pass
-
-
-def join_challenge(challenge_id: str = "1"):
-    return f"challenge join {challenge_id}"
-
-
-def cancel_challenge(challenge_id: str = "1"):
+def challenge_cancel(challenge_id: str = "1", *args):
     return f"challenge cancel {challenge_id}"
 
 
+def challenge_join(challenge_id: str = "1", *args):
+    return f"challenge join {challenge_id}"
+
+
+def challenge_leave(challenge_id: str = "1", *args):
+    return f"challenge leave {challenge_id}"
+
+
+def challenge_start(challenge_id: str = "1", opponent_id: str = "1", *args):
+    return f"challenge start {challenge_id} {opponent_id}"
+
+
 preset_messages = {
-    "login": login_message,
+    "login": auth_login,
     "logout": lambda: "auth logout",
-    "new": lambda: "challenge new GN[my game]GI[0R0W19H19]FL[000]TS[0M3600O0P0S0B0D0]",
-    "join": join_challenge,
-    "cancel": cancel_challenge,
+    "new": lambda: f"challenge new GN[Test]GI[0R0W19H19]FL[000]TS[0M3600O0P0S0B0D0]",
+    "cancel": challenge_cancel,
+    "join": challenge_join,
+    "leave": challenge_leave,
+    "start": challenge_start,
 }
 
 
