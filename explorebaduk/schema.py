@@ -62,8 +62,8 @@ class LoginSchema(BaseSchema):
 
 class ChallengeNewSchema(BaseSchema):
     __pattern__ = re.compile(
-        r"GN\[(?P<name>[\w\W]+)\]"    # challenge name
-        r"GI\["                       # game info
+        r"GN\[(?P<name>[\w\W]+)\]"  # challenge name
+        r"GI\["  # game info
         r"(?P<game_type>\d+)"
         r"R(?P<rules>\d+)"
         r"W(?P<width>\d+)"
@@ -71,12 +71,12 @@ class ChallengeNewSchema(BaseSchema):
         r"(MIN(?P<rank_lower>\d+))?"  # min rank is optional
         r"(MAX(?P<rank_upper>\d+))?"  # max rank is optional
         r"\]"
-        r"FL\["                       # flags
+        r"FL\["  # flags
         r"(?P<is_open>\d)"
         r"(?P<undo>\d)"
         r"(?P<pause>\d)"
         r"\]"
-        r"TS\["                       # time system
+        r"TS\["  # time system
         r"(?P<time_system>\d+)"
         r"(M(?P<main_time>\d+))?"
         r"(O(?P<overtime>\d+))?"

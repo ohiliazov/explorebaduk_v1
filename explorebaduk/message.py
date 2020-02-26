@@ -19,10 +19,7 @@ from explorebaduk.handlers.challenge import (
 logger = logging.getLogger("explorebaduk")
 
 MESSAGE_HANDLERS = {
-    "auth": {
-        "login": (LoginSchema, handle_auth_login),
-        "logout": (None, handle_auth_logout),
-    },
+    "auth": {"login": (LoginSchema, handle_auth_login), "logout": (None, handle_auth_logout),},
     "challenge": {
         "new": (ChallengeNewSchema, handle_challenge_new),
         "cancel": (ChallengeIdSchema, handle_challenge_cancel),
@@ -36,7 +33,8 @@ MESSAGE_HANDLERS = {
 async def handle_message(ws, message: str):
     logger.info(message)
 
-    message = message.split(' ', maxsplit=2)
+    # TODO: add message_id somewhere here if needed
+    message = message.split(" ", maxsplit=2)
 
     if len(message) < 2:
         return await ws.send("incorrect message")
