@@ -61,7 +61,7 @@ class LoginSchema(BaseSchema):
 
 
 class ChallengeNewSchema(BaseSchema):
-    __pattern__ = (
+    __pattern__ = re.compile(
         r"GN\[(?P<name>[\w\W]+)\]"    # challenge name
         r"GI\["                       # game info
         r"(?P<game_type>\d+)"

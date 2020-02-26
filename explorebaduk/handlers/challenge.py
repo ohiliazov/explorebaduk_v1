@@ -50,8 +50,7 @@ def next_game_id():
 
 
 async def handle_challenge_new(ws, data):
-    logger.info("create_challenge")
-
+    """Create new challenge"""
     player = PLAYERS[ws]
 
     if not player:
@@ -67,7 +66,7 @@ async def handle_challenge_new(ws, data):
 
 
 async def handle_challenge_cancel(ws, data: dict):
-    logger.info("cancel_challenge")
+    """Cancel challenge"""
 
     challenge_id = data["challenge_id"]
     challenge = CHALLENGES.get(challenge_id)
@@ -82,7 +81,7 @@ async def handle_challenge_cancel(ws, data: dict):
 
 
 async def handle_challenge_join(ws, data):
-    logger.info("join_challenge")
+    """Join challenge"""
 
     challenge_id = data["challenge_id"]
 
@@ -107,7 +106,7 @@ async def handle_challenge_join(ws, data):
 
 
 async def handle_challenge_leave(ws, data):
-    logger.info("leave_challenge")
+    """Leave challenge"""
 
     challenge_id = data["challenge_id"]
 
@@ -116,10 +115,7 @@ async def handle_challenge_leave(ws, data):
 
     player = PLAYERS[ws]
 
-    print(CHALLENGES)
-    print(challenge_id)
     challenge = CHALLENGES.get(challenge_id)
-    print(challenge)
     if not challenge:
         return await ws.send(challenge_error("leave", "not found"))
 
@@ -138,7 +134,7 @@ async def handle_challenge_leave(ws, data):
 
 
 async def handle_challenge_start(ws, data: dict):
-    logger.info("challenge_start")
+    """Start game from challenge"""
 
     challenge_id = data["challenge_id"]
     challenge = CHALLENGES.get(challenge_id)

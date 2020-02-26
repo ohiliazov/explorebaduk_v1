@@ -19,7 +19,6 @@ def player_left(player: Player):
 
 async def handle_auth_login(ws, data: dict):
     """Login player"""
-    logger.info("handle_login")
 
     if ws in PLAYERS:
         return await ws.send("auth login ERROR already logged in")
@@ -47,7 +46,6 @@ async def handle_auth_login(ws, data: dict):
 
 async def handle_auth_logout(ws, data):
     """Logout player"""
-    logger.info("handle_logout")
 
     if ws not in PLAYERS:
         return await ws.send("auth logout OK")
