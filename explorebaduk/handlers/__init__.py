@@ -17,7 +17,10 @@ from explorebaduk.message import parse_message_v2
 logger = logging.getLogger("explorebaduk")
 
 MESSAGE_HANDLERS = {
-    "auth": {"login": handle_auth_login, "logout": handle_auth_logout,},
+    "auth": {
+        "login": handle_auth_login,
+        "logout": handle_auth_logout,
+    },
     "challenge": {
         "new": handle_challenge_new,
         "cancel": handle_challenge_cancel,

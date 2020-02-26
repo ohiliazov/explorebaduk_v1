@@ -1,8 +1,10 @@
+import re
 from typing import Type, Any
 from enum import Enum
 from marshmallow import (
     Schema,
     fields,
+    pre_load,
     post_load,
     validate,
     validates_schema,
@@ -39,15 +41,59 @@ class EnumValidator(validate.Validator):
         return value
 
 
-class ChallengeNewSchema(Schema):
+class BaseSchema(Schema):
+    __pattern__ = None
+
+    @pre_load
+    def parse_message(self, message, **kwargs):
+        data = self.__pattern__.match(message)
+
+        if not data:
+            raise ValidationError(message)
+
+        return {key: value for key, value in data.groupdict().items() if value is not None}
+
+
+class LoginSchema(BaseSchema):
+    __pattern__ = re.compile(r"^(?P<token>\w{64})$")
+
+    token = fields.String(required=True, validate=validate.Length(equal=64))
+
+
+class ChallengeNewSchema(BaseSchema):
+    __pattern__ = (
+        r"GN\[(?P<name>[\w\W]+)\]"    # challenge name
+        r"GI\["                       # game info
+        r"(?P<game_type>\d+)"
+        r"R(?P<rules>\d+)"
+        r"W(?P<width>\d+)"
+        r"H(?P<height>\d+)"
+        r"(MIN(?P<rank_lower>\d+))?"  # min rank is optional
+        r"(MAX(?P<rank_upper>\d+))?"  # max rank is optional
+        r"\]"
+        r"FL\["                       # flags
+        r"(?P<is_open>\d)"
+        r"(?P<undo>\d)"
+        r"(?P<pause>\d)"
+        r"\]"
+        r"TS\["                       # time system
+        r"(?P<time_system>\d+)"
+        r"(M(?P<main_time>\d+))?"
+        r"(O(?P<overtime>\d+))?"
+        r"(P(?P<periods>\d+))?"
+        r"(S(?P<stones>\d+))?"
+        r"(B(?P<bonus>\d+))?"
+        r"(D(?P<delay>\d+))?"
+        r"\]"
+    )
     name = fields.String(required=True)
 
     game_type = fields.Integer(required=True, validate=EnumValidator(GameType))
     rules = fields.Integer(required=True, validate=EnumValidator(Ruleset))
     width = fields.Integer(required=True, validate=validate.Range(min=5, max=52))
     height = fields.Integer(required=True, validate=validate.Range(min=5, max=52))
-    rank_lower = fields.Integer(missing=0, allow_none=True, validate=validate.Range(min=0, max=3000))
-    rank_upper = fields.Integer(missing=3000, allow_none=True, validate=validate.Range(min=0, max=3000))
+    rank_lower = fields.Integer(missing=0, validate=validate.Range(min=0, max=3000))
+    rank_upper = fields.Integer(missing=3000, validate=validate.Range(min=0, max=3000))
 
     is_open = fields.Boolean(required=True)
     undo = fields.Boolean(required=True)
@@ -84,20 +130,12 @@ class ChallengeNewSchema(Schema):
         return data
 
 
-class ChallengeIdSchema(Schema):
+class ChallengeIdSchema(BaseSchema):
+    __pattern__ = re.compile(r"^(?P<challenge_id>\d+)$")
     challenge_id = fields.Integer(required=True)
 
 
-class PlayerRequestSchema(ChallengeIdSchema):
-    color = fields.Integer(missing=0)
-    handicap = fields.Integer(missing=0)
-    komi = fields.Float(missing=None)
-
-    @post_load
-    def convert_enums(self, data, **kwargs):
-        data["color"] = PlayerColor(data["color"])
-        return data
-
-
-class ChallengeStartSchema(ChallengeIdSchema):
+class ChallengeStartSchema(BaseSchema):
+    __pattern__ = re.compile(r"^(?P<challenge_id>\d+) (?P<opponent_id>\d+)$")
+    challenge_id = fields.Integer(required=True)
     opponent_id = fields.Integer(required=True)

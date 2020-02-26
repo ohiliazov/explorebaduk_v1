@@ -6,7 +6,6 @@ from explorebaduk.server import PLAYERS, CHALLENGES
 from explorebaduk.schema import (
     ChallengeNewSchema,
     ChallengeIdSchema,
-    PlayerRequestSchema,
     ChallengeStartSchema,
 )
 
@@ -52,7 +51,6 @@ def next_game_id():
 
 async def handle_challenge_new(ws, data):
     logger.info("create_challenge")
-    data = ChallengeNewSchema().load(data)
 
     player = PLAYERS[ws]
 
@@ -70,7 +68,6 @@ async def handle_challenge_new(ws, data):
 
 async def handle_challenge_cancel(ws, data: dict):
     logger.info("cancel_challenge")
-    data = ChallengeIdSchema().load(data)
 
     challenge_id = data["challenge_id"]
     challenge = CHALLENGES.get(challenge_id)
@@ -86,7 +83,6 @@ async def handle_challenge_cancel(ws, data: dict):
 
 async def handle_challenge_join(ws, data):
     logger.info("join_challenge")
-    data = PlayerRequestSchema().load(data)
 
     challenge_id = data["challenge_id"]
 
@@ -112,7 +108,6 @@ async def handle_challenge_join(ws, data):
 
 async def handle_challenge_leave(ws, data):
     logger.info("leave_challenge")
-    data = ChallengeIdSchema().load(data)
 
     challenge_id = data["challenge_id"]
 
@@ -144,7 +139,6 @@ async def handle_challenge_leave(ws, data):
 
 async def handle_challenge_start(ws, data: dict):
     logger.info("challenge_start")
-    data = ChallengeStartSchema().load(data)
 
     challenge_id = data["challenge_id"]
     challenge = CHALLENGES.get(challenge_id)
