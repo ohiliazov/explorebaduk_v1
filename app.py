@@ -1,8 +1,7 @@
 import websockets
 import logging
 
-from explorebaduk.message import handle_message
-from explorebaduk.handlers.sync import register, unregister
+from explorebaduk.handlers import handle_message, register, unregister
 
 logger = logging.getLogger("app")
 
