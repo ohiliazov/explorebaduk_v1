@@ -3,17 +3,10 @@ import logging
 
 from explorebaduk.models import Player, Challenge, Game
 from explorebaduk.server import PLAYERS, CHALLENGES
-from explorebaduk.schema import (
-    ChallengeNewSchema,
-    ChallengeIdSchema,
-    ChallengeStartSchema,
-)
-
-from explorebaduk.helpers import send_sync_messages, error_message, get_player_by_id
+from explorebaduk.helpers import send_sync_messages, error_message, get_player_by_id, get_challenge_by_id
 
 logger = logging.getLogger("challenge_handler")
 
-NEXT_CHALLENGE_ID = 0
 NEXT_GAME_ID = 0  # TODO: get ID from database
 
 
@@ -37,12 +30,6 @@ def notify_player_joined(challenge: Challenge, player: Player) -> str:
     return f"challenge {challenge} joined {str(player)}"
 
 
-def next_challenge_id():
-    global NEXT_CHALLENGE_ID
-    NEXT_CHALLENGE_ID += 1
-    return NEXT_CHALLENGE_ID
-
-
 def next_game_id():
     global NEXT_GAME_ID
     NEXT_GAME_ID += 1
@@ -56,25 +43,26 @@ async def handle_challenge_new(ws, data):
     if not player:
         return await ws.send(challenge_error("new", "not logged in"))
 
-    challenge_id = next_challenge_id()
-    challenge = Challenge(challenge_id, player, data)
+    if get_challenge_by_id(player.id):
+        return await ws.send(challenge_error("new", "already exists"))
 
-    message = challenge_created(challenge)
-    CHALLENGES[challenge_id] = challenge
+    challenge = Challenge(player.id, player, data)
 
-    return await send_sync_messages(message)
+    CHALLENGES.add(challenge)
+
+    return await send_sync_messages(challenge_created(challenge))
 
 
 async def handle_challenge_cancel(ws, data: dict):
     """Cancel challenge"""
 
     challenge_id = data["challenge_id"]
-    challenge = CHALLENGES.get(challenge_id)
+    challenge = get_challenge_by_id(challenge_id)
 
-    if challenge:
+    if not challenge:
         return await ws.send(challenge_error("cancel", "not found"))
 
-    del CHALLENGES[challenge_id]
+    CHALLENGES.remove(challenge)
 
     message = challenge_removed(challenge)
     return await send_sync_messages(message)
@@ -85,7 +73,7 @@ async def handle_challenge_join(ws, data):
 
     challenge_id = data["challenge_id"]
 
-    challenge = CHALLENGES.get(challenge_id)
+    challenge = get_challenge_by_id(challenge_id)
     if not challenge:
         return await ws.send(challenge_error("join", "not found"))
 
@@ -97,12 +85,9 @@ async def handle_challenge_join(ws, data):
     if player in challenge.pending:
         return await ws.send(challenge_error("join", "already joined"))
 
-    player_request = challenge.join_player(player, data)
+    await challenge.add_player(player)
 
-    message_to_joined = f"challenge join OK {challenge_id}"
-    message_to_creator = f"challenge joined {player_request}"
-
-    return await asyncio.gather(player.send(message_to_joined), challenge.creator.send(message_to_creator))
+    return await ws.send(f"challenge join OK {challenge_id}")
 
 
 async def handle_challenge_leave(ws, data):
@@ -115,7 +100,7 @@ async def handle_challenge_leave(ws, data):
 
     player = PLAYERS[ws]
 
-    challenge = CHALLENGES.get(challenge_id)
+    challenge = get_challenge_by_id(challenge_id)
     if not challenge:
         return await ws.send(challenge_error("leave", "not found"))
 
@@ -125,19 +110,16 @@ async def handle_challenge_leave(ws, data):
     if player not in challenge.pending:
         return await ws.send(challenge_error("leave", "not joined"))
 
-    player_request = challenge.leave_player(player)
+    await challenge.remove_player(player)
 
-    message_to_joined = f"challenge leave OK {challenge_id}"
-    message_to_creator = f"challenge left {player_request}"
-
-    return await asyncio.gather(player.send(message_to_joined), challenge.creator.send(message_to_creator))
+    return await ws.send(f"challenge leave OK {challenge_id}")
 
 
 async def handle_challenge_start(ws, data: dict):
     """Start game from challenge"""
 
     challenge_id = data["challenge_id"]
-    challenge = CHALLENGES.get(challenge_id)
+    challenge = get_challenge_by_id(challenge_id)
 
     # challenge should exist
     if not challenge:
@@ -164,10 +146,13 @@ async def handle_challenge_start(ws, data: dict):
     game = Game.from_challenge(game_id, challenge, opponent)
     game.black.start_timer()
 
+    CHALLENGES.remove(challenge)
+
+    creator_color = "black" if game.black.player is creator else "white"
+    opponent_color = "black" if game.black.player is opponent else "white"
+
     await asyncio.gather(
-        creator.send(f"challenge start {challenge_id}"),
-        opponent.send(f"challenge start {challenge_id}"),
+        creator.send(f"challenge start {challenge_id} {creator_color}"),
+        opponent.send(f"challenge start {challenge_id} {opponent_color}"),
         send_sync_messages(challenge_started(game)),
     )
-
-    del CHALLENGES[challenge_id]

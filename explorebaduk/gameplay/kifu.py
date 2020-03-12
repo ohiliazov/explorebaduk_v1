@@ -2,17 +2,18 @@ import numpy as np
 
 from explorebaduk.gameplay.board import Board, Location, IllegalMoveError
 from explorebaduk.gameplay.sgflib import Property, Node
-from explorebaduk.utils.sgf import sgf_coord_to_int, int_coord_to_sgf, create_new_sgf
+from explorebaduk.utils.sgf import sgf_coord_to_int, create_new_sgf
 
 
 class Kifu:
-    def __init__(
-        self, width: int, height: int, handicap: int = 0, komi: float = 7.5, turn: str = "B",
-    ):
+    def __init__(self, width: int, height: int, handicap: int = 0, komi: float = 7.5):
         self._shape = (width, height)
-        self._turn = turn
         self.cursor = create_new_sgf(width, height, handicap, komi)
         self.board = self.get_root_board()
+
+    @property
+    def turn_color(self):
+        return "black" if self.board.turn is Location.BLACK else "white"
 
     def get_root_board(self) -> Board:
         root_node = self.cursor.root_node
@@ -34,16 +35,32 @@ class Kifu:
     def add_comment(self, new_comment: str):
         self.cursor.node.add_comment(new_comment)
 
-    def play_move(self, turn, coord, flip_turn: bool = True) -> None:
-        try:
-            self.board.move(coord, flip_turn)
-        except IllegalMoveError as err:
-            raise err
+    def play_move(self, color: str, coord: str, flip_turn: bool = True) -> None:
+        if color != self.turn_color:
+            raise IllegalMoveError("Invalid move order")
 
-        if coord != "pass":
-            coord = int_coord_to_sgf(coord)
+        self.board.move(sgf_coord_to_int(coord), flip_turn)
 
-        move_prop = Property(turn, [coord])
+        turn_label = "B" if color == "black" else "W"
+
+        move_prop = Property(turn_label, [coord])
+        node = Node([move_prop])
+
+        self.cursor.append_node(node)
+        self.cursor.next()
+
+        return self.board.current
+
+    def make_pass(self, color: str) -> None:
+        if color != self.turn_color:
+            raise IllegalMoveError("Invalid move order")
+
+        self.board.make_pass()
+
+        coord = ""
+        turn_label = "B" if color == "black" else "W"
+
+        move_prop = Property(turn_label, [coord])
         node = Node([move_prop])
 
         self.cursor.append_node(node)

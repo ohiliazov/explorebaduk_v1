@@ -1,7 +1,13 @@
 import logging
 from pprint import pprint
 
-from explorebaduk.schema import LoginSchema, ChallengeNewSchema, ChallengeIdSchema, ChallengeStartSchema
+from explorebaduk.messages import (
+    LoginSchema,
+    ChallengeNewSchema,
+    ChallengeIdSchema,
+    ChallengeStartSchema,
+    GameMoveSchema,
+)
 
 from marshmallow import ValidationError
 from explorebaduk.handlers.auth import (
@@ -15,11 +21,15 @@ from explorebaduk.handlers.challenge import (
     handle_challenge_leave,
     handle_challenge_start,
 )
+from explorebaduk.handlers.game import handle_game_move
 
 logger = logging.getLogger("explorebaduk")
 
 MESSAGE_HANDLERS = {
-    "auth": {"login": (LoginSchema, handle_auth_login), "logout": (None, handle_auth_logout),},
+    "auth": {
+        "login": (LoginSchema, handle_auth_login),
+        "logout": (None, handle_auth_logout),
+    },
     "challenge": {
         "new": (ChallengeNewSchema, handle_challenge_new),
         "cancel": (ChallengeIdSchema, handle_challenge_cancel),
@@ -27,6 +37,9 @@ MESSAGE_HANDLERS = {
         "leave": (ChallengeIdSchema, handle_challenge_leave),
         "start": (ChallengeStartSchema, handle_challenge_start),
     },
+    "game": {
+        "move": (GameMoveSchema, handle_game_move)
+    }
 }
 
 

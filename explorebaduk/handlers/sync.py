@@ -10,7 +10,7 @@ def all_players() -> List[str]:
 
 
 def all_challenges() -> List[str]:
-    return [challenge_created(challenge) for challenge in CHALLENGES.values()]
+    return [challenge_created(challenge) for challenge in CHALLENGES]
 
 
 async def register(ws):

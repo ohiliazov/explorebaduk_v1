@@ -6,10 +6,10 @@ from explorebaduk.exceptions import TimerError
 
 
 class Timer(metaclass=ABCMeta):
-    def __init__(self, time_left: float, delay: float = MOVE_DELAY, **kwargs):
+    def __init__(self, remaining: float, delay: float = MOVE_DELAY, **kwargs):
         self._started_at = None
 
-        self.time_left = time_left
+        self.remaining = remaining
         self.delay = delay
 
     def _reset(self):
@@ -19,13 +19,19 @@ class Timer(metaclass=ABCMeta):
     def started(self):
         return self._started_at is not None
 
+    @property
+    def time_left(self):
+        if self.started:
+            return self.remaining + self._started_at - time.monotonic()
+        return self.remaining
+
     def start(self):
         if self.started:
             raise TimerError("Already started")
 
         self._started_at = time.monotonic() + self.delay
 
-        return self.time_left
+        return self.remaining
 
     def stop(self):
         if not self.started:
@@ -36,12 +42,12 @@ class Timer(metaclass=ABCMeta):
         if time_used > 0:
             self.process_time(time_used)
 
-            if self.time_left < 0:
+            if self.remaining < 0:
                 raise TimerError(f"Out of time")
 
         self._reset()
 
-        return self.time_left
+        return self.remaining
 
     @abstractmethod
     async def process_time(self, time_used: float) -> None:
@@ -54,8 +60,8 @@ class NoTimeTimer(Timer):
     """
 
     def __init__(self, **kwargs):
-        time_left = float("+inf")
-        super().__init__(time_left, **kwargs)
+        remaining = float("+inf")
+        super().__init__(remaining, **kwargs)
 
     def process_time(self, time_used: float) -> None:
         return None
@@ -71,7 +77,7 @@ class AbsoluteTimer(Timer):
         super().__init__(main_time, **kwargs)
 
     def process_time(self, time_used: float) -> None:
-        self.time_left -= time_used
+        self.remaining -= time_used
 
 
 class ByoyomiTimer(Timer):
@@ -82,19 +88,19 @@ class ByoyomiTimer(Timer):
     """
 
     def __init__(self, *, main_time: float, overtime: float, periods: int, **kwargs):
-        time_left = main_time + overtime * periods
-        super().__init__(time_left, **kwargs)
+        remaining = main_time + overtime * periods
+        super().__init__(remaining, **kwargs)
 
         self.overtime = overtime
         self.periods = periods
 
     def process_time(self, time_used: float) -> None:
-        self.time_left -= time_used
+        self.remaining -= time_used
 
-        periods_left = self.time_left // self.overtime
+        periods_left = self.remaining // self.overtime
 
         if 0 <= periods_left < self.periods:
-            self.time_left = self.overtime * (periods_left + 1)
+            self.remaining = self.overtime * (periods_left + 1)
 
 
 class CanadianTimer(Timer):
@@ -103,23 +109,23 @@ class CanadianTimer(Timer):
     """
 
     def __init__(
-        self, *, main_time: float, overtime: float, stones: int, delay: float = MOVE_DELAY, **kwargs,
+        self, *, main_time: float, overtime: float, stones: int, **kwargs,
     ):
-        time_left = main_time + overtime
-        super().__init__(time_left, **kwargs)
+        remaining = main_time + overtime
+        super().__init__(remaining, **kwargs)
 
         self.overtime = overtime
         self.stones = self.stones_left = stones
 
     def process_time(self, time_used: float) -> None:
-        self.time_left -= time_used
+        self.remaining -= time_used
 
-        if self.time_left < self.overtime:
+        if self.remaining < self.overtime:
             self.stones_left -= 1
 
             # next overtime period
             if self.stones_left == 0:
-                self.time_left = self.overtime
+                self.remaining = self.overtime
                 self.stones_left = self.stones
 
         else:
@@ -138,7 +144,7 @@ class FischerTimer(Timer):
         self.bonus = bonus
 
     def process_time(self, time_used: float) -> None:
-        self.time_left -= time_used + self.bonus
+        self.remaining -= time_used + self.bonus
 
 
 TIMERS = {

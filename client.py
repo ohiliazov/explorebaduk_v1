@@ -1,8 +1,19 @@
 import asyncio
+import random
 import string
 import websockets
 import sys
 import select
+
+BOARD_SIZE_CHOICES = ["19:19", "13:13", "9:9"]
+FLAGS_CHOICES = ["000", "001", "010", "011", "100", "101", "110", "111"]
+TIME_CONTROL_CHOICES = [
+    f"0",
+    f"1M{random.randint(60, 3600)}",
+    f"2M{random.randint(60, 3600)}O60P5",
+    f"3M{random.randint(60, 3600)}O600S15",
+    f"4M{random.randint(60, 3600)}B7",
+]
 
 
 def auth_login(user_id: str = "1", *args):
@@ -25,10 +36,19 @@ def challenge_start(challenge_id: str = "1", opponent_id: str = "1", *args):
     return f"challenge start {challenge_id} {opponent_id}"
 
 
+def challenge_new():
+    game_name = "Test Game Request"
+    board_size = random.choice(BOARD_SIZE_CHOICES)
+    flags = random.choice(FLAGS_CHOICES)
+    time_control = random.choice(TIME_CONTROL_CHOICES)
+
+    return f"challenge new GN[{game_name}]SZ[{board_size}]FL[{flags}]TS[{time_control}]"
+
+
 preset_messages = {
     "login": auth_login,
     "logout": lambda: "auth logout",
-    "new": lambda: f"challenge new GN[Test]GI[0R0W19H19]FL[000]TS[0M3600O0P0S0B0D0]",
+    "new": challenge_new,
     "cancel": challenge_cancel,
     "join": challenge_join,
     "leave": challenge_leave,
