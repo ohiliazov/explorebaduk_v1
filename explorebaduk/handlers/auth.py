@@ -51,6 +51,9 @@ async def handle_auth_logout(ws, data):
         return await ws.send("auth logout OK")
 
     player = PLAYERS[ws]
+
+
+
     message = player_left(player)
 
     del PLAYERS[ws]

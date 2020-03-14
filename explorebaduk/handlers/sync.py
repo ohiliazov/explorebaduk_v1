@@ -1,30 +1,25 @@
-from typing import List
+import asyncio
 from explorebaduk.server import CONNECTED, PLAYERS, CHALLENGES
-from explorebaduk.handlers.auth import player_joined, player_left
-from explorebaduk.handlers.challenge import challenge_created
-from explorebaduk.helpers import send_messages, send_sync_messages
-
-
-def all_players() -> List[str]:
-    return [player_joined(player) for player in PLAYERS.values()]
-
-
-def all_challenges() -> List[str]:
-    return [challenge_created(challenge) for challenge in CHALLENGES]
-
+from explorebaduk.handlers import handle_info_players, handle_info_challenges, handle_info_games, handle_auth_logout, handle_challenge_cancel
+from explorebaduk.helpers import get_challenge_by_id
 
 async def register(ws):
     CONNECTED.add(ws)
-
-    messages = all_players() + all_challenges()
-
-    if messages:
-        await send_messages(ws, messages)
+    await asyncio.gather(
+        handle_info_players(ws, {}),
+        handle_info_challenges(ws, {}),
+        handle_info_games(ws, {}),
+    )
 
 
 async def unregister(ws):
-    CONNECTED.remove(ws)
     if ws in PLAYERS:
         player = PLAYERS[ws]
-        del PLAYERS[ws]
-        await send_sync_messages([player_left(player)])
+        challenge = get_challenge_by_id(player.id)
+
+        if challenge:
+            await handle_challenge_cancel(ws, )
+
+        await handle_auth_logout(ws, {})
+
+    CONNECTED.remove(ws)

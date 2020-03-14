@@ -56,8 +56,8 @@ async def handle_challenge_new(ws, data):
 async def handle_challenge_cancel(ws, data: dict):
     """Cancel challenge"""
 
-    challenge_id = data["challenge_id"]
-    challenge = get_challenge_by_id(challenge_id)
+    player = PLAYERS[ws]
+    challenge = get_challenge_by_id(player.id)
 
     if not challenge:
         return await ws.send(challenge_error("cancel", "not found"))
