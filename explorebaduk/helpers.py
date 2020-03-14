@@ -4,7 +4,8 @@ from typing import List, Union, Type, Any
 
 from marshmallow import validate, ValidationError
 
-from explorebaduk.server import CONNECTED, PLAYERS, CHALLENGES
+from explorebaduk.models import Player, Challenge, Game
+from explorebaduk.server import CONNECTED, PLAYERS, CHALLENGES, GAMES
 
 
 class EnumValidator(validate.Validator):
@@ -28,20 +29,22 @@ class EnumValidator(validate.Validator):
         return value
 
 
-def get_player_by_id(player_id: int):
+def get_player_by_id(player_id: int) -> Player:
     for player in PLAYERS.values():
         if player.id == player_id:
             return player
 
 
-def get_challenge_by_id(challenge_id: int):
+def get_challenge_by_id(player_id: int) -> Challenge:
     for challenge in CHALLENGES:
-        if challenge.challenge_id == challenge_id:
+        if challenge.challenge_id == player_id:
             return challenge
 
 
-def error_message(message_type, action, reason):
-    return f"{message_type} {action} ERROR ({reason})"
+def get_game_by_id(player_id: int) -> Game:
+    for game in GAMES:
+        if game.black.player.id == player_id or game.white.player.id == player_id:
+            return game
 
 
 async def send_messages(ws, messages: Union[str, List[str]]):

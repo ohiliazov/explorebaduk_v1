@@ -4,9 +4,9 @@ from explorebaduk.models.player import Player
 
 
 class Challenge:
-    def __init__(self, challenge_id, creator: Player, data: dict):
-        self.challenge_id = challenge_id
-        self.creator = creator
+    def __init__(self, player: Player, data: dict):
+        self.challenge_id = player.id
+        self.creator = player
 
         # game info
         self.name = data["name"]
@@ -19,7 +19,7 @@ class Challenge:
         self.pause = data["pause"]
 
         # time control
-        self.time_system = data["time_system"].value
+        self.time_system = data["time_system"]
         self.main_time = data["main_time"]
         self.overtime = data["overtime"]
         self.periods = data["periods"]
@@ -32,12 +32,13 @@ class Challenge:
         return (
             f"ID[{self.challenge_id}]GN[{self.name}]SZ[{self.width}:{self.height}]"
             f"FL[{self.is_open:d}{self.undo:d}{self.pause:d}]"
-            f"TS[{self.time_system}M{self.main_time}O{self.overtime}P{self.periods}S{self.stones}B{self.bonus}]"
+            f"TS[{self.time_system.value}M{self.main_time}O{self.overtime}P{self.periods}S{self.stones}B{self.bonus}]"
         )
 
     @property
-    def time_control(self):
+    def time_settings(self):
         return {
+            "time_system": self.time_system,
             "main_time": self.main_time,
             "overtime": self.overtime,
             "periods": self.periods,
@@ -47,11 +48,6 @@ class Challenge:
 
     async def add_player(self, player: Player):
         self.pending.add(player)
-        print(self.pending)
-
-        await self.creator.send(f"challenge joined {player}")
 
     async def remove_player(self, player: Player):
         self.pending.remove(player)
-
-        await self.creator.send(f"challenge left {player}")

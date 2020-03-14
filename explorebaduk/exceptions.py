@@ -16,3 +16,7 @@ class TimerError(Exception):
 
 class GameError(Exception):
     pass
+
+
+class MessageHandlerError(Exception):
+    pass

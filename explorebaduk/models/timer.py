@@ -156,7 +156,7 @@ TIMERS = {
 }
 
 
-def create_timer(time_system: TimeSystem, **time_control_data) -> Timer:
+def create_timer(time_system: TimeSystem, **time_settings) -> Timer:
     """
     Create timer for
     :param time_system:

@@ -3,13 +3,13 @@ import random
 from explorebaduk.gameplay.kifu import Kifu
 from explorebaduk.models.player import Player
 from explorebaduk.models.challenge import Challenge
-from explorebaduk.models.timer import Timer, create_timer
+from explorebaduk.models.timer import create_timer
 
 
 class GamePlayer:
-    def __init__(self, player: Player, timer: Timer):
+    def __init__(self, player: Player, time_settings: dict):
         self.player = player
-        self.timer = timer
+        self.timer = create_timer(**time_settings)
 
     @property
     def time_left(self):
@@ -23,44 +23,33 @@ class GamePlayer:
 
 
 class Game:
-    def __init__(self, game_id, black: GamePlayer, white: GamePlayer, width: int, height: int):
+    def __init__(self, game_id, black: Player, white: Player, challenge: Challenge):
         self.game_id = game_id
-        self.black = black
-        self.white = white
-        self.players = {
-            "black": black,
-            "white": white,
-        }
-        self.kifu = Kifu(width, height)
+        self.black = GamePlayer(black, challenge.time_settings)
+        self.white = GamePlayer(white, challenge.time_settings)
+        self.kifu = Kifu(challenge.width, challenge.height)
 
     def __str__(self):
         return f"ID[{self.game_id}]B[{self.black.player}]W[{self.white.player}]"
 
-    @classmethod
-    def from_challenge(cls, game_id, challenge: "Challenge", against: Player):
-        black, white = random.sample([challenge.creator, against], 2)
+    @property
+    def whose_turn(self):
+        return self.kifu.turn_color
 
-        black_timer = create_timer(challenge.time_system, **challenge.time_control)
-        white_timer = create_timer(challenge.time_system, **challenge.time_control)
-
-        black = GamePlayer(black, black_timer)
-        white = GamePlayer(white, white_timer)
-
-        return cls(game_id, black, white, challenge.width, challenge.height)
-
-    def play_move(self, player: Player, color: str, coord: str):
-        if self.players[color].player is not player:
+    def play_move(self, color: str, coord: str):
+        if color != self.whose_turn:
             raise Exception("Invalid player data")
         self.kifu.play_move(color, coord)
 
-    def make_pass(self, player: Player, color: str):
-        if self.players[color].player is not player:
+    def make_pass(self, color: str):
+        if color != self.whose_turn:
             raise Exception("Invalid player data")
         self.kifu.make_pass(color)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from explorebaduk.constants import TimeSystem
+
     black = Player(None, 1)
     white = Player(None, 2)
 

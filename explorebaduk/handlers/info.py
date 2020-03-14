@@ -14,4 +14,4 @@ async def handle_info_challenges(ws, data):
 
 async def handle_info_games(ws, data):
     if GAMES:
-        return await asyncio.gather(*[ws.send(f"info games {game}") for game in GAMES.values()])
+        return await asyncio.gather(*[ws.send(f"info games {game}") for game in GAMES])

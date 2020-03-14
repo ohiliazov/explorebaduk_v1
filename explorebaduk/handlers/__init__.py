@@ -1,6 +1,8 @@
 import logging
+from marshmallow import ValidationError
 from pprint import pprint
 
+from explorebaduk.exceptions import MessageHandlerError
 from explorebaduk.messages import (
     LoginSchema,
     ChallengeNewSchema,
@@ -9,7 +11,6 @@ from explorebaduk.messages import (
     GameMoveSchema,
 )
 
-from marshmallow import ValidationError
 from explorebaduk.handlers.auth import (
     handle_auth_login,
     handle_auth_logout,
@@ -32,10 +33,7 @@ from explorebaduk.handlers.sync import register, unregister
 logger = logging.getLogger("explorebaduk")
 
 MESSAGE_HANDLERS = {
-    "auth": {
-        "login": (LoginSchema, handle_auth_login),
-        "logout": (None, handle_auth_logout),
-    },
+    "auth": {"login": (LoginSchema, handle_auth_login), "logout": (None, handle_auth_logout),},
     "challenge": {
         "new": (ChallengeNewSchema, handle_challenge_new),
         "cancel": (None, handle_challenge_cancel),
@@ -43,14 +41,12 @@ MESSAGE_HANDLERS = {
         "leave": (ChallengeIdSchema, handle_challenge_leave),
         "start": (ChallengeStartSchema, handle_challenge_start),
     },
-    "game": {
-        "move": (GameMoveSchema, handle_game_move)
-    },
+    "game": {"move": (GameMoveSchema, handle_game_move)},
     "info": {
         "players": (None, handle_info_players),
         "challenges": (None, handle_info_challenges),
         "games": (None, handle_info_games),
-    }
+    },
 }
 
 
@@ -61,19 +57,19 @@ async def handle_message(ws, message: str):
     message = message.split(" ", maxsplit=2)
 
     if len(message) < 2:
-        return await ws.send("incorrect message")
+        return await ws.send(f"ERROR [{message}] incorrect message")
 
     message_type, action, *data = message
     if message_type not in MESSAGE_HANDLERS:
-        return await ws.send("incorrect message_type")
+        return await ws.send(f"ERROR [{message_type} {action}] invalid message_type")
 
     if action not in MESSAGE_HANDLERS[message_type]:
-        return await ws.send("incorrect action")
+        return await ws.send(f"ERROR [{message_type} {action}] invalid action")
 
     message_schema, message_handler = MESSAGE_HANDLERS[message_type][action]
 
     if message_schema and not data:
-        return await ws.send(f"no data provided")
+        return await ws.send(f"ERROR [{message_type} {action}] no data")
 
     try:
         parsed_data = message_schema().load(*data) if message_schema else {}
@@ -81,8 +77,8 @@ async def handle_message(ws, message: str):
 
         await message_handler(ws, parsed_data)
 
-    except ValidationError as err:
-        await ws.send(f"validation error {err}")
+    except (ValidationError, MessageHandlerError) as err:
+        await ws.send(f"ERROR [{message_type} {action}] {err}")
 
-    except Exception as err:
-        await ws.send(f"unexpected error {err}")
+    except Exception:
+        await ws.send(f"ERROR [{message_type} {action}] unexpected")
