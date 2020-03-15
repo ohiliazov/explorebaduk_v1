@@ -33,19 +33,42 @@ class Game:
         return f"ID[{self.game_id}]B[{self.black.player}]W[{self.white.player}]"
 
     @property
-    def whose_turn(self):
+    def turn_color(self):
         return self.kifu.turn_color
 
+    @property
+    def current_player(self):
+        return self.black if self.turn_color == "black" else self.white
+
+    @property
+    def history(self):
+        return self.kifu.history
+
+    @property
+    def finished(self):
+        return (self.history[-1] == 'pass' and self.history[-2] == 'pass') if len(self.history) > 1 else False
+
+    def get_player(self, color: str):
+        if color == "black":
+            return self.black
+        elif color == "white":
+            return self.white
+
     def play_move(self, color: str, coord: str):
-        if color != self.whose_turn:
+        if self.finished:
+            raise Exception("Game finished")
+        if color != self.turn_color:
             raise Exception("Invalid player data")
         self.kifu.play_move(color, coord)
 
     def make_pass(self, color: str):
-        if color != self.whose_turn:
+        if color != self.turn_color:
             raise Exception("Invalid player data")
-        self.kifu.make_pass(color)
 
+        player = self.get_player(color)
+        player.stop_timer()
+        self.kifu.make_pass(color)
+        opponent = []
 
 if __name__ == "__main__":
     from explorebaduk.constants import TimeSystem

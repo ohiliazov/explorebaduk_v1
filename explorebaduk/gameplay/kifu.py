@@ -10,6 +10,7 @@ class Kifu:
         self._shape = (width, height)
         self.cursor = create_new_sgf(width, height, handicap, komi)
         self.board = self.get_root_board()
+        self.history = []
 
     @property
     def turn_color(self):
@@ -49,6 +50,8 @@ class Kifu:
         self.cursor.append_node(node)
         self.cursor.next()
 
+        self.history.append(coord)
+
         return self.board.current
 
     def make_pass(self, color: str) -> None:
@@ -65,5 +68,7 @@ class Kifu:
 
         self.cursor.append_node(node)
         self.cursor.next()
+
+        self.history.append('pass')
 
         return self.board.current
