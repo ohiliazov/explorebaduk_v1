@@ -39,11 +39,7 @@ MESSAGE_HANDLERS = {
         "join": (ChallengeIdSchema, handle_challenge_join),
         "leave": (ChallengeIdSchema, handle_challenge_leave),
     },
-    "game": {
-        "move": (GameMoveSchema, handle_game_move),
-        "start": (GameStartSchema, handle_game_start),
-
-    },
+    "game": {"move": (GameMoveSchema, handle_game_move), "start": (GameStartSchema, handle_game_start),},
     "info": {
         "players": (None, handle_info_players),
         "challenges": (None, handle_info_challenges),
@@ -82,5 +78,6 @@ async def handle_message(ws, message: str):
     except (ValidationError, MessageHandlerError) as err:
         await ws.send(f"ERROR [{message_type} {action}] {err}")
 
-    except Exception:
+    except Exception as ex:
+        print(str(ex))
         await ws.send(f"ERROR [{message_type} {action}] unexpected")

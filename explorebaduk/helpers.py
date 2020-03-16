@@ -41,9 +41,9 @@ def get_challenge_by_id(player_id: int) -> Challenge:
             return challenge
 
 
-def get_game_by_id(player_id: int) -> Game:
+def get_game_by_id(game_id: int) -> Game:
     for game in GAMES:
-        if game.black.player.id == player_id or game.white.player.id == player_id:
+        if game.game_id == game_id:
             return game
 
 

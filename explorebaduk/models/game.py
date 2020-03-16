@@ -54,21 +54,22 @@ class Game:
         elif color == "white":
             return self.white
 
-    def play_move(self, color: str, coord: str):
-        if self.finished:
-            raise Exception("Game finished")
-        if color != self.turn_color:
-            raise Exception("Invalid player data")
-        self.kifu.play_move(color, coord)
+    def _flip_timers(self):
+        if self.black.timer.started:
+            self.black.stop_timer()
+            self.white.start_timer()
+        else:
+            self.white.stop_timer()
+            self.black.start_timer()
 
-    def make_pass(self, color: str):
-        if color != self.turn_color:
-            raise Exception("Invalid player data")
+    def play_move(self, coord: str):
+        if coord == "pass":
+            position = self.kifu.make_pass()
+        else:
+            position = self.kifu.play_move(coord)
 
-        player = self.get_player(color)
-        player.stop_timer()
-        self.kifu.make_pass(color)
-        opponent = []
+        print(position)
+        self._flip_timers()
 
 
 if __name__ == "__main__":

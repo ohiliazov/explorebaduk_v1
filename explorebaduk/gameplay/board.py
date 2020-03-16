@@ -24,6 +24,11 @@ CoordinateType = Tuple[Location, tuple]
 
 
 class Board:
+    turn_color_map = {
+        Location.BLACK: "black",
+        Location.WHITE: "white",
+    }
+
     def __init__(
         self,
         shape: tuple = (19, 19),
@@ -78,7 +83,7 @@ class Board:
     @property
     def turn_color(self):
         """ Current player color """
-        return "black" if self._turn is Location.BLACK else "white"
+        return self.turn_color_map[self.turn]
 
     @property
     def next_turn(self) -> int:

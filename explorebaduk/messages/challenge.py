@@ -63,9 +63,3 @@ class ChallengeNewSchema(BaseSchema):
 class ChallengeIdSchema(BaseSchema):
     __pattern__ = re.compile(r"^(?P<challenge_id>\d+)$")
     challenge_id = fields.Integer(required=True)
-
-
-class GameStartSchema(BaseSchema):
-    __pattern__ = re.compile(r"^(?P<challenge_id>\d+) (?P<opponent_id>\d+)$")
-    challenge_id = fields.Integer(required=True)
-    opponent_id = fields.Integer(required=True)

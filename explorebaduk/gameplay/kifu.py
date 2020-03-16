@@ -16,6 +16,10 @@ class Kifu:
     def turn_color(self):
         return "black" if self.board.turn is Location.BLACK else "white"
 
+    @property
+    def turn_label(self):
+        return "B" if self.turn_color == "black" else "white"
+
     def get_root_board(self) -> Board:
         root_node = self.cursor.root_node
         black = root_node.get("AB") or []
@@ -36,39 +40,24 @@ class Kifu:
     def add_comment(self, new_comment: str):
         self.cursor.node.add_comment(new_comment)
 
-    def play_move(self, color: str, coord: str, flip_turn: bool = True) -> None:
-        if color != self.turn_color:
-            raise IllegalMoveError("Invalid move order")
+    def _move_sgf(self, coord):
 
-        self.board.move(sgf_coord_to_int(coord), flip_turn)
-
-        turn_label = "B" if color == "black" else "W"
-
-        move_prop = Property(turn_label, [coord])
+        move_prop = Property(self.turn_label, [coord])
         node = Node([move_prop])
 
         self.cursor.append_node(node)
         self.cursor.next()
 
+    def play_move(self, coord: str, flip_turn: bool = True) -> np.ndarray:
+        self.board.move(sgf_coord_to_int(coord), flip_turn)
+        self._move_sgf(coord)
         self.history.append(coord)
 
         return self.board.current
 
-    def make_pass(self, color: str) -> None:
-        if color != self.turn_color:
-            raise IllegalMoveError("Invalid move order")
-
+    def make_pass(self) -> np.ndarray:
         self.board.make_pass()
-
-        coord = ""
-        turn_label = "B" if color == "black" else "W"
-
-        move_prop = Property(turn_label, [coord])
-        node = Node([move_prop])
-
-        self.cursor.append_node(node)
-        self.cursor.next()
-
+        self._move_sgf("")
         self.history.append("pass")
 
         return self.board.current

@@ -2,9 +2,9 @@ import asyncio
 import random
 
 from explorebaduk.exceptions import MessageHandlerError
-from explorebaduk.helpers import get_player_by_id, get_challenge_by_id, send_sync_messages
+from explorebaduk.helpers import get_player_by_id, get_challenge_by_id, get_game_by_id, send_sync_messages
 from explorebaduk.models import Game
-from explorebaduk.server import PLAYERS, CHALLENGES
+from explorebaduk.server import PLAYERS, CHALLENGES, GAMES
 
 
 async def handle_game_start(ws, data: dict):
@@ -37,6 +37,7 @@ async def handle_game_start(ws, data: dict):
     black, white = random.sample([player, opponent], 2)
     game = Game(player.id, black, white, challenge)
     game.black.start_timer()
+    GAMES.add(game)
 
     CHALLENGES.remove(challenge)
 
@@ -51,5 +52,16 @@ async def handle_game_start(ws, data: dict):
 
 
 async def handle_game_move(ws, data: dict):
-    pos = data["pos"]
-    return await ws.send(f"You played {pos}")
+    player = PLAYERS.get(ws)
+
+    if not player:
+        raise MessageHandlerError("not logged in")
+
+    game = get_game_by_id(data["game_id"])
+
+    if player is not game.current_player:
+        raise MessageHandlerError("not your turn")
+
+    move = data["move"]
+
+    return await ws.send(f"You played {move}")
