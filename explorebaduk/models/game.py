@@ -46,7 +46,7 @@ class Game:
 
     @property
     def finished(self):
-        return (self.history[-1] == 'pass' and self.history[-2] == 'pass') if len(self.history) > 1 else False
+        return (self.history[-1] == "pass" and self.history[-2] == "pass") if len(self.history) > 1 else False
 
     def get_player(self, color: str):
         if color == "black":
@@ -69,6 +69,7 @@ class Game:
         player.stop_timer()
         self.kifu.make_pass(color)
         opponent = []
+
 
 if __name__ == "__main__":
     from explorebaduk.constants import TimeSystem

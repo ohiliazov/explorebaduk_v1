@@ -69,6 +69,6 @@ class Kifu:
         self.cursor.append_node(node)
         self.cursor.next()
 
-        self.history.append('pass')
+        self.history.append("pass")
 
         return self.board.current
