@@ -46,7 +46,7 @@ async def handle_game_start(ws, data: dict):
     await asyncio.gather(
         player.send(f"game started {challenge} {creator_color}"),
         opponent.send(f"game started {challenge} {opponent_color}"),
-        send_sync_messages(challenge_started(game)),
+        send_sync_messages(f"game started {game}"),
     )
 
 

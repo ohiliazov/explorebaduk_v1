@@ -7,7 +7,7 @@ from explorebaduk.messages import (
     LoginSchema,
     ChallengeNewSchema,
     ChallengeIdSchema,
-    ChallengeStartSchema,
+    GameStartSchema,
     GameMoveSchema,
 )
 
@@ -20,14 +20,13 @@ from explorebaduk.handlers.challenge import (
     handle_challenge_cancel,
     handle_challenge_join,
     handle_challenge_leave,
-    handle_challenge_start,
 )
 from explorebaduk.handlers.info import (
     handle_info_players,
     handle_info_challenges,
     handle_info_games,
 )
-from explorebaduk.handlers.game import handle_game_move
+from explorebaduk.handlers.game import handle_game_start, handle_game_move
 from explorebaduk.handlers.sync import register, unregister
 
 logger = logging.getLogger("explorebaduk")
@@ -39,9 +38,12 @@ MESSAGE_HANDLERS = {
         "cancel": (None, handle_challenge_cancel),
         "join": (ChallengeIdSchema, handle_challenge_join),
         "leave": (ChallengeIdSchema, handle_challenge_leave),
-        "start": (ChallengeStartSchema, handle_challenge_start),
     },
-    "game": {"move": (GameMoveSchema, handle_game_move)},
+    "game": {
+        "move": (GameMoveSchema, handle_game_move),
+        "start": (GameStartSchema, handle_game_start),
+
+    },
     "info": {
         "players": (None, handle_info_players),
         "challenges": (None, handle_info_challenges),

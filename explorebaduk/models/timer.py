@@ -165,4 +165,4 @@ def create_timer(time_system: TimeSystem, **time_settings) -> Timer:
     """
     timer_class = TIMERS[time_system]
 
-    return timer_class(**time_control_data)
+    return timer_class(**time_settings)
