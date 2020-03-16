@@ -37,7 +37,7 @@ class Game:
         return self.kifu.turn_color
 
     @property
-    def current_player(self):
+    def current(self):
         return self.black if self.turn_color == "black" else self.white
 
     @property
@@ -70,6 +70,8 @@ class Game:
 
         print(position)
         self._flip_timers()
+
+        return position
 
 
 if __name__ == "__main__":

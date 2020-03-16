@@ -59,9 +59,11 @@ async def handle_game_move(ws, data: dict):
 
     game = get_game_by_id(data["game_id"])
 
-    if player is not game.current_player:
+    if player is not game.current.player:
         raise MessageHandlerError("not your turn")
 
     move = data["move"]
 
-    return await ws.send(f"You played {move}")
+    result = game.play_move(move)
+
+    return await ws.send(f"You played {move}:\n{result}")

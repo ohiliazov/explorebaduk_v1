@@ -16,7 +16,7 @@ async def unregister(ws):
 
     sync_messages = []
     if ws in PLAYERS:
-        player = PLAYERS[ws]
+        player = PLAYERS.pop(ws)
         sync_messages.append(f"players del {player}")
         challenge = get_challenge_by_id(player.id)
 
