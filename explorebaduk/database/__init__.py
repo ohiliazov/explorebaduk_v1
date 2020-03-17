@@ -47,9 +47,29 @@ class GameModel(BaseModel):
     started_at = Column(DateTime, default=datetime.datetime.utcnow)
     finished_at = Column(DateTime)
 
-    game_type = Column(String(255))
+    name = Column(String, nullable=False)
+
+    width = Column(Integer, nullable=False)
+    height = Column(Integer, nullable=False)
 
     sgf = Column(Text, name="SGF")
+
+
+class TimerModel(BaseModel):
+    __tablename__ = "timers"
+
+    game_id = Column(Integer, primary_key=True)
+    player_id = Column(Integer, primary_key=True)
+
+    time_system = Column(Integer, nullable=False)
+
+    main_time = Column(Integer)
+    overtime = Column(Integer)
+    periods = Column(Integer)
+    stones = Column(Integer)
+    bonus = Column(Integer)
+
+    time_left = Column(Integer)
 
 
 def create_session(database_uri, expire_on_commit=True):

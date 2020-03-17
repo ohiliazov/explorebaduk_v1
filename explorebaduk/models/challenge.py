@@ -13,10 +13,10 @@ class Challenge:
         self.width = data["width"]
         self.height = data["height"]
 
-        # flags
-        self.is_open = data["is_open"]
-        self.undo = data["undo"]
-        self.pause = data["pause"]
+        # # flags
+        # self.is_open = data["is_open"]
+        # self.undo = data["undo"]
+        # self.pause = data["pause"]
 
         # time control
         self.time_system = data["time_system"]
@@ -31,7 +31,7 @@ class Challenge:
     def __str__(self):
         return (
             f"ID[{self.challenge_id}]GN[{self.name}]SZ[{self.width}:{self.height}]"
-            f"FL[{self.is_open:d}{self.undo:d}{self.pause:d}]"
+            # f"FL[{self.is_open:d}{self.undo:d}{self.pause:d}]"
             f"TS[{self.time_system.value}M{self.main_time}O{self.overtime}P{self.periods}S{self.stones}B{self.bonus}]"
         )
 

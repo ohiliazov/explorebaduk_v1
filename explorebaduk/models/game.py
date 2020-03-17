@@ -1,4 +1,5 @@
 import random
+from typing import List
 
 from explorebaduk.gameplay.kifu import Kifu
 from explorebaduk.models.player import Player
@@ -25,9 +26,16 @@ class GamePlayer:
 class Game:
     def __init__(self, game_id, black: Player, white: Player, challenge: Challenge):
         self.game_id = game_id
-        self.black = GamePlayer(black, challenge.time_settings)
-        self.white = GamePlayer(white, challenge.time_settings)
-        self.kifu = Kifu(challenge.width, challenge.height)
+
+        self.name = challenge.name
+        self.width = challenge.width
+        self.height = challenge.height
+        self.time_settings = challenge.time_settings
+
+        self.black = GamePlayer(black, self.time_settings)
+        self.white = GamePlayer(white, self.time_settings)
+
+        self.kifu = Kifu(self.width, self.height)
 
     def __str__(self):
         return f"ID[{self.game_id}]B[{self.black.player}]W[{self.white.player}]"

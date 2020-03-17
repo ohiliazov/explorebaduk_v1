@@ -6,7 +6,7 @@ import sys
 import select
 
 BOARD_SIZE_CHOICES = ["19:19", "13:13", "9:9"]
-FLAGS_CHOICES = ["000", "001", "010", "011", "100", "101", "110", "111"]
+# FLAGS_CHOICES = ["000", "001", "010", "011", "100", "101", "110", "111"]
 TIME_CONTROL_CHOICES = [
     f"0",
     f"1M{random.randint(60, 3600)}",
@@ -32,17 +32,22 @@ def challenge_leave(challenge_id: str = "1", *args):
     return f"challenge leave {challenge_id}"
 
 
-def challenge_start(challenge_id: str = "1", opponent_id: str = "1", *args):
-    return f"challenge start {challenge_id} {opponent_id}"
+def game_start(challenge_id: str = "1", opponent_id: str = "1", *args):
+    return f"game start {challenge_id} {opponent_id}"
 
 
 def challenge_new():
     game_name = "Test Game Request"
     board_size = random.choice(BOARD_SIZE_CHOICES)
-    flags = random.choice(FLAGS_CHOICES)
+    # flags = random.choice(FLAGS_CHOICES)
     time_control = random.choice(TIME_CONTROL_CHOICES)
 
-    return f"challenge new GN[{game_name}]SZ[{board_size}]FL[{flags}]TS[{time_control}]"
+    return (
+        f"challenge new GN[{game_name}]"
+        f"SZ[{board_size}]"
+        # f"FL[{flags}]"
+        f"TS[{time_control}]"
+    )
 
 
 preset_messages = {
@@ -52,7 +57,7 @@ preset_messages = {
     "cancel": challenge_cancel,
     "join": challenge_join,
     "leave": challenge_leave,
-    "start": challenge_start,
+    "start": game_start,
 }
 
 

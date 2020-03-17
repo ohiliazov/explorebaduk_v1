@@ -1,3 +1,5 @@
+from typing import Tuple
+
 from config import APP_NAME, APP_VERSION
 from explorebaduk.gameplay.sgflib import Property, Node, GameTree, Cursor
 
@@ -26,7 +28,8 @@ def int_coord_to_sgf(coord: tuple) -> str:
     return f"{x}{y}"
 
 
-def create_new_sgf(width: int, height: int, handicap: int, komi: float) -> Cursor:
+def create_new_sgf(board_size: Tuple[int, int], handicap: int, komi: float) -> Cursor:
+    width, height = board_size
     size = f"{width}" if width == height else f"{width}:{height}"
 
     root_properties = [

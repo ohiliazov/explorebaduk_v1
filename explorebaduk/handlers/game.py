@@ -34,21 +34,21 @@ async def handle_game_start(ws, data: dict):
         return await ws.send("player not joined")
 
     # TODO: implement
-    black, white = random.sample([player, opponent], 2)
+    players = [player, opponent]
+    random.shuffle(players)
+    black, white = players
     game = Game(player.id, black, white, challenge)
-    game.black.start_timer()
-    GAMES.add(game)
 
+    GAMES.add(game)
     CHALLENGES.remove(challenge)
 
-    creator_color = "black" if game.black.player is player else "white"
-    opponent_color = "black" if game.black.player is opponent else "white"
-
     await asyncio.gather(
-        player.send(f"game started {challenge} {creator_color}"),
-        opponent.send(f"game started {challenge} {opponent_color}"),
-        send_sync_messages(f"game started {game}"),
+        player.send(f"OK [game start] {game}"),
+        opponent.send(f"game started {game}"),
+        send_sync_messages(f"games add {game}"),
     )
+
+    game.black.start_timer()
 
 
 async def handle_game_move(ws, data: dict):

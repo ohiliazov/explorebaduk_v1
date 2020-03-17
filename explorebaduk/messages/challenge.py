@@ -16,7 +16,7 @@ class ChallengeNewSchema(BaseSchema):
     __pattern__ = re.compile(
         r"GN\[(?P<name>[\w\W]+)\]"  # challenge name
         r"SZ\[(?P<width>\d+):(?P<height>\d+)\]"  # board size
-        r"FL\[(?P<is_open>\d)(?P<undo>\d)(?P<pause>\d)\]"  # flags
+        # r"FL\[(?P<is_open>\d)(?P<undo>\d)(?P<pause>\d)\]"  # flags
         r"TS\["  # time system
         r"(?P<time_system>\d+)(?:M(?P<main_time>\d+))?"
         r"(?:O(?P<overtime>\d+))?(?:P(?P<periods>\d+))?"
@@ -28,9 +28,9 @@ class ChallengeNewSchema(BaseSchema):
     width = fields.Integer(required=True, validate=validate.Range(min=5, max=52))
     height = fields.Integer(required=True, validate=validate.Range(min=5, max=52))
 
-    is_open = fields.Boolean(required=True)
-    undo = fields.Boolean(required=True)
-    pause = fields.Boolean(required=True)
+    # is_open = fields.Boolean(required=True)
+    # undo = fields.Boolean(required=True)
+    # pause = fields.Boolean(required=True)
 
     time_system = fields.Integer(required=True, validate=EnumValidator(TimeSystem))
     main_time = fields.Integer(missing=0)
