@@ -5,6 +5,8 @@ import websockets
 import sys
 import select
 
+from config import SERVER_HOST, SERVER_PORT
+
 BOARD_SIZE_CHOICES = ["19:19", "13:13", "9:9"]
 # FLAGS_CHOICES = ["000", "001", "010", "011", "100", "101", "110", "111"]
 TIME_CONTROL_CHOICES = [
@@ -62,7 +64,7 @@ preset_messages = {
 
 
 async def hello():
-    uri = "ws://localhost:8080"
+    uri = f"ws://{SERVER_HOST}:{SERVER_PORT}"
     async with websockets.connect(uri) as websocket:
         while True:
             try:

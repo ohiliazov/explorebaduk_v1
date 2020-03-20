@@ -5,7 +5,7 @@ from explorebaduk.constants import MOVE_DELAY, TimeSystem
 from explorebaduk.exceptions import TimerError
 
 
-class Timer(metaclass=ABCMeta):
+class TimerBase(metaclass=ABCMeta):
     def __init__(self, remaining: float, delay: float = MOVE_DELAY, **kwargs):
         self._started_at = None
 
@@ -54,7 +54,7 @@ class Timer(metaclass=ABCMeta):
         pass
 
 
-class NoTimeTimer(Timer):
+class NoTimeTimerBase(TimerBase):
     """
     No time limit
     """
@@ -67,7 +67,7 @@ class NoTimeTimer(Timer):
         return None
 
 
-class AbsoluteTimer(Timer):
+class AbsoluteTimerBase(TimerBase):
     """
     Each player is assigned a fixed amount of time for the whole game.
     If a player's main time expires, they generally lose the game.
@@ -80,7 +80,7 @@ class AbsoluteTimer(Timer):
         self.remaining -= time_used
 
 
-class ByoyomiTimer(Timer):
+class ByoyomiTimerBase(TimerBase):
     """
     After the main time is depleted, a player has a certain number of periods.
     If a move is completed before the time expires, the time period resets and restarts the next turn.
@@ -103,7 +103,7 @@ class ByoyomiTimer(Timer):
             self.remaining = self.overtime * (periods_left + 1)
 
 
-class CanadianTimer(Timer):
+class CanadianTimerBase(TimerBase):
     """
     After the main time is depleted, a player must make a certain number of moves within a certain period of time.
     """
@@ -132,7 +132,7 @@ class CanadianTimer(Timer):
             self.stones_left = self.stones
 
 
-class FischerTimer(Timer):
+class FischerTimerBase(TimerBase):
     """
     A specified amount of time is added to the players main time each move,
     unless the player's main time ran out before they completed their move.
@@ -148,15 +148,15 @@ class FischerTimer(Timer):
 
 
 TIMERS = {
-    TimeSystem.NO_TIME: NoTimeTimer,
-    TimeSystem.ABSOLUTE: AbsoluteTimer,
-    TimeSystem.BYOYOMI: ByoyomiTimer,
-    TimeSystem.CANADIAN: CanadianTimer,
-    TimeSystem.FISCHER: FischerTimer,
+    TimeSystem.NO_TIME: NoTimeTimerBase,
+    TimeSystem.ABSOLUTE: AbsoluteTimerBase,
+    TimeSystem.BYOYOMI: ByoyomiTimerBase,
+    TimeSystem.CANADIAN: CanadianTimerBase,
+    TimeSystem.FISCHER: FischerTimerBase,
 }
 
 
-def create_timer(time_system: TimeSystem, **time_settings) -> Timer:
+def create_timer(time_system: TimeSystem, **time_settings) -> TimerBase:
     """
     Create timer for
     :param time_system:

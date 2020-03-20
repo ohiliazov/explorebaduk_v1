@@ -1,26 +1,57 @@
 import random
 from typing import List
 
+from explorebaduk.database import GameModel, TimerModel
 from explorebaduk.gameplay.kifu import Kifu
 from explorebaduk.models.player import Player
 from explorebaduk.models.challenge import Challenge
-from explorebaduk.models.timer import create_timer
+from explorebaduk.models.timerbase import create_timer
+from explorebaduk.server import db
 
 
-class GamePlayer:
-    def __init__(self, player: Player, time_settings: dict):
+class GameTimer:
+    def __init__(self, game_id: int, player: Player, time_settings: dict):
+        self._db_timer = None
+        self.game_id = game_id
         self.player = player
+        self.time_settings = time_settings
         self.timer = create_timer(**time_settings)
+
+    @property
+    def db_timer(self) -> TimerModel:
+        if self._db_timer is None:
+            self._db_timer = TimerModel(
+                game_id=self.game_id,
+                player_id=self.player.id,
+                time_system=self.time_settings["time_system"].value,
+                main_time=self.time_settings["main_time"],
+                overtime=self.time_settings["overtime"],
+                periods=self.time_settings["periods"],
+                stones=self.time_settings["stones"],
+                bonus=self.time_settings["bonus"],
+                time_left=self.time_left
+            )
+
+            db.add(self._db_timer)
+            db.commit()
+
+        return self._db_timer
 
     @property
     def time_left(self):
         return self.timer.time_left
+
+    def save_to_db(self):
+        self.db_timer.time_left = self.time_left
+        db.add(self.db_timer)
+        db.commit()
 
     def start_timer(self):
         self.timer.start()
 
     def stop_timer(self):
         self.timer.stop()
+        self.save_to_db()
 
 
 class Game:
@@ -32,8 +63,8 @@ class Game:
         self.height = challenge.height
         self.time_settings = challenge.time_settings
 
-        self.black = GamePlayer(black, self.time_settings)
-        self.white = GamePlayer(white, self.time_settings)
+        self.black = GameTimer(game_id, black, self.time_settings)
+        self.white = GameTimer(game_id, white, self.time_settings)
 
         self.kifu = Kifu(self.width, self.height)
 
@@ -92,7 +123,7 @@ if __name__ == "__main__":
     black_timer = create_timer(TimeSystem.ABSOLUTE, main_time=3600)
     white_timer = create_timer(TimeSystem.ABSOLUTE, main_time=3600)
 
-    black = GamePlayer(black, black_timer)
-    white = GamePlayer(white, white_timer)
+    black = GameTimer(black, black_timer)
+    white = GameTimer(white, white_timer)
 
     game = Game(1, black, white, 19, 19)
