@@ -1,11 +1,10 @@
 import random
 
-from explorebaduk.database.timer import TimerModel
+from explorebaduk.database import TimerModel, db
 from explorebaduk.gameplay.kifu import Kifu
 from explorebaduk.models.player import Player
 from explorebaduk.models.challenge import Challenge
 from explorebaduk.models.timer import create_timer
-from explorebaduk.handlers.database import db
 
 
 class GameTimer:
@@ -28,7 +27,7 @@ class GameTimer:
                 periods=self.time_settings["periods"],
                 stones=self.time_settings["stones"],
                 bonus=self.time_settings["bonus"],
-                time_left=self.time_left
+                time_left=self.time_left,
             )
 
             db.add(self._db_timer)
@@ -38,7 +37,7 @@ class GameTimer:
 
     @property
     def time_left(self):
-        return self.timer.time_left
+        return self.timer._time_left
 
     def save_to_db(self):
         self.db_timer.time_left = self.time_left

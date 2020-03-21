@@ -1,16 +1,38 @@
 import time
-
 from abc import ABCMeta, abstractmethod
+
+from explorebaduk.database import TimerModel, db
 from explorebaduk.constants import MOVE_DELAY, TimeSystem
 from explorebaduk.exceptions import TimerError
 
 
 class TimerBase(metaclass=ABCMeta):
-    def __init__(self, remaining: float, delay: float = MOVE_DELAY, **kwargs):
-        self._started_at = None
+    def __init__(
+        self,
+        game_id: int,
+        player_id: int,
+        *,
+        main_time: int = 0,
+        overtime: int = 0,
+        periods: int = 1,
+        stones: int = 1,
+        bonus: int = 0,
+    ):
+        self._game_id = game_id
+        self._player_id = player_id
 
-        self.remaining = remaining
-        self.delay = delay
+        self._started_at = None
+        self._time_left = None
+
+        self.main_time = main_time
+        self.overtime = overtime
+        self.periods = periods
+        self.stones = stones
+        self.bonus = bonus
+        self.delay = MOVE_DELAY
+
+    def save_to_db(self):
+        pass
 
     def _reset(self):
         self._started_at = None
@@ -22,8 +44,8 @@ class TimerBase(metaclass=ABCMeta):
     @property
     def time_left(self):
         if self.started:
-            return self.remaining + self._started_at - time.monotonic()
-        return self.remaining
+            return self._time_left + self._started_at - time.monotonic()
+        return self._time_left
 
     def start(self):
         if self.started:
@@ -31,7 +53,7 @@ class TimerBase(metaclass=ABCMeta):
 
         self._started_at = time.monotonic() + self.delay
 
-        return self.remaining
+        return self._time_left
 
     def stop(self):
         if not self.started:
@@ -42,15 +64,15 @@ class TimerBase(metaclass=ABCMeta):
         if time_used > 0:
             self.process_time(time_used)
 
-            if self.remaining < 0:
+            if self._time_left < 0:
                 raise TimerError(f"Out of time")
 
         self._reset()
 
-        return self.remaining
+        return self._time_left
 
     @abstractmethod
-    async def process_time(self, time_used: float) -> None:
+    def process_time(self, time_used: float) -> None:
         pass
 
 
@@ -59,12 +81,14 @@ class NoTimeTimerBase(TimerBase):
     No time limit
     """
 
-    def __init__(self, **kwargs):
-        remaining = float("+inf")
-        super().__init__(remaining, **kwargs)
+    def start(self):
+        return 0
+
+    def stop(self):
+        return 0
 
     def process_time(self, time_used: float) -> None:
-        return None
+        pass
 
 
 class AbsoluteTimerBase(TimerBase):
@@ -73,8 +97,9 @@ class AbsoluteTimerBase(TimerBase):
     If a player's main time expires, they generally lose the game.
     """
 
-    def __init__(self, *, main_time: float, **kwargs):
-        super().__init__(main_time, **kwargs)
+    def __init__(self, *, main_time: int, **kwargs):
+        super().__init__(main_time=main_time)
+        self.remaining = main_time
 
     def process_time(self, time_used: float) -> None:
         self.remaining -= time_used
@@ -87,12 +112,9 @@ class ByoyomiTimerBase(TimerBase):
     If a move is not completed within a time period, the time period will expire, and the next time period begins.
     """
 
-    def __init__(self, *, main_time: float, overtime: float, periods: int, **kwargs):
-        remaining = main_time + overtime * periods
-        super().__init__(remaining, **kwargs)
-
-        self.overtime = overtime
-        self.periods = periods
+    def __init__(self, *, main_time: int, overtime: int, periods: int, **kwargs):
+        super().__init__(main_time=main_time, overtime=overtime, periods=periods)
+        self.remaining = main_time + overtime * periods
 
     def process_time(self, time_used: float) -> None:
         self.remaining -= time_used
@@ -108,14 +130,10 @@ class CanadianTimerBase(TimerBase):
     After the main time is depleted, a player must make a certain number of moves within a certain period of time.
     """
 
-    def __init__(
-        self, *, main_time: float, overtime: float, stones: int, **kwargs,
-    ):
-        remaining = main_time + overtime
-        super().__init__(remaining, **kwargs)
-
-        self.overtime = overtime
-        self.stones = self.stones_left = stones
+    def __init__(self, *, main_time: int, overtime: int, stones: int, **kwargs):
+        super().__init__(main_time=main_time, overtime=overtime, stones=stones)
+        self.remaining = main_time + overtime
+        self.stones_left = stones
 
     def process_time(self, time_used: float) -> None:
         self.remaining -= time_used
@@ -138,10 +156,9 @@ class FischerTimerBase(TimerBase):
     unless the player's main time ran out before they completed their move.
     """
 
-    def __init__(self, *, main_time: float, bonus: float, **kwargs):
-        super().__init__(main_time, **kwargs)
-
-        self.bonus = bonus
+    def __init__(self, *, main_time: int, bonus: int, **kwargs):
+        super().__init__(main_time=main_time, bonus=bonus)
+        self.remaining = main_time
 
     def process_time(self, time_used: float) -> None:
         self.remaining -= time_used + self.bonus
@@ -158,11 +175,9 @@ TIMERS = {
 
 def create_timer(time_system: TimeSystem, **time_settings) -> TimerBase:
     """
-    Create timer for
-    :param time_system:
-    :param time_control_data: main_time, overtime,
-    :return:
+    Create timer
+    :param time_system: type of time control system
+    :param time_settings: main_time, overtime, periods, stones, bonus
+    :return: timer
     """
-    timer_class = TIMERS[time_system]
-
-    return timer_class(**time_settings)
+    return TIMERS[time_system](**time_settings)

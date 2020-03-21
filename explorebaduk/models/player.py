@@ -1,11 +1,12 @@
 from enum import Enum
 
-from explorebaduk.database.user import UserModel
+from explorebaduk.database import UserModel
 
 
 class PlayerStatus(Enum):
     IDLE = "idle"
     PLAYING = "playing"
+    OBSERVING = "observing"
 
 
 class Player:
