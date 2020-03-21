@@ -1,10 +1,12 @@
 import asyncio
 
-from explorebaduk.database import TokenModel, UserModel
+from explorebaduk.database.auth import TokenModel
+from explorebaduk.database.user import UserModel
+from explorebaduk.handlers.database import db
 from explorebaduk.exceptions import MessageHandlerError
 from explorebaduk.helpers import get_player_by_id, send_sync_messages
 from explorebaduk.models import Player
-from explorebaduk.server import PLAYERS, db
+from explorebaduk.server import PLAYERS
 
 
 async def handle_auth_login(ws, data: dict):
@@ -13,7 +15,7 @@ async def handle_auth_login(ws, data: dict):
         raise MessageHandlerError("already logged in")
 
     # Authenticate user
-    signin_token = db.query(TokenModel).filter_by(token=data["token"]).first()
+    signin_token = db.fetch_one(TokenModel, token=data["token"])
 
     if not signin_token:
         raise MessageHandlerError("invalid token")
@@ -23,7 +25,7 @@ async def handle_auth_login(ws, data: dict):
     if get_player_by_id(user_id):
         raise MessageHandlerError("online from other device")
 
-    user = db.query(UserModel).filter_by(user_id=user_id).first()
+    user = db.fetch_one(UserModel, user_id=user_id)
     player = Player(ws, user)
 
     PLAYERS[ws] = player

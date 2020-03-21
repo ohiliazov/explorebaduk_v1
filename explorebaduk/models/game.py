@@ -1,12 +1,11 @@
 import random
-from typing import List
 
-from explorebaduk.database import GameModel, TimerModel
+from explorebaduk.database.timer import TimerModel
 from explorebaduk.gameplay.kifu import Kifu
 from explorebaduk.models.player import Player
 from explorebaduk.models.challenge import Challenge
-from explorebaduk.models.timerbase import create_timer
-from explorebaduk.server import db
+from explorebaduk.models.timer import create_timer
+from explorebaduk.handlers.database import db
 
 
 class GameTimer:

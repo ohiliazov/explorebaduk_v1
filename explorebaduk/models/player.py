@@ -1,6 +1,6 @@
 from enum import Enum
 
-from explorebaduk.database import UserModel
+from explorebaduk.database.user import UserModel
 
 
 class PlayerStatus(Enum):
