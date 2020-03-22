@@ -2,7 +2,7 @@ import random
 import string
 import datetime
 from config import DATABASE_URI
-from explorebaduk.database import BaseModel, UserModel, TokenModel, create_session
+from explorebaduk.database import BaseModel, UserModel, TokenModel, db
 
 
 def make_user(num: int):
@@ -40,10 +40,9 @@ def populate_database_with_data(db, num_users: int):
 
 
 def create_db():
-    session = create_session(DATABASE_URI)
-    BaseModel.metadata.drop_all(session.bind)
-    BaseModel.metadata.create_all(session.bind)
-    populate_database_with_data(session, 1000)
+    BaseModel.metadata.drop_all(db.engine)
+    BaseModel.metadata.create_all(db.engine)
+    populate_database_with_data(db.session, 1000)
 
 
 if __name__ == "__main__":

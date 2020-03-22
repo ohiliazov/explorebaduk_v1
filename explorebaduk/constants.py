@@ -29,7 +29,6 @@ class TimeSystem(IntEnum):
     BYOYOMI = 2
     CANADIAN = 3
     FISCHER = 4
-    CUSTOM = 5
 
 
 class PlayerColor(IntEnum):
