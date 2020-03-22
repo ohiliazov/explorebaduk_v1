@@ -28,7 +28,7 @@ class DatabaseHandler:
     def fetch_one(self, model: BaseModel, **filters):
         return self.query(model, **filters).first()
 
-    def create_or_update(self, instance: BaseModel):
+    def add(self, instance: BaseModel):
         self.session.add(instance)
 
 

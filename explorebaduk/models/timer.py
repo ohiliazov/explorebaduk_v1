@@ -42,7 +42,7 @@ class Timer(metaclass=ABCMeta):
             timer = TimerModel(
                 game_id=self.game_id,
                 player_id=self.player_id,
-                time_system=self.time_system,
+                time_system=self.time_system.value,
                 main_time=self.main_time,
                 overtime=self.overtime,
                 periods=self.periods,
@@ -50,13 +50,14 @@ class Timer(metaclass=ABCMeta):
                 started_at=self.started_at,
                 time_left=self._time_left,
             )
+            db.add(timer)
 
         return timer
 
     def save_to_db(self):
-        self.timer.time_left = self.ti
+        self.timer.time_left = self._time_left
 
-        db.create_or_update(self.timer)
+        db.add(self.timer)
 
     @property
     def started(self):

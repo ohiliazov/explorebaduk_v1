@@ -4,6 +4,7 @@ import random
 from explorebaduk.exceptions import MessageHandlerError
 from explorebaduk.helpers import get_player_by_id, get_challenge_by_id, get_game_by_id, send_sync_messages
 from explorebaduk.models import Game
+from explorebaduk.models.timer import create_timer
 from explorebaduk.server import PLAYERS, CHALLENGES, GAMES
 
 
@@ -34,6 +35,7 @@ async def handle_game_start(ws, data: dict):
         return await ws.send("player not joined")
 
     # TODO: implement
+    player_timer = create_timer(challenge.time_system)
     players = [player, opponent]
     random.shuffle(players)
     black, white = players
