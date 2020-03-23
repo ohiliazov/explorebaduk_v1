@@ -55,7 +55,7 @@ class Timer(metaclass=ABCMeta):
         return timer
 
     def save_to_db(self):
-        self.timer.time_left = self._time_left
+        self.timer.time_left = self.time_left
 
         db.add(self.timer)
 
