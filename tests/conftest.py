@@ -3,7 +3,7 @@ from sqlalchemy import create_engine
 
 from config import TEST_DATABASE_URI
 from explorebaduk.database import BaseModel
-from explorebaduk.utils.database import (
+from scripts.database import (
     make_user,
     make_token,
     populate_database_with_data,
@@ -26,7 +26,7 @@ def db_session():
 def user1(db_session):
     user = make_user(1)
 
-    db_session.add(user)
+    db_session.save(user)
 
     return user
 
@@ -35,7 +35,7 @@ def user1(db_session):
 def token1(db_session, user1):
     token = make_token(user1.user_id, user1.user_id, 60)
 
-    db_session.add(token)
+    db_session.save(token)
 
     return token
 
@@ -44,6 +44,6 @@ def token1(db_session, user1):
 def token_expired(db_session, user1):
     token = make_token(666, user1.user_id, 0)
 
-    db_session.add(token)
+    db_session.save(token)
 
     return token

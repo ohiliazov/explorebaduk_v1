@@ -1,7 +1,6 @@
 import time
 from abc import ABCMeta, abstractmethod
 
-from explorebaduk.database import TimerModel, db
 from explorebaduk.constants import MOVE_DELAY, TimeSystem
 from explorebaduk.exceptions import TimerError
 
@@ -33,31 +32,6 @@ class Timer(metaclass=ABCMeta):
 
         self.started_at = None
         self._time_left = time_left or self.initial_time_left()
-        self.timer = self.get_or_create()
-
-    def get_or_create(self):
-        timer = db.get_by_id(TimerModel, (self.game_id, self.player_id))
-
-        if not timer:
-            timer = TimerModel(
-                game_id=self.game_id,
-                player_id=self.player_id,
-                time_system=self.time_system.value,
-                main_time=self.main_time,
-                overtime=self.overtime,
-                periods=self.periods,
-                bonus=self.bonus,
-                started_at=self.started_at,
-                time_left=self._time_left,
-            )
-            db.add(timer)
-
-        return timer
-
-    def save_to_db(self):
-        self.timer.time_left = self.time_left
-
-        db.add(self.timer)
 
     @property
     def started(self):

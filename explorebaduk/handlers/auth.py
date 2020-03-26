@@ -1,8 +1,6 @@
 import asyncio
 
-from explorebaduk.database.auth import TokenModel
-from explorebaduk.database.user import UserModel
-from explorebaduk.handlers.database import db
+from explorebaduk.database import TokenModel, UserModel, db
 from explorebaduk.exceptions import MessageHandlerError
 from explorebaduk.helpers import get_player_by_id, send_sync_messages
 from explorebaduk.models import Player

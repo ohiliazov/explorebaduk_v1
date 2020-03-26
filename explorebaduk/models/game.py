@@ -1,10 +1,73 @@
+import datetime
 import random
 
-from explorebaduk.database import TimerModel, db
+from explorebaduk.database import GameModel, GamePlayerModel
 from explorebaduk.gameplay.kifu import Kifu
+from explorebaduk.mixins import DatabaseMixin
 from explorebaduk.models.player import Player
 from explorebaduk.models.challenge import Challenge
 from explorebaduk.models.timer import Timer
+
+
+class GamePlayer(DatabaseMixin):
+    db_model = GamePlayerModel
+    columns = [
+        "game_id",
+        "player_id",
+        "time_left",
+    ]
+
+    def __init__(self, game_id: int, player_id: int, timer: Timer):
+        self.game_id = game_id
+        self.player_id = player_id
+        self.timer = timer
+
+    @property
+    def time_left(self):
+        return self.timer.time_left
+
+
+class Game(DatabaseMixin):
+    db_model = GameModel
+    columns = [
+        "name",
+        "width",
+        "height",
+        "time_system",
+        "main_time",
+        "overtime",
+        "periods",
+        "stones",
+        "bonus",
+        "started_at",
+        "sgf",
+    ]
+
+    def __init__(self, challenge: Challenge):
+        self.name = challenge.name
+        self.width = challenge.width
+        self.height = challenge.height
+        self.time_system = challenge.time_system
+        self.main_time = challenge.main_time
+        self.overtime = challenge.overtime
+        self.periods = challenge.periods
+        self.stones = challenge.stones
+        self.bonus = challenge.bonus
+        self.started_at = datetime.datetime.utcnow()
+
+        self.kifu = Kifu(self.width, self.height)
+        self.create_model()
+
+    @property
+    def sgf(self):
+        return str(self.kifu.cursor.game)
+
+
+class GameManager:
+    def __init__(self, game: Game, black: GamePlayer, white: GamePlayer):
+        self.game = game
+        self.black = black
+        self.white = white
 
 
 class Game:

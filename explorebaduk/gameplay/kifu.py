@@ -8,7 +8,7 @@ from explorebaduk.utils.sgf import sgf_coord_to_int, create_new_sgf
 class Kifu:
     def __init__(self, width: int, height: int, handicap: int = 0, komi: float = 7.5):
         self._shape = (width, height)
-        self.cursor = create_new_sgf(width, height, handicap, komi)
+        self.cursor = create_new_sgf((width, height), handicap, komi)
         self.board = self.get_root_board()
         self.history = []
 
@@ -25,6 +25,7 @@ class Kifu:
         black = root_node.get("AB") or []
         white = root_node.get("AW") or []
 
+        print(self._shape)
         board = np.zeros(self._shape, dtype=int)
 
         for stone in black:

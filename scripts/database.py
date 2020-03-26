@@ -32,11 +32,8 @@ def populate_database_with_data(db, num_users: int):
         user = make_user(i)
         token = make_token(i, i, random.randint(0, 3600))
 
-        db.add(user)
-        db.add(token)
-
-    db.commit()
-    db.close()
+        db.save(user)
+        db.save(token)
 
 
 def create_db():
