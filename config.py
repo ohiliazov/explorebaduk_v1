@@ -13,7 +13,8 @@ SERVER_PORT = 8080
 # database
 # MYSQL_DATABASE_URI = 'mysql:///username:password@host:port/database'
 DATABASE_PATH = os.path.join(BASE_PATH, "explorebaduk.db")
-DATABASE_URI = "sqlite:///" + DATABASE_PATH
+# DATABASE_URI = "sqlite:///" + DATABASE_PATH
+DATABASE_URI = "postgresql://ohili:ohili@localhost:5432/explorebaduk"
 SQLALCHEMY_ECHO = True
 SQLALCHEMY_ENCODING = "utf8"
 

@@ -18,9 +18,6 @@ class Player:
     async def send(self, message: str):
         return await self.ws.send(message)
 
-    async def send_message(self, message: str):
-        return await self.ws.send(message)
-
     @property
     def id(self):
         return self.user.user_id

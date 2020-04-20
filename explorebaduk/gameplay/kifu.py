@@ -25,7 +25,6 @@ class Kifu:
         black = root_node.get("AB") or []
         white = root_node.get("AW") or []
 
-        print(self._shape)
         board = np.zeros(self._shape, dtype=int)
 
         for stone in black:

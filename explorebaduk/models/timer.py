@@ -10,9 +10,6 @@ class Timer(metaclass=ABCMeta):
 
     def __init__(
         self,
-        game_id: int,
-        player_id: int,
-        *,
         main_time: int = 0,
         overtime: int = 0,
         periods: int = 1,
@@ -20,9 +17,6 @@ class Timer(metaclass=ABCMeta):
         bonus: int = 0,
         time_left: float = None,
     ):
-        self.game_id = game_id
-        self.player_id = player_id
-
         self.main_time = main_time
         self.overtime = overtime
         self.periods = periods
@@ -43,13 +37,15 @@ class Timer(metaclass=ABCMeta):
             return self._time_left + max(self.started_at - time.monotonic(), 0)
         return self._time_left
 
-    def start(self) -> None:
+    def start(self) -> float:
         if self.started:
             raise TimerError("Already started")
 
         self.started_at = time.monotonic() + self.delay
 
-    def stop(self) -> None:
+        return self.time_left
+
+    def stop(self) -> float:
         if not self.started:
             raise TimerError("Not started")
 
@@ -62,6 +58,8 @@ class Timer(metaclass=ABCMeta):
                 raise TimerError(f"Out of time")
 
         self.started_at = None
+
+        return self.time_left
 
     @abstractmethod
     def initial_time_left(self):
@@ -172,20 +170,36 @@ class FischerTimer(Timer):
         self._time_left -= time_used + self.bonus
 
 
-TIMERS = {
-    TimeSystem.NO_TIME: NoTimeTimer,
-    TimeSystem.ABSOLUTE: AbsoluteTimer,
-    TimeSystem.BYOYOMI: ByoyomiTimer,
-    TimeSystem.CANADIAN: CanadianTimer,
-    TimeSystem.FISCHER: FischerTimer,
-}
+class TimeControl:
+    def __init__(
+            self,
+            time_system: TimeSystem,
+            main_time: int = 0,
+            overtime: int = 0,
+            period: int = 1,
+            stones: int = 1,
+            bonus: int = 0,
+            **kwargs
+    ):
+        self.time_system = time_system
+        self.main_time = main_time
+        self.overtime = overtime
+        self.periods = period
+        self.stones = stones
+        self.bonus = bonus
 
+    def __str__(self):
+        return f"TS[{self.time_system}M{self.main_time}O{self.overtime}P{self.periods}S{self.stones}B{self.bonus}]"
 
-def create_timer(time_system: TimeSystem, **time_settings) -> Timer:
-    """
-    Create timer
-    :param time_system: type of time control system
-    :param time_settings: main_time, overtime, periods, stones, bonus
-    :return: timer
-    """
-    return TIMERS[time_system](**time_settings)
+    def timer(self) -> Timer:
+        if self.time_system is TimeSystem.NO_TIME:
+            return NoTimeTimer()
+        if self.time_system is TimeSystem.ABSOLUTE:
+            return AbsoluteTimer(main_time=self.main_time)
+        if self.time_system is TimeSystem.BYOYOMI:
+            return ByoyomiTimer(main_time=self.main_time, overtime=self.overtime, periods=self.periods)
+        if self.time_system is TimeSystem.CANADIAN:
+            return CanadianTimer(main_time=self.main_time, overtime=self.overtime, stones=self.stones)
+        if self.time_system is TimeSystem.FISCHER:
+            return FischerTimer(main_time=self.main_time, bonus=self.bonus)
+        raise NotImplementedError("Timer not implemented")

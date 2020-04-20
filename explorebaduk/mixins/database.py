@@ -1,4 +1,4 @@
-from explorebaduk.database import BaseModel, db
+from explorebaduk.database import BaseModel, TokenModel, UserModel, GameModel, GamePlayerModel, db
 
 
 class DatabaseMixin:
@@ -6,6 +6,7 @@ class DatabaseMixin:
     columns = []
 
     def create_model(self):
+        self.model = None
         data = {col: getattr(self, col) for col in self.columns}
         self.model = self.db_model(**data)
 

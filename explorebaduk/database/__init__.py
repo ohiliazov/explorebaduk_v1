@@ -42,5 +42,31 @@ class DatabaseHandler:
         except SQLAlchemyError:
             self.session.rollback()
 
+    def select_token(self, token: str) -> TokenModel:
+        return self.fetch_one(TokenModel, token=token)
+
+    def select_user(self, user_id: int) -> UserModel:
+        return self.fetch_one(UserModel, user_id=user_id)
+
+    def select_game(self) -> GameModel:
+        pass
+
+    def insert_game(self, name, width, height) -> GameModel:
+        game_model = GameModel(name=name, width=width, height=height)
+        self.save(game_model)
+        return game_model
+
+    def update_game(self) -> GameModel:
+        pass
+
+    def select_game_player(self) -> GamePlayerModel:
+        pass
+
+    def insert_game_player(self) -> GamePlayerModel:
+        pass
+
+    def update_game_player(self) -> GamePlayerModel:
+        pass
+
 
 db = DatabaseHandler(DATABASE_URI)

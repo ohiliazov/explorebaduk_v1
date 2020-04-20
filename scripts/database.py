@@ -39,7 +39,7 @@ def populate_database_with_data(db, num_users: int):
 def create_db():
     BaseModel.metadata.drop_all(db.engine)
     BaseModel.metadata.create_all(db.engine)
-    populate_database_with_data(db.session, 1000)
+    populate_database_with_data(db, 1000)
 
 
 if __name__ == "__main__":
