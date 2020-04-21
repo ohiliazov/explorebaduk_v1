@@ -1,16 +1,19 @@
 import numpy as np
 
-from explorebaduk.gameplay.board import Board, Location, IllegalMoveError
-from explorebaduk.gameplay.sgflib import Property, Node
+from sgftree import Property, Node
+from sgftree.board import Board, Location
+
 from explorebaduk.utils.sgf import sgf_coord_to_int, create_new_sgf
 
 
-class Kifu:
+class KifuBoard:
     def __init__(self, width: int, height: int, handicap: int = 0, komi: float = 7.5):
         self._shape = (width, height)
         self.cursor = create_new_sgf((width, height), handicap, komi)
-        self.board = self.get_root_board()
+        self.board = Board((width, height))
         self.history = []
+        self.board.update_board(self.cursor.root_node.setup_props["AB"],
+                                self.cursor.root_node.setup_props["AW"])
 
     @property
     def turn_color(self):
@@ -18,46 +21,39 @@ class Kifu:
 
     @property
     def turn_label(self):
-        return "B" if self.turn_color == "black" else "white"
+        return "B" if self.board.turn is Location.BLACK else "W"
 
-    def get_root_board(self) -> Board:
-        root_node = self.cursor.root_node
-        black = root_node.get("AB") or []
-        white = root_node.get("AW") or []
+    @property
+    def time_label(self):
+        return "BL" if self.board.turn is Location.BLACK else "WL"
 
-        board = np.zeros(self._shape, dtype=int)
+    def play_move(self, coord: str, time_left: float = 0.0, flip_turn: bool = True) -> np.ndarray:
+        node = Node([
+            Property(self.turn_label, [coord]),
+            Property(self.time_label, [f"{time_left:.2f}"])
+        ])
 
-        for stone in black:
-            coord = sgf_coord_to_int(stone)
-            board[coord] = Location.BLACK
-
-        for stone in white:
-            coord = sgf_coord_to_int(stone)
-            board[coord] = Location.WHITE
-
-        return Board(self._shape, board)
-
-    def add_comment(self, new_comment: str):
-        self.cursor.node.add_comment(new_comment)
-
-    def _move_sgf(self, coord):
-
-        move_prop = Property(self.turn_label, [coord])
-        node = Node([move_prop])
+        self.board.move(sgf_coord_to_int(coord), flip_turn)
+        self.history.append(coord)
 
         self.cursor.append_node(node)
         self.cursor.next()
 
-    def play_move(self, coord: str, flip_turn: bool = True) -> np.ndarray:
-        self.board.move(sgf_coord_to_int(coord), flip_turn)
-        self._move_sgf(coord)
-        self.history.append(coord)
+        return self.board.board
 
-        return self.board.current
-
-    def make_pass(self) -> np.ndarray:
+    def make_pass(self, time_left: float = 0.0) -> np.ndarray:
+        node = Node([
+            Property(self.turn_label, []),
+            Property(self.time_label, [f"{time_left:.2f}"])
+        ])
         self.board.make_pass()
-        self._move_sgf("")
         self.history.append("pass")
 
-        return self.board.current
+        self.cursor.append_node(node)
+        self.cursor.next()
+
+        return self.board.board
+
+    def undo(self):
+        self.board.undo()
+        self.cursor.previous()

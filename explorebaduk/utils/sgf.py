@@ -1,7 +1,7 @@
 from typing import Tuple
 
 from config import APP_NAME, APP_VERSION
-from explorebaduk.gameplay.sgflib import Property, Node, GameTree, Cursor
+from sgftree import Property, Node, GameTree, Cursor
 
 SGF_COORDINATES = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
