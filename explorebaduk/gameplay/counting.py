@@ -1,8 +1,6 @@
-import numpy as np
-
+from sgftree.board import Location, Board
 
 from explorebaduk.constants import Ruleset
-from explorebaduk.gameplay.board import Location, Board
 
 
 def count_japanese(board: Board) -> dict:

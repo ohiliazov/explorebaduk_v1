@@ -1,35 +1,17 @@
 import datetime
 
+from sgftree.sgf import SGF
+
 from explorebaduk.database import db
-from explorebaduk.gameplay.kifu import Kifu
 from explorebaduk.mixins import DatabaseMixin
+from explorebaduk.models.player import Player
 from explorebaduk.models.challenge import Challenge
 from explorebaduk.models.timer import TimeControl
 
 
-class Game:
-    def __init__(self, challenge: Challenge):
-        self.name = challenge.name
-        self.width = challenge.width
-        self.height = challenge.height
-        self.started_at = datetime.datetime.utcnow()
-
-        self.kifu = Kifu(self.width, self.height)
-        self.model = db.insert_game(self.name, self.width, self.height)
-
-    @property
-    def sgf(self):
-        return str(self.kifu.cursor.game)
-
-    @property
-    def game_id(self):
-        return self.model.game_id
-
-
 class GamePlayer(DatabaseMixin):
-    def __init__(self, game_id: int, player_id: int, time_control: TimeControl):
-        self.game_id = game_id
-        self.player_id = player_id
+    def __init__(self, player: Player, time_control: TimeControl):
+        self.player = player
         self.time_system = time_control.time_system
         self.main_time = time_control.main_time
         self.overtime = time_control.overtime
@@ -49,8 +31,26 @@ class GamePlayer(DatabaseMixin):
         return self.timer.stop()
 
 
-class GameManager:
-    def __init__(self, game: Game, black: GamePlayer, white: GamePlayer):
-        self.game = game
+class Game:
+    def __init__(self, challenge: Challenge, black: GamePlayer, white: GamePlayer):
+        self.game_id = None
+        self.name = challenge.name
+        self.width = challenge.width
+        self.height = challenge.height
+        self.started_at = datetime.datetime.utcnow()
+
+        self.sgf = SGF(self.width, self.height)
+
         self.black = black
         self.white = white
+
+    @property
+    def turn(self):
+        return self.sgf.turn
+
+    def __str__(self):
+        return f"ID[{self.game_id}]GN[{self.name}]SZ[{self.width}:{self.height}]" \
+               f"B[{self.black.player.id}]W[{self.white.player.id}]"
+
+    def whose_turn(self):
+        return self.black.player if self.turn == "black" else self.white.player

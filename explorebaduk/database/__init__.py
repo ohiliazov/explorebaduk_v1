@@ -51,10 +51,10 @@ class DatabaseHandler:
     def select_game(self) -> GameModel:
         pass
 
-    def insert_game(self, name, width, height) -> GameModel:
-        game_model = GameModel(name=name, width=width, height=height)
+    def insert_game(self, game) -> int:
+        game_model = GameModel(name=game.name, width=game.width, height=game.height, sgf=game.sgf)
         self.save(game_model)
-        return game_model
+        return game_model.game_id
 
     def update_game(self) -> GameModel:
         pass
