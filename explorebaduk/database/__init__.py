@@ -12,7 +12,7 @@ from explorebaduk.database.game import GameModel, GamePlayerModel
 class DatabaseHandler:
     def __init__(self, database_uri: str):
         self.engine = create_engine(database_uri)
-        self.session = Session(self.engine)
+        self.session = Session(self.engine, autocommit=True)
 
     def get_by_id(self, model: BaseModel, key):
         return self.session.query(model).get(key)
@@ -30,17 +30,19 @@ class DatabaseHandler:
 
     def save(self, instance: BaseModel):
         self.session.add(instance)
-        try:
-            self.session.commit()
-        except SQLAlchemyError:
-            self.session.rollback()
+        self.session.flush()
+        # try:
+        #     self.session.commit()
+        # except SQLAlchemyError:
+        #     self.session.rollback()
 
     def delete(self, instance: BaseModel):
         self.session.delete(instance)
-        try:
-            self.session.commit()
-        except SQLAlchemyError:
-            self.session.rollback()
+        self.session.flush()
+        # try:
+        #     self.session.commit()
+        # except SQLAlchemyError:
+        #     self.session.rollback()
 
     def select_token(self, token: str) -> TokenModel:
         return self.fetch_one(TokenModel, token=token)
@@ -51,8 +53,8 @@ class DatabaseHandler:
     def select_game(self) -> GameModel:
         pass
 
-    def insert_game(self, game) -> int:
-        game_model = GameModel(name=game.name, width=game.width, height=game.height, sgf=game.sgf)
+    def insert_game(self, name, width, height, started_at, sgf) -> int:
+        game_model = GameModel(name=name, width=width, height=height, started_at=started_at, sgf=sgf)
         self.save(game_model)
         return game_model.game_id
 

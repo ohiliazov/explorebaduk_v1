@@ -40,7 +40,6 @@ async def handle_game_start(ws, data: dict):
     black_player = GamePlayer(black, challenge.time_control)
     white_player = GamePlayer(white, challenge.time_control)
     game = Game(challenge, black_player, white_player)
-    game.game_id = db.insert_game(game)
 
     GAMES.add(game)
     CHALLENGES.remove(challenge)
@@ -51,9 +50,8 @@ async def handle_game_start(ws, data: dict):
         send_sync_messages(f"games add {game}"),
     )
 
-    game_manager.black.start_timer()
-
-    await asyncio.sleep(5)
+    game.start_game()
+    await game.sync_timers()
 
 
 async def handle_game_move(ws, data: dict):
@@ -64,11 +62,14 @@ async def handle_game_move(ws, data: dict):
 
     game = get_game_by_id(data["game_id"])
 
-    if player is not game.current.player:
+    if player is not game.whose_turn.player:
         raise MessageHandlerError("not your turn")
 
     move = data["move"]
 
-    result = game.play_move(move)
+    if not game.sgf.is_valid_move(move):
+        raise MessageHandlerError(f"invalid move {move}")
 
-    return await ws.send(f"You played {move}:\n{result}")
+    game.make_move(move)
+
+    return await ws.send(f"You played {move}: {game.sgf}")
