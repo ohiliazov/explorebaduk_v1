@@ -31,12 +31,5 @@ class TimeSystem(IntEnum):
     FISCHER = 4
 
 
-class PlayerColor(IntEnum):
-    AUTO = 0
-    NIGIRI = 1
-    BLACK = 2
-    WHITE = 3
-
-
 DEFAULT_RULESET = Ruleset.CHINESE
 DEFAULT_KOMI = 7.5

@@ -32,10 +32,12 @@ class Timer(metaclass=ABCMeta):
         return self.started_at is not None
 
     @property
+    def time_used(self):
+        return time.monotonic() - self.started_at if self.started else 0
+
+    @property
     def time_left(self) -> float:
-        if self.started:
-            return self._time_left + max(self.started_at - time.monotonic(), 0)
-        return self._time_left
+        return self._time_left - self.time_used
 
     def start(self) -> float:
         if self.started:
@@ -49,13 +51,11 @@ class Timer(metaclass=ABCMeta):
         if not self.started:
             raise TimerError("Not started")
 
-        time_used = time.monotonic() - self.started_at
+        self._time_left -= max(0, self.time_used)
+        if self._time_left <= 0:
+            raise TimerError(f"Out of time")
 
-        if time_used > 0:
-            self.process_time(time_used)
-
-            if self._time_left < 0:
-                raise TimerError(f"Out of time")
+        self.process_overtime()
 
         self.started_at = None
 
@@ -66,7 +66,7 @@ class Timer(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def process_time(self, time_used: float) -> None:
+    def process_overtime(self) -> None:
         pass
 
 
@@ -86,7 +86,7 @@ class NoTimeTimer(Timer):
     def stop(self):
         pass
 
-    def process_time(self, time_used: float) -> None:
+    def process_overtime(self) -> None:
         pass
 
 
@@ -101,8 +101,8 @@ class AbsoluteTimer(Timer):
     def initial_time_left(self):
         return self.main_time
 
-    def process_time(self, time_used: float) -> None:
-        self._time_left -= time_used
+    def process_overtime(self) -> None:
+        pass
 
 
 class ByoyomiTimer(Timer):
@@ -117,9 +117,7 @@ class ByoyomiTimer(Timer):
     def initial_time_left(self):
         return self.main_time + self.overtime * self.periods
 
-    def process_time(self, time_used: float) -> None:
-        self._time_left -= time_used
-
+    def process_overtime(self) -> None:
         periods_left = self._time_left // self.overtime
 
         if 0 <= periods_left < self.periods:
@@ -140,9 +138,7 @@ class CanadianTimer(Timer):
     def initial_time_left(self):
         return self.main_time + self.overtime * self.periods
 
-    def process_time(self, time_used: float) -> None:
-        self._time_left -= time_used
-
+    def process_overtime(self) -> None:
         if self._time_left < self.overtime:
             self.stones_left -= 1
 
@@ -166,8 +162,8 @@ class FischerTimer(Timer):
     def initial_time_left(self):
         return self.main_time
 
-    def process_time(self, time_used: float) -> None:
-        self._time_left -= time_used + self.bonus
+    def process_overtime(self) -> None:
+        self._time_left += self.bonus
 
 
 class TimeControl:

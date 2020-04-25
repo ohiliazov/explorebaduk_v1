@@ -1,9 +1,9 @@
 import asyncio
 
-from explorebaduk.exceptions import MessageHandlerError
-from explorebaduk.helpers import get_challenge_by_id, send_sync_messages
-from explorebaduk.models import Challenge
+from explorebaduk.models import Game, Challenge
 from explorebaduk.server import PLAYERS, CHALLENGES
+from explorebaduk.helpers import get_challenge_by_id, send_sync_messages
+from explorebaduk.exceptions import MessageHandlerError
 
 
 async def handle_challenge_new(ws, data):
@@ -16,7 +16,8 @@ async def handle_challenge_new(ws, data):
     if get_challenge_by_id(player.id):
         raise MessageHandlerError("already created")
 
-    challenge = Challenge(player, data)
+    game = Game(data)
+    challenge = Challenge(player.id, player, game)
 
     CHALLENGES.add(challenge)
 

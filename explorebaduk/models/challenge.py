@@ -1,26 +1,18 @@
 from typing import Set
 
 from explorebaduk.models.player import Player
-from explorebaduk.models.timer import TimeControl
+from explorebaduk.models.game import Game
 
 
 class Challenge:
-    def __init__(self, player: Player, data: dict):
-        self.challenge_id = player.id
-        self.creator = player
-
-        # game info
-        self.name = data["name"]
-        self.width = data["width"]
-        self.height = data["height"]
-
-        # time control
-        self.time_control = TimeControl(**data)
-
+    def __init__(self, challenge_id: int, creator: Player, game: Game):
+        self.challenge_id = challenge_id
+        self.creator = creator
+        self.game = game
         self.pending: Set[Player] = set()
 
     def __str__(self):
-        return f"ID[{self.challenge_id}]GN[{self.name}]SZ[{self.width}:{self.height}]{self.time_control}"
+        return f"ID[{self.challenge_id}]{self.game}{self.game.time_control}"
 
     async def add_player(self, player: Player):
         self.pending.add(player)

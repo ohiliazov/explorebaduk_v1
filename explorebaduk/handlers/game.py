@@ -1,11 +1,8 @@
 import asyncio
 import random
 
-from explorebaduk.database import db
 from explorebaduk.exceptions import MessageHandlerError
 from explorebaduk.helpers import get_player_by_id, get_challenge_by_id, get_game_by_id, send_sync_messages
-from explorebaduk.models import Game
-from explorebaduk.models.game import GamePlayer
 from explorebaduk.server import PLAYERS, CHALLENGES, GAMES
 
 
@@ -36,10 +33,11 @@ async def handle_game_start(ws, data: dict):
         return await ws.send("player not joined")
 
     # TODO: implement
+    game = challenge.game
+
     black, white = random.sample([player, opponent], 2)
-    black_player = GamePlayer(black, challenge.time_control)
-    white_player = GamePlayer(white, challenge.time_control)
-    game = Game(challenge, black_player, white_player)
+
+    game.start_game(black, white, 0, 6.5)
 
     GAMES.add(game)
     CHALLENGES.remove(challenge)
@@ -50,7 +48,6 @@ async def handle_game_start(ws, data: dict):
         send_sync_messages(f"games add {game}"),
     )
 
-    game.start_game()
     await game.sync_timers()
 
 
@@ -72,4 +69,5 @@ async def handle_game_move(ws, data: dict):
 
     game.make_move(move)
 
-    return await ws.send(f"You played {move}: {game.sgf}")
+    await game.sync_timers()
+

@@ -14,6 +14,10 @@ class TimerError(Exception):
     pass
 
 
+class OutOfTimeError(Exception):
+    pass
+
+
 class GameError(Exception):
     pass
 
