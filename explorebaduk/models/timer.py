@@ -168,14 +168,14 @@ class FischerTimer(Timer):
 
 class TimeControl:
     def __init__(
-            self,
-            time_system: TimeSystem,
-            main_time: int = 0,
-            overtime: int = 0,
-            period: int = 1,
-            stones: int = 1,
-            bonus: int = 0,
-            **kwargs
+        self,
+        time_system: TimeSystem,
+        main_time: int = 0,
+        overtime: int = 0,
+        period: int = 1,
+        stones: int = 1,
+        bonus: int = 0,
+        **kwargs,
     ):
         self.time_system = time_system
         self.main_time = main_time

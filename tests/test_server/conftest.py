@@ -34,9 +34,7 @@ async def start_test_server(event_loop):
 @pytest.fixture
 def ws_factory(event_loop):
     async def gen(i):
-        return [
-            await websockets.connect(server_uri, loop=event_loop) for _ in range(i)
-        ]
+        return [await websockets.connect(server_uri, loop=event_loop) for _ in range(i)]
 
     return gen
 

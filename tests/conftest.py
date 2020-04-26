@@ -12,7 +12,7 @@ from explorebaduk.database import DatabaseHandler
 
 
 config = get_config(env="test")
-db = DatabaseHandler(config['database_uri'])
+db = DatabaseHandler(config["database_uri"])
 
 
 @pytest.fixture(scope="session", autouse=True)

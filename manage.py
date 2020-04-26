@@ -12,7 +12,7 @@ FORMAT = "%(asctime)s [%(name)s] %(levelname)s: %(message)s"
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 logging.basicConfig(level=logging.INFO, format=FORMAT, datefmt=DATE_FORMAT)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     config = get_config()
     loop = asyncio.get_event_loop()
 
@@ -20,9 +20,10 @@ if __name__ == '__main__':
 
     server = websockets.serve(
         ws_handler=partial(start_server, db_handler=db_handler),
-        host=config['server_host'],
-        port=config['server_port'],
-        loop=loop)
+        host=config["server_host"],
+        port=config["server_port"],
+        loop=loop,
+    )
 
     loop.run_until_complete(server)
     loop.run_forever()

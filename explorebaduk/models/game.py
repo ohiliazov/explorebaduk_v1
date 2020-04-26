@@ -58,8 +58,10 @@ class Game:
 
     def __str__(self):
         if self.game_id:
-            return f"ID[{self.game_id}]GN[{self.name}]SZ[{self.width}:{self.height}]" \
-                   f"B[{self.black.player.id}]W[{self.white.player.id}]"
+            return (
+                f"ID[{self.game_id}]GN[{self.name}]SZ[{self.width}:{self.height}]"
+                f"B[{self.black.player.id}]W[{self.white.player.id}]"
+            )
 
         return f"GN[{self.name}]SZ[{self.width}:{self.height}]"
 
@@ -76,8 +78,7 @@ class Game:
         print(self.whose_turn.time_left)
         print(self.opponent.time_left)
         await asyncio.gather(
-            self.whose_turn.player.send("you lost"),
-            self.opponent.player.send("you won"),
+            self.whose_turn.player.send("you lost"), self.opponent.player.send("you won"),
         )
 
     async def _check_timer(self):
@@ -107,8 +108,7 @@ class Game:
         message = f"game ID[{self.game_id}]PL[{self.turn}]BL[{self.black.time_left}]WL[{self.white.time_left}]"
         message += "\n" + str(self.sgf.board)
         await asyncio.gather(
-            self.black.player.send(message),
-            self.white.player.send(message),
+            self.black.player.send(message), self.white.player.send(message),
         )
 
     def make_move(self, coord):

@@ -71,4 +71,3 @@ async def handle_game_move(ws, data: dict, db_handler: DatabaseHandler):
     game.make_move(move)
 
     await game.sync_timers()
-

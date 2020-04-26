@@ -1,8 +1,7 @@
 import random
 import string
 import datetime
-from config import DATABASE_URI
-from explorebaduk.database import BaseModel, UserModel, TokenModel, db
+from explorebaduk.database import BaseModel, UserModel, TokenModel, DatabaseHandler
 
 
 def make_user(num: int):
@@ -36,11 +35,19 @@ def populate_database_with_data(db, num_users: int):
         db.save(token)
 
 
-def create_db():
-    BaseModel.metadata.drop_all(db.engine)
-    BaseModel.metadata.create_all(db.engine)
-    populate_database_with_data(db, 1000)
+def create_db(database_uri):
+    db_handler = DatabaseHandler(database_uri)
+    BaseModel.metadata.drop_all(db_handler.engine)
+    BaseModel.metadata.create_all(db_handler.engine)
+    populate_database_with_data(db_handler, 1000)
 
 
 if __name__ == "__main__":
-    create_db()
+    import sys
+    from config import get_config
+
+    if len(sys.argv) < 2:
+        raise Exception("Please provide env")
+
+    config = get_config(env=sys.argv[1])
+    create_db(config["database_uri"])
