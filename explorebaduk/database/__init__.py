@@ -47,18 +47,19 @@ class DatabaseHandler:
         return self.fetch_one(TokenModel, token=token)
 
     def select_user(self, user_id: int) -> UserModel:
-        return self.fetch_one(UserModel, user_id=user_id)
+        return self.get_by_id(UserModel, user_id)
 
-    def select_game(self) -> GameModel:
-        pass
+    def select_game(self, game_id: int) -> GameModel:
+        return self.get_by_id(GameModel, game_id)
 
     def insert_game(self, name, width, height, started_at, sgf) -> int:
         game_model = GameModel(name=name, width=width, height=height, started_at=started_at, sgf=sgf)
         self.save(game_model)
         return game_model.game_id
 
-    def update_game(self) -> GameModel:
-        pass
+    def update_game(self, game_id) -> GameModel:
+        # TODO: make actual update
+        return self.select_game(game_id)
 
     def select_game_player(self) -> GamePlayerModel:
         pass
@@ -68,6 +69,3 @@ class DatabaseHandler:
 
     def update_game_player(self) -> GamePlayerModel:
         pass
-
-
-db = DatabaseHandler(DATABASE_URI)
