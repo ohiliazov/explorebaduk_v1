@@ -14,4 +14,4 @@ class GameMoveSchema(BaseSchema):
     __pattern__ = re.compile(r"^(?P<game_id>\d+) (?P<color>[BW])\[(?P<move>[a-z]{2})?\]$")
     game_id = fields.Integer(required=True)
     color = fields.String(required=True)
-    move = fields.String(default="")
+    move = fields.String(missing=None)

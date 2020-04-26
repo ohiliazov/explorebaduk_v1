@@ -111,9 +111,21 @@ class Game:
             self.black.player.send(message), self.white.player.send(message),
         )
 
-    def make_move(self, coord):
-        if self.status == GameStatus.FINISHED:
-            raise Exception("Game is finished")
+    async def make_move(self, coord):
+        if self.status != GameStatus.PLAYING:
+            raise Exception("Game is not in progress.")
 
-        self.sgf.make_move(coord, self.stop_timer())
-        self.start_timer()
+        if coord:
+            self.sgf.make_move(coord, self.stop_timer())
+        else:
+            self.sgf.make_pass(self.stop_timer())
+
+        if self.sgf.board.passes > 1:
+            self.status = GameStatus.SCORING
+            message = f"game ID[{self.game_id}] scoring started"
+            await asyncio.gather(
+                self.black.player.send(message),
+                self.white.player.send(message),
+            )
+        else:
+            self.start_timer()

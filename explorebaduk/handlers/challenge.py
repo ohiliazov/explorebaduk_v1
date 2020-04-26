@@ -16,7 +16,7 @@ async def handle_challenge_new(ws, data, db_handler):
     if get_challenge_by_id(player.id):
         raise MessageHandlerError("already created")
 
-    game = Game(data)
+    game = Game(data, db_handler)
     challenge = Challenge(player.id, player, game)
 
     CHALLENGES.add(challenge)

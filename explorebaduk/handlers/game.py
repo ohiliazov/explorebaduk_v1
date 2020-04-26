@@ -65,9 +65,9 @@ async def handle_game_move(ws, data: dict, db_handler: DatabaseHandler):
 
     move = data["move"]
 
-    if not game.sgf.is_valid_move(move):
+    if move and not game.sgf.is_valid_move(move):
         raise MessageHandlerError(f"invalid move {move}")
 
-    game.make_move(move)
+    await game.make_move(move)
 
     await game.sync_timers()
