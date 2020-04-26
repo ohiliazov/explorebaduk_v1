@@ -2,6 +2,7 @@ import asyncio
 import logging
 from typing import List, Tuple
 
+from explorebaduk.database import DatabaseHandler
 from explorebaduk.constants import AUTO_MATCH_DELAY
 from explorebaduk.server import LOBBY
 
@@ -40,7 +41,7 @@ async def auto_match_manager():
 
 
 # TODO: implement
-async def handle_auto_match(ws, data: dict):
+async def handle_auto_match(ws, data: dict, db_handler: DatabaseHandler):
     """
     Handles auto-match message
     :param ws:

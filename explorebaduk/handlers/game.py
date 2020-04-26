@@ -1,12 +1,13 @@
 import asyncio
 import random
 
+from explorebaduk.database import DatabaseHandler
 from explorebaduk.exceptions import MessageHandlerError
 from explorebaduk.helpers import get_player_by_id, get_challenge_by_id, get_game_by_id, send_sync_messages
 from explorebaduk.server import PLAYERS, CHALLENGES, GAMES
 
 
-async def handle_game_start(ws, data: dict):
+async def handle_game_start(ws, data: dict, db_handler: DatabaseHandler):
     """Start game from challenge"""
     player = PLAYERS.get(ws)
 
@@ -51,7 +52,7 @@ async def handle_game_start(ws, data: dict):
     await game.sync_timers()
 
 
-async def handle_game_move(ws, data: dict):
+async def handle_game_move(ws, data: dict, db_handler: DatabaseHandler):
     player = PLAYERS.get(ws)
 
     if not player:

@@ -6,7 +6,7 @@ from explorebaduk.helpers import get_challenge_by_id, send_sync_messages
 from explorebaduk.exceptions import MessageHandlerError
 
 
-async def handle_challenge_new(ws, data):
+async def handle_challenge_new(ws, data, db_handler):
     """Create new challenge"""
     player = PLAYERS.get(ws)
 
@@ -24,7 +24,7 @@ async def handle_challenge_new(ws, data):
     await asyncio.gather(ws.send(f"OK [challenge new] {challenge}"), send_sync_messages(f"challenges add {challenge}"))
 
 
-async def handle_challenge_cancel(ws, data: dict):
+async def handle_challenge_cancel(ws, data: dict, db_handler):
     """Cancel challenge"""
     player = PLAYERS.get(ws)
 
@@ -43,7 +43,7 @@ async def handle_challenge_cancel(ws, data: dict):
     )
 
 
-async def handle_challenge_join(ws, data):
+async def handle_challenge_join(ws, data, db_handler):
     """Join challenge"""
     player = PLAYERS.get(ws)
 
@@ -68,7 +68,7 @@ async def handle_challenge_join(ws, data):
     )
 
 
-async def handle_challenge_leave(ws, data):
+async def handle_challenge_leave(ws, data, db_handler):
     """Leave challenge"""
     player = PLAYERS.get(ws)
 

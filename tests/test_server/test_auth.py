@@ -18,7 +18,7 @@ def random_token(db):
     return user
 
 
-async def receive_mesages(ws):
+async def receive_messages(ws):
     responses = []
     try:
         while True:
@@ -32,16 +32,16 @@ async def receive_mesages(ws):
 
 
 @pytest.mark.asyncio
-async def test_auth_login(db_session, ws):
+async def test_auth_login(db_handler, ws):
 
-    token = random_token(db_session)
-    user = get_user(db_session, token.user_id)
+    token = random_token(db_handler)
+    user = get_user(db_handler, token.user_id)
     player = Player(ws, user)
 
     await ws.send(f"auth login {token.token}")
-    messages = await receive_mesages(ws)
-    assert f"auth login OK {player}" in messages
-    assert f"sync player joined {player}" in messages
+    messages = await receive_messages(ws)
+    assert f"OK [auth login] {player}" in messages
+    assert f"players add {player}" in messages
 
 
 @pytest.mark.asyncio
@@ -49,69 +49,69 @@ async def test_auth_login_invalid_token(ws):
     wrong_token = "x" * 64
 
     await ws.send(f"auth login {wrong_token}")
-    messages = await receive_mesages(ws)
-    assert "auth login ERROR invalid token" in messages
+    messages = await receive_messages(ws)
+    assert "ERROR [auth login] invalid token" in messages
 
 
 @pytest.mark.asyncio
-async def test_auth_login_already_login(db_session, ws):
+async def test_auth_login_already_login(db_handler, ws):
 
-    token = random_token(db_session)
-    user = get_user(db_session, token.user_id)
+    token = random_token(db_handler)
+    user = get_user(db_handler, token.user_id)
     player = Player(ws, user)
 
     await ws.send(f"auth login {token.token}")
-    messages = await receive_mesages(ws)
-    assert f"auth login OK {player}" in messages
-    assert f"sync player joined {player}" in messages
+    messages = await receive_messages(ws)
+    assert f"OK [auth login] {player}" in messages
+    assert f"players add {player}" in messages
 
     await ws.send(f"auth login {token.token}")
-    messages = await receive_mesages(ws)
+    messages = await receive_messages(ws)
 
-    assert "auth login ERROR already logged in" in messages
+    assert "ERROR [auth login] already logged in" in messages
 
 
 @pytest.mark.asyncio
-async def test_auth_login_online_other_device(db_session, ws_factory):
+async def test_auth_login_online_other_device(db_handler, ws_factory):
     ws1, ws2 = await ws_factory(2)
 
-    token = random_token(db_session)
-    user = get_user(db_session, token.user_id)
+    token = random_token(db_handler)
+    user = get_user(db_handler, token.user_id)
     player = Player(ws1, user)
 
     await ws1.send(f"auth login {token.token}")
-    messages = await receive_mesages(ws1)
-    assert f"auth login OK {player}" in messages
-    assert f"sync player joined {player}" in messages
+    messages = await receive_messages(ws1)
+    assert f"OK [auth login] {player}" in messages
+    assert f"players add {player}" in messages
 
-    messages = await receive_mesages(ws2)
-    assert f"sync player joined {player}" in messages
+    messages = await receive_messages(ws2)
+    assert f"players add {player}" in messages
 
     await ws2.send(f"auth login {token.token}")
-    messages = await receive_mesages(ws2)
-    assert "auth login ERROR online from other device" in messages
+    messages = await receive_messages(ws2)
+    assert "ERROR [auth login] online from other device" in messages
 
 
 @pytest.mark.asyncio
-async def test_auth_logout(db_session, ws_factory):
+async def test_auth_logout(db_handler, ws_factory):
     ws1, ws2 = await ws_factory(2)
 
-    token = random_token(db_session)
-    user = get_user(db_session, token.user_id)
+    token = random_token(db_handler)
+    user = get_user(db_handler, token.user_id)
     player = Player(ws1, user)
 
     await ws1.send(f"auth login {token.token}")
 
-    messages = await receive_mesages(ws1)
-    assert f"auth login OK {player}" in messages
-    assert f"sync player joined {player}" in messages
+    messages = await receive_messages(ws1)
+    assert f"OK [auth login] {player}" in messages
+    assert f"players add {player}" in messages
 
-    messages = await receive_mesages(ws2)
-    assert f"sync player joined {player}" in messages
+    messages = await receive_messages(ws2)
+    assert f"players add {player}" in messages
 
     await ws1.send(f"auth logout")
-    messages = await receive_mesages(ws1)
-    assert f"auth logout OK" in messages
+    messages = await receive_messages(ws1)
+    assert f"OK [auth logout] {player}" in messages
 
-    messages = await receive_mesages(ws2)
-    assert f"sync player left {player}" in messages
+    messages = await receive_messages(ws2)
+    assert f"players del {player}" in messages

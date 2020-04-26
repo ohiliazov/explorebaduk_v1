@@ -1,10 +1,20 @@
 import os
+import yaml
+
+BASE_PATH = os.path.dirname(os.path.abspath(__file__))
+DEFAULT_CONFIG_PATH = os.path.join(BASE_PATH, "config.yaml")
+
+
+def get_config(config_path: str = DEFAULT_CONFIG_PATH, env: str = "dev"):
+    with open(config_path) as f:
+        config_data = yaml.load(f)
+    return config_data[env]
+
 
 APP_NAME = "explorebaduk"
 APP_VERSION = "0.1.0"
 
 # path to project root directory
-BASE_PATH = os.path.dirname(os.path.abspath(__file__))
 
 # ws game_server
 SERVER_HOST = "localhost"

@@ -1,9 +1,17 @@
 import asyncio
+import functools
 import websockets
 import pytest
 
-from config import TEST_SERVER_HOST, TEST_SERVER_PORT
+from config import get_config
 from app import start_server
+
+from explorebaduk.database import DatabaseHandler
+
+
+config = get_config(env="test")
+db_handler = DatabaseHandler(config["database_uri"])
+server_uri = f"ws://{config['server_host']}:{config['server_port']}"
 
 
 @pytest.fixture
@@ -13,7 +21,12 @@ def event_loop():
 
 @pytest.yield_fixture(autouse=True)
 async def start_test_server(event_loop):
-    server = await websockets.serve(start_server, TEST_SERVER_HOST, TEST_SERVER_PORT, loop=event_loop)
+    server = await websockets.serve(
+        ws_handler=functools.partial(start_server, db_handler=db_handler),
+        host=config["server_host"],
+        port=config["server_port"],
+        loop=event_loop,
+    )
     yield
     server.close()
 
@@ -22,7 +35,7 @@ async def start_test_server(event_loop):
 def ws_factory(event_loop):
     async def gen(i):
         return [
-            await websockets.connect(f"ws://{TEST_SERVER_HOST}:{TEST_SERVER_PORT}", loop=event_loop) for _ in range(i)
+            await websockets.connect(server_uri, loop=event_loop) for _ in range(i)
         ]
 
     return gen
@@ -30,4 +43,4 @@ def ws_factory(event_loop):
 
 @pytest.yield_fixture
 async def ws(event_loop):
-    return await websockets.connect(f"ws://{TEST_SERVER_HOST}:{TEST_SERVER_PORT}", loop=event_loop)
+    return await websockets.connect(server_uri, loop=event_loop)

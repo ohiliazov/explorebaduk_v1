@@ -7,7 +7,9 @@ from explorebaduk.helpers import get_challenge_by_id, get_game_by_id, send_sync_
 async def register(ws):
     CONNECTED.add(ws)
     await asyncio.gather(
-        handle_info_players(ws, {}), handle_info_challenges(ws, {}), handle_info_games(ws, {}),
+        handle_info_players(ws),
+        handle_info_challenges(ws),
+        handle_info_games(ws),
     )
 
 

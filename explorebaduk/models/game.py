@@ -3,7 +3,7 @@ import datetime
 
 from sgftree.sgf import SGF
 
-from explorebaduk.database import db
+from explorebaduk.database import DatabaseHandler
 from explorebaduk.models.player import Player
 from explorebaduk.models.timer import TimeControl
 
@@ -32,7 +32,8 @@ class GamePlayer:
 
 
 class Game:
-    def __init__(self, data: dict):
+    def __init__(self, data: dict, db_handler: DatabaseHandler):
+        self.db_handler = db_handler
         self.name = data["name"]
         self.width = data["width"]
         self.height = data["height"]
@@ -97,7 +98,7 @@ class Game:
 
         self.sgf = SGF(self.width, self.height, handicap, komi)
         self.started_at = datetime.datetime.utcnow()
-        self.game_id = db.insert_game(self.name, self.width, self.height, self.started_at, str(self.sgf))
+        self.game_id = self.db_handler.insert_game(self.name, self.width, self.height, self.started_at, str(self.sgf))
 
         self.status = GameStatus.PLAYING
         self.start_timer()

@@ -1,17 +1,28 @@
 import asyncio
 import websockets
 import logging
+from functools import partial
 
-from config import SERVER_HOST, SERVER_PORT
+from config import get_config
 from app import start_server
+from explorebaduk.database import DatabaseHandler
+
 
 FORMAT = "%(asctime)s [%(name)s] %(levelname)s: %(message)s"
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 logging.basicConfig(level=logging.INFO, format=FORMAT, datefmt=DATE_FORMAT)
 
-loop = asyncio.get_event_loop()
+if __name__ == '__main__':
+    config = get_config()
+    loop = asyncio.get_event_loop()
 
-server = websockets.serve(start_server, SERVER_HOST, SERVER_PORT, loop=loop)
+    db_handler = DatabaseHandler(config["database_uri"])
 
-loop.run_until_complete(server)
-loop.run_forever()
+    server = websockets.serve(
+        ws_handler=partial(start_server, db_handler=db_handler),
+        host=config['server_host'],
+        port=config['server_port'],
+        loop=loop)
+
+    loop.run_until_complete(server)
+    loop.run_forever()

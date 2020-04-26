@@ -48,7 +48,7 @@ MESSAGE_HANDLERS = {
 }
 
 
-async def handle_message(ws, message: str):
+async def handle_message(ws, message: str, db_handler):
     logger.info(message)
 
     # TODO: add message_id somewhere here if needed
@@ -73,7 +73,7 @@ async def handle_message(ws, message: str):
         parsed_data = message_schema().load(*data) if message_schema else {}
         pprint(parsed_data)
 
-        await message_handler(ws, parsed_data)
+        await message_handler(ws, parsed_data, db_handler)
 
     except (ValidationError, MessageHandlerError) as err:
         await ws.send(f"ERROR [{message_type} {action}] {err}")
