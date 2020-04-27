@@ -1,4 +1,3 @@
-from explorebaduk.database import DatabaseHandler
 from explorebaduk.server import PLAYERS, CHALLENGES, GAMES
 
 

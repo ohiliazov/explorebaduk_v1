@@ -9,3 +9,4 @@ pytest-asyncio
 sqlalchemy
 websockets
 psycopg2
+pyyaml

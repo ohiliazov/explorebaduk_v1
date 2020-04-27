@@ -1,5 +1,6 @@
 PYTHON=python3.7
 VERSION=`python setup.py --version`
+LDFLAGS='-L/usr/local/lib -L/usr/local/opt/openssl/lib -L/usr/local/opt/readline/lib'
 
 install:
 	python -m pip install -r requirements.txt
