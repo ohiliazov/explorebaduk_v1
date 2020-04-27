@@ -1,11 +1,12 @@
 # ExploreBaduk GameServer
 The game server designed for the ExploreBaduk website
 
-Python 3.6 virtual environment:
+Use Python >=3.7
+Python virtual environment:
 ```bash
-python3.6 -m venv venv
+python -m venv venv
 source venv/bin/activate
-pip install -r requirements.txt
+make install
 ```
 
 Run server within your python virtual environment:
@@ -33,16 +34,16 @@ python -m websockets ws://localhost:8080
 
 ##### Challenge
 - [x] create challenge
-- [ ] cancel challenge
+- [x] cancel challenge
 - [x] join challenge
-- [ ] accept challenge
+- [x] accept challenge
 - [ ] decline challenge
 - [ ] change request
 - [ ] return change request
 
 ##### Play move
-- [ ] play move
-- [ ] make pass
+- [x] play move
+- [x] make pass
 - [ ] resign
 
 ##### Undo move
