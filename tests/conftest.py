@@ -1,5 +1,6 @@
 import pytest
-from sqlalchemy import create_engine
+
+from sgftree.helpers import make_game_tree
 
 from config import get_config
 from explorebaduk.database import BaseModel
@@ -49,3 +50,9 @@ def token_expired(db_handler, user1):
     db_handler.session.save(token)
 
     return token
+
+
+@pytest.fixture(scope="session")
+def game():
+    import os
+    return make_game_tree(os.path.join(os.path.dirname(__file__), "test_data/game9x9.sgf"))

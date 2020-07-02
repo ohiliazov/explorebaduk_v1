@@ -6,9 +6,11 @@ from explorebaduk.exceptions import MessageHandlerError
 from explorebaduk.messages import (
     LoginSchema,
     ChallengeNewSchema,
-    ChallengeIdSchema,
+    ChallengeIDSchema,
+    GameIDSchema,
     GameStartSchema,
     GameMoveSchema,
+    GameMarkSchema,
 )
 
 from explorebaduk.handlers.auth import (
@@ -26,20 +28,34 @@ from explorebaduk.handlers.info import (
     handle_info_challenges,
     handle_info_games,
 )
-from explorebaduk.handlers.game import handle_game_start, handle_game_move
+from explorebaduk.handlers.game import (
+    handle_game_start,
+    handle_game_leave,
+    handle_game_move,
+    handle_game_mark,
+    handle_game_done,
+    handle_game_resign,
+)
 from explorebaduk.handlers.sync import register, unregister
 
 logger = logging.getLogger("explorebaduk")
 
 MESSAGE_HANDLERS = {
-    "auth": {"login": (LoginSchema, handle_auth_login), "logout": (None, handle_auth_logout),},
+    "auth": {"login": (LoginSchema, handle_auth_login), "logout": (None, handle_auth_logout)},
     "challenge": {
         "new": (ChallengeNewSchema, handle_challenge_new),
-        "cancel": (None, handle_challenge_cancel),
-        "join": (ChallengeIdSchema, handle_challenge_join),
-        "leave": (ChallengeIdSchema, handle_challenge_leave),
+        "cancel": (ChallengeIDSchema, handle_challenge_cancel),
+        "join": (ChallengeIDSchema, handle_challenge_join),
+        "leave": (ChallengeIDSchema, handle_challenge_leave),
     },
-    "game": {"move": (GameMoveSchema, handle_game_move), "start": (GameStartSchema, handle_game_start),},
+    "game": {
+        "start": (GameStartSchema, handle_game_start),
+        "leave": (GameIDSchema, handle_game_leave),
+        "move": (GameMoveSchema, handle_game_move),
+        "mark": (GameMarkSchema, handle_game_mark),
+        "done": (GameIDSchema, handle_game_done),
+        "resign": (GameIDSchema, handle_game_resign),
+    },
     "info": {
         "players": (None, handle_info_players),
         "challenges": (None, handle_info_challenges),

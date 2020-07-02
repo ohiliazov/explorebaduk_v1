@@ -3,7 +3,7 @@ import pytest
 import random
 
 from explorebaduk.database import UserModel, TokenModel
-from explorebaduk.models import Player
+from explorebaduk.models import User
 
 CONNECTED_CLIENTS = 10
 
@@ -36,7 +36,7 @@ async def test_auth_login(db_handler, ws):
 
     token = random_token(db_handler)
     user = get_user(db_handler, token.user_id)
-    player = Player(ws, user)
+    player = User(ws, user)
 
     await ws.send(f"auth login {token.token}")
     messages = await receive_messages(ws)
@@ -58,7 +58,7 @@ async def test_auth_login_already_login(db_handler, ws):
 
     token = random_token(db_handler)
     user = get_user(db_handler, token.user_id)
-    player = Player(ws, user)
+    player = User(ws, user)
 
     await ws.send(f"auth login {token.token}")
     messages = await receive_messages(ws)
@@ -77,7 +77,7 @@ async def test_auth_login_online_other_device(db_handler, ws_factory):
 
     token = random_token(db_handler)
     user = get_user(db_handler, token.user_id)
-    player = Player(ws1, user)
+    player = User(ws1, user)
 
     await ws1.send(f"auth login {token.token}")
     messages = await receive_messages(ws1)
@@ -98,7 +98,7 @@ async def test_auth_logout(db_handler, ws_factory):
 
     token = random_token(db_handler)
     user = get_user(db_handler, token.user_id)
-    player = Player(ws1, user)
+    player = User(ws1, user)
 
     await ws1.send(f"auth login {token.token}")
 

@@ -24,3 +24,7 @@ class GameError(Exception):
 
 class MessageHandlerError(Exception):
     pass
+
+
+class GameStatusError(Exception):
+    pass

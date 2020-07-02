@@ -1,26 +1,17 @@
-from enum import IntEnum
-
-
-# Time to wait for match making
-AUTO_MATCH_DELAY = 3
+from enum import Enum, IntEnum
 
 # Delay before making a move
 MOVE_DELAY = 1
 
 
-class GameType(IntEnum):
-    RANKED = 0
-    FREE = 1
-    DEMO = 2
-    RENGO = 3
+class GameType:
+    RANKED = "ranked"
+    FREE = "free"
 
 
-class Ruleset(IntEnum):
-    CHINESE = 0
-    JAPANESE = 1
-    AGA = 2
-    ING = 3
-    NEW_ZEALAND = 4
+class GameRules(Enum):
+    CHINESE = "chinese"
+    JAPANESE = "japanese"
 
 
 class TimeSystem(IntEnum):
@@ -31,5 +22,5 @@ class TimeSystem(IntEnum):
     FISCHER = 4
 
 
-DEFAULT_RULESET = Ruleset.CHINESE
-DEFAULT_KOMI = 7.5
+PASS = "pass"
+RESIGN = "resign"

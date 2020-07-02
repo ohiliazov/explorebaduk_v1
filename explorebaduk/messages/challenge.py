@@ -7,16 +7,28 @@ from marshmallow import (
     ValidationError,
 )
 
-from explorebaduk.constants import TimeSystem
+from explorebaduk.constants import TimeSystem, GameRules
 from explorebaduk.helpers import EnumValidator
 from explorebaduk.messages.base import BaseSchema
+
+
+# challenge new GN[name]SZ[5:5]TS[1M3000O30P3S1B0]
+# challenge cancel 1
+# challenge start 1 2
+# challenge join 1
+# challenge leave 1
+
+
+class ChallengeIDSchema(BaseSchema):
+    __pattern__ = re.compile(r"^(?P<challenge_id>\d+)$")
+    challenge_id = fields.Integer(required=True)
 
 
 class ChallengeNewSchema(BaseSchema):
     __pattern__ = re.compile(
         r"GN\[(?P<name>[\w\W]+)\]"  # challenge name
         r"SZ\[(?P<width>\d+):(?P<height>\d+)\]"  # board size
-        # r"FL\[(?P<is_open>\d)(?P<undo>\d)(?P<pause>\d)\]"  # flags
+        r"RU\[(?P<rules>[a-z]+)\]"  # rules
         r"TS\["  # time system
         r"(?P<time_system>\d+)(?:M(?P<main_time>\d+))?"
         r"(?:O(?P<overtime>\d+))?(?:P(?P<periods>\d+))?"
@@ -28,9 +40,7 @@ class ChallengeNewSchema(BaseSchema):
     width = fields.Integer(required=True, validate=validate.Range(min=5, max=52))
     height = fields.Integer(required=True, validate=validate.Range(min=5, max=52))
 
-    # is_open = fields.Boolean(required=True)
-    # undo = fields.Boolean(required=True)
-    # pause = fields.Boolean(required=True)
+    rules = fields.String(required=True, validate=EnumValidator(GameRules))
 
     time_system = fields.Integer(required=True, validate=EnumValidator(TimeSystem))
     main_time = fields.Integer(missing=0)
@@ -58,8 +68,3 @@ class ChallengeNewSchema(BaseSchema):
     def convert_enums(self, data, **kwargs):
         data["time_system"] = TimeSystem(data["time_system"])
         return data
-
-
-class ChallengeIdSchema(BaseSchema):
-    __pattern__ = re.compile(r"^(?P<challenge_id>\d+)$")
-    challenge_id = fields.Integer(required=True)

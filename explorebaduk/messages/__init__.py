@@ -1,3 +1,3 @@
 from explorebaduk.messages.login import LoginSchema
-from explorebaduk.messages.challenge import ChallengeNewSchema, ChallengeIdSchema
-from explorebaduk.messages.game import GameStartSchema, GameMoveSchema
+from explorebaduk.messages.challenge import ChallengeIDSchema, ChallengeNewSchema
+from explorebaduk.messages.game import GameIDSchema, GameStartSchema, GameMoveSchema, GameMarkSchema

@@ -3,13 +3,14 @@ import random
 
 from explorebaduk.database import DatabaseHandler
 from explorebaduk.exceptions import MessageHandlerError
-from explorebaduk.helpers import get_player_by_id, get_challenge_by_id, get_game_by_id, send_sync_messages
-from explorebaduk.server import PLAYERS, CHALLENGES, GAMES
+from explorebaduk.helpers import get_user_by_id, get_challenge_by_id, get_game_by_id, send_sync_messages
+from explorebaduk.server import USERS, CHALLENGES, GAMES
+from explorebaduk.models import Game, GameInfo
 
 
 async def handle_game_start(ws, data: dict, db_handler: DatabaseHandler):
     """Start game from challenge"""
-    player = PLAYERS.get(ws)
+    player = USERS.get(ws)
 
     if not player:
         raise MessageHandlerError("not logged in")
@@ -23,7 +24,7 @@ async def handle_game_start(ws, data: dict, db_handler: DatabaseHandler):
     if player is not challenge.creator:
         raise MessageHandlerError("not creator")
 
-    opponent = get_player_by_id(data["opponent_id"])
+    opponent = get_user_by_id(data["opponent_id"])
 
     # opponent should be online
     if not opponent:
@@ -34,11 +35,12 @@ async def handle_game_start(ws, data: dict, db_handler: DatabaseHandler):
         return await ws.send("player not joined")
 
     # TODO: implement
-    game = challenge.game
 
     black, white = random.sample([player, opponent], 2)
+    handicap, komi = 0, 6.5
+    game = Game(challenge, black, white, handicap, komi)
 
-    game.start_game(black, white, 0, 6.5)
+    await game.start_game(db_handler)
 
     GAMES.add(game)
     CHALLENGES.remove(challenge)
@@ -49,25 +51,54 @@ async def handle_game_start(ws, data: dict, db_handler: DatabaseHandler):
         send_sync_messages(f"games add {game}"),
     )
 
-    await game.sync_timers()
-
 
 async def handle_game_move(ws, data: dict, db_handler: DatabaseHandler):
-    player = PLAYERS.get(ws)
+    player = USERS.get(ws)
 
     if not player:
         raise MessageHandlerError("not logged in")
 
     game = get_game_by_id(data["game_id"])
 
+    if not game:
+        raise MessageHandlerError("game not found")
+
     if player is not game.whose_turn.player:
         raise MessageHandlerError("not your turn")
 
     move = data["move"]
 
-    if move and not game.sgf.is_valid_move(move):
-        raise MessageHandlerError(f"invalid move {move}")
-
     await game.make_move(move)
+    await ws.send(str(game.kifu))
 
-    await game.sync_timers()
+
+async def handle_game_mark(ws, data, db_handler: DatabaseHandler):
+    player = USERS.get(ws)
+
+    if not player:
+        raise MessageHandlerError("not logged in")
+
+    game = get_game_by_id(data["game_id"])
+
+    if not game:
+        raise MessageHandlerError("game not found")
+
+    if player not in [game.whose_turn.player, game.opponent.player]:
+        raise MessageHandlerError("not a player")
+
+    action = data["action"]
+    coord = data["coord"]
+
+    await game.mark_stone(action, coord)
+
+
+async def handle_game_leave(ws, data, db_handler: DatabaseHandler):
+    pass
+
+
+async def handle_game_done(ws, data, db_handler: DatabaseHandler):
+    pass
+
+
+async def handle_game_resign(ws, data, db_handler: DatabaseHandler):
+    pass

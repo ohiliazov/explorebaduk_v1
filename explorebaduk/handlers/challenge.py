@@ -1,14 +1,14 @@
 import asyncio
 
 from explorebaduk.models import Game, Challenge
-from explorebaduk.server import PLAYERS, CHALLENGES
+from explorebaduk.server import USERS, CHALLENGES
 from explorebaduk.helpers import get_challenge_by_id, send_sync_messages
 from explorebaduk.exceptions import MessageHandlerError
 
 
 async def handle_challenge_new(ws, data, db_handler):
     """Create new challenge"""
-    player = PLAYERS.get(ws)
+    player = USERS.get(ws)
 
     if not player:
         raise MessageHandlerError("not logged in")
@@ -16,8 +16,7 @@ async def handle_challenge_new(ws, data, db_handler):
     if get_challenge_by_id(player.id):
         raise MessageHandlerError("already created")
 
-    game = Game(data, db_handler)
-    challenge = Challenge(player.id, player, game)
+    challenge = Challenge(player, data)
 
     CHALLENGES.add(challenge)
 
@@ -26,7 +25,7 @@ async def handle_challenge_new(ws, data, db_handler):
 
 async def handle_challenge_cancel(ws, data: dict, db_handler):
     """Cancel challenge"""
-    player = PLAYERS.get(ws)
+    player = USERS.get(ws)
 
     if not player:
         raise MessageHandlerError("not logged in")
@@ -45,7 +44,7 @@ async def handle_challenge_cancel(ws, data: dict, db_handler):
 
 async def handle_challenge_join(ws, data, db_handler):
     """Join challenge"""
-    player = PLAYERS.get(ws)
+    player = USERS.get(ws)
 
     if not player:
         raise MessageHandlerError("not logged in")
@@ -61,7 +60,7 @@ async def handle_challenge_join(ws, data, db_handler):
     if player in challenge.pending:
         raise MessageHandlerError("already joined")
 
-    await challenge.add_player(player)
+    await challenge.join_player(player)
 
     await asyncio.gather(
         ws.send(f"OK [challenge join] {challenge}"), challenge.creator.send(f"challenge joined {player}")
@@ -70,7 +69,7 @@ async def handle_challenge_join(ws, data, db_handler):
 
 async def handle_challenge_leave(ws, data, db_handler):
     """Leave challenge"""
-    player = PLAYERS.get(ws)
+    player = USERS.get(ws)
 
     if not player:
         raise MessageHandlerError("not logged in")
@@ -86,7 +85,7 @@ async def handle_challenge_leave(ws, data, db_handler):
     if player not in challenge.pending:
         raise MessageHandlerError("not joined")
 
-    await challenge.remove_player(player)
+    await challenge.leave_player(player)
 
     await asyncio.gather(
         ws.send(f"OK [challenge leave] {challenge}"), challenge.creator.send(f"challenge left {player}")

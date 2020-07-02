@@ -10,4 +10,4 @@ sqlalchemy
 websockets
 psycopg2
 pyyaml
-sgftree-Gelya
+sgftree==0.0.4

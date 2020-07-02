@@ -7,7 +7,6 @@ logger = logging.getLogger("app")
 
 
 async def start_server(ws: websockets.WebSocketServerProtocol, path: str, db_handler):
-    print("here")
     await register(ws)
     try:
         async for message in ws:

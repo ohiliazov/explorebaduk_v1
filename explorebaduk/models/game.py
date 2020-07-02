@@ -1,28 +1,40 @@
 import asyncio
 import datetime
 
-from sgftree.sgf import SGF
+from sgftree import Kifu
 
-from explorebaduk.database import DatabaseHandler
-from explorebaduk.models.player import Player
+from explorebaduk.models.user import User
 from explorebaduk.models.timer import TimeControl
+from explorebaduk.exceptions import GameStatusError
 
 
 class GameStatus:
-    PENDING = "pending"
+    CREATED = "created"
     PLAYING = "playing"
+    PAUSED = "paused"
     SCORING = "scoring"
     FINISHED = "finished"
 
 
+class GameInfo:
+    def __init__(self, black: User, white: User, handicap: int, komi: float):
+        self.black = black
+        self.white = white
+        self.handicap = handicap
+        self.komi = komi
+
+    def __str__(self):
+        return f"B[{self.black.id}]W[{self.white.id}]HA[{self.handicap}]KM[{self.komi}]"
+
+
 class GamePlayer:
-    def __init__(self, player: Player, time_control: TimeControl):
+    def __init__(self, player: User, time_control: TimeControl):
         self.player = player
         self.timer = time_control.timer()
 
     @property
     def time_left(self):
-        return self.timer.time_left
+        return round(self.timer.time_left, 2)
 
     def start_timer(self):
         return self.timer.start()
@@ -32,19 +44,15 @@ class GamePlayer:
 
 
 class Game:
-    def __init__(self, data: dict, db_handler: DatabaseHandler):
-        self.db_handler = db_handler
-        self.name = data["name"]
-        self.width = data["width"]
-        self.height = data["height"]
-        self.time_control = TimeControl(**data)
+    def __init__(self, challenge, game_info):
+        self.challenge = challenge
+        self.black = GamePlayer(game_info.black, challenge.time_control)
+        self.white = GamePlayer(game_info.white, challenge.time_control)
+        self.kifu = Kifu.from_game_info(challenge.info, game_info)
 
-        self.status = GameStatus.PENDING
+        self.status = GameStatus.CREATED
 
         # will set on game start
-        self.black = None
-        self.white = None
-        self.sgf = None
         self.started_at = None
         self.game_id = None
 
@@ -54,16 +62,10 @@ class Game:
 
     @property
     def turn(self):
-        return self.sgf.turn
+        return self.kifu._turn
 
     def __str__(self):
-        if self.game_id:
-            return (
-                f"ID[{self.game_id}]GN[{self.name}]SZ[{self.width}:{self.height}]"
-                f"B[{self.black.player.id}]W[{self.white.player.id}]"
-            )
-
-        return f"GN[{self.name}]SZ[{self.width}:{self.height}]"
+        return f"ID[{self.game_id}]B[{self.black.player.id}]W[{self.white.player.id}]{self.challenge.info}"
 
     @property
     def whose_turn(self) -> GamePlayer:
@@ -75,10 +77,9 @@ class Game:
 
     async def _out_of_time(self):
         self.status = GameStatus.FINISHED
-        print(self.whose_turn.time_left)
-        print(self.opponent.time_left)
         await asyncio.gather(
-            self.whose_turn.player.send("you lost"), self.opponent.player.send("you won"),
+            self.whose_turn.player.send("you lost"),
+            self.opponent.player.send("you won"),
         )
 
     async def _check_timer(self):
@@ -93,39 +94,60 @@ class Game:
         self._timer_task.cancel()
         return self.whose_turn.timer.stop()
 
-    def start_game(self, black: Player, white: Player, handicap, komi):
-        self.black = GamePlayer(black, self.time_control)
-        self.white = GamePlayer(white, self.time_control)
+    async def send(self, message, *, include_observers: bool = False):
+        tasks = [self.black.player.send(message), self.white.player.send(message)]
 
-        self.sgf = SGF(self.width, self.height, handicap, komi)
+        if include_observers:
+            tasks.extend([observer.send(message) for observer in self.observers])
+
+        await asyncio.gather(*tasks)
+
+    async def sync_status(self):
+        message = (
+            f"game ID[{self.game_id}]ST[{self.status}]PL[{self.turn}]"
+            f"BL[{self.black.time_left}]WL[{self.white.time_left}]"
+        )
+        await self.send(message, include_observers=True)
+
+    async def start_game(self, db_handler):
+        if self.status != GameStatus.CREATED:
+            raise GameStatusError("The game is already started")
+
         self.started_at = datetime.datetime.utcnow()
-        self.game_id = self.db_handler.insert_game(self.name, self.width, self.height, self.started_at, str(self.sgf))
+        self.game_id = db_handler.insert_game(
+            self.challenge.info.name,
+            self.challenge.info.width,
+            self.challenge.info.height,
+            self.started_at,
+            str(self.kifu)
+        )
 
         self.status = GameStatus.PLAYING
         self.start_timer()
 
-    async def sync_timers(self):
-        message = f"game ID[{self.game_id}]PL[{self.turn}]BL[{self.black.time_left}]WL[{self.white.time_left}]"
-        message += "\n" + str(self.sgf.board)
-        await asyncio.gather(
-            self.black.player.send(message), self.white.player.send(message),
-        )
+        await self.sync_status()
 
     async def make_move(self, coord):
         if self.status != GameStatus.PLAYING:
-            raise Exception("Game is not in progress.")
+            raise GameStatusError("The game is not started")
 
-        if coord:
-            self.sgf.make_move(coord, self.stop_timer())
-        else:
-            self.sgf.make_pass(self.stop_timer())
+        try:
+            self.kifu.make_move(coord, self.stop_timer())
+        except Exception as ex:
+            print(ex)
+            self.start_timer()
 
-        if self.sgf.board.passes > 1:
+        if self.kifu.board.count_passes > 1:
             self.status = GameStatus.SCORING
-            message = f"game ID[{self.game_id}] scoring started"
-            await asyncio.gather(
-                self.black.player.send(message),
-                self.white.player.send(message),
-            )
         else:
             self.start_timer()
+
+        await self.sync_status()
+
+    async def mark_stone(self, action, coord):
+        if self.status != GameStatus.SCORING:
+            raise GameStatusError("The game is not finished")
+
+        black_territory, white_territory = self.kifu.mark_stone(action, coord)
+
+        await self.send(f"game ID[{self.game_id}]{black_territory}{white_territory}", include_observers=True)

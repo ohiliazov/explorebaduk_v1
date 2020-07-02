@@ -4,8 +4,8 @@ from typing import List, Union, Type, Any
 
 from marshmallow import validate, ValidationError
 
-from explorebaduk.models import Player, Challenge, Game
-from explorebaduk.server import CONNECTED, PLAYERS, CHALLENGES, GAMES
+from explorebaduk.models import User, Challenge, Game
+from explorebaduk.server import USERS, CHALLENGES, GAMES
 
 
 class EnumValidator(validate.Validator):
@@ -29,15 +29,15 @@ class EnumValidator(validate.Validator):
         return value
 
 
-def get_player_by_id(player_id: int) -> Player:
-    for player in PLAYERS.values():
+def get_user_by_id(player_id: int) -> User:
+    for player in USERS.values():
         if player.id == player_id:
             return player
 
 
 def get_challenge_by_id(player_id: int) -> Challenge:
     for challenge in CHALLENGES:
-        if challenge.challenge_id == player_id:
+        if challenge.creator.id == player_id:
             return challenge
 
 
@@ -51,7 +51,7 @@ async def send_messages(ws, messages: Union[str, List[str]]):
     if isinstance(messages, str):
         messages = [messages]
 
-    if ws in CONNECTED:
+    if ws in USERS:
         await asyncio.gather(*[ws.send(message) for message in messages])
 
 
@@ -59,5 +59,5 @@ async def send_sync_messages(messages: Union[str, List[str]]):
     if isinstance(messages, str):
         messages = [messages]
 
-    if CONNECTED:
-        await asyncio.gather(*[send_messages(ws, messages) for ws in CONNECTED])
+    if USERS:
+        await asyncio.gather(*[send_messages(ws, messages) for ws in USERS])

@@ -9,7 +9,7 @@ class PlayerStatus(Enum):
     OBSERVING = "observing"
 
 
-class Player:
+class User:
     def __init__(self, ws, user: UserModel):
         self.ws = ws
         self.user = user
