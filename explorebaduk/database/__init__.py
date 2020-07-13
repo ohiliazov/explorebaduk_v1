@@ -29,24 +29,22 @@ class DatabaseHandler:
     def save(self, instance: BaseModel):
         self.session.add(instance)
         self.session.flush()
-        # try:
-        #     self.session.commit()
-        # except SQLAlchemyError:
-        #     self.session.rollback()
 
     def delete(self, instance: BaseModel):
         self.session.delete(instance)
         self.session.flush()
-        # try:
-        #     self.session.commit()
-        # except SQLAlchemyError:
-        #     self.session.rollback()
 
     def select_token(self, token: str) -> TokenModel:
         return self.fetch_one(TokenModel, token=token)
 
     def select_user(self, user_id: int) -> UserModel:
         return self.get_by_id(UserModel, user_id)
+
+    def get_user_by_token(self, auth_token: str) -> UserModel:
+        token = self.session.query(TokenModel).filter_by(token=auth_token).first()
+
+        if token:
+            return token.user
 
     def select_game(self, game_id: int) -> GameModel:
         return self.get_by_id(GameModel, game_id)

@@ -1,58 +1,16 @@
+import os
 import pytest
 
-from sgftree.helpers import make_game_tree
-
-from config import get_config
-from explorebaduk.database import BaseModel
-from scripts.database import (
-    make_user,
-    make_token,
-    populate_database_with_data,
-)
-from explorebaduk.database import DatabaseHandler
+from explorebaduk.app import create_app
 
 
-config = get_config(env="test")
-db = DatabaseHandler(config["database_uri"])
+@pytest.yield_fixture()
+def test_app():
+    os.environ["CONFIG_PATH"] = "config/test.cfg"
+    app = create_app()
+    return app
 
 
-@pytest.fixture(scope="session", autouse=True)
-def db_handler():
-    BaseModel.metadata.drop_all(db.engine)
-    BaseModel.metadata.create_all(db.engine)
-    populate_database_with_data(db, 20)
-
-    return db
-
-
-@pytest.fixture(scope="session")
-def user1(db_handler):
-    user = make_user(1)
-
-    db_handler.session.save(user)
-
-    return user
-
-
-@pytest.fixture(scope="session")
-def token1(db_handler, user1):
-    token = make_token(user1.user_id, user1.user_id, 60)
-
-    db_handler.session.save(token)
-
-    return token
-
-
-@pytest.fixture(scope="session")
-def token_expired(db_handler, user1):
-    token = make_token(666, user1.user_id, 0)
-
-    db_handler.session.save(token)
-
-    return token
-
-
-@pytest.fixture(scope="session")
-def game():
-    import os
-    return make_game_tree(os.path.join(os.path.dirname(__file__), "test_data/game9x9.sgf"))
+@pytest.fixture
+def test_cli(loop, test_app, test_client):
+    return loop.run_until_complete(test_client(test_app))

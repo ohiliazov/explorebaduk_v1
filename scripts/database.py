@@ -44,10 +44,8 @@ def create_db(database_uri):
 
 if __name__ == "__main__":
     import sys
-    from config import get_config
 
     if len(sys.argv) < 2:
-        raise Exception("Please provide env")
+        raise Exception("Please provide database uri")
 
-    config = get_config(env=sys.argv[1])
-    create_db(config["database_uri"])
+    create_db(sys.argv[1])

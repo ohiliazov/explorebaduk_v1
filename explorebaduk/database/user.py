@@ -19,3 +19,13 @@ class UserModel(BaseModel):
     @property
     def full_name(self):
         return f"{self.first_name} {self.last_name}"
+
+    def as_dict(self):
+        return {
+            "user_id": self.user_id,
+            "first_name": self.first_name,
+            "last_name": self.last_name,
+            "email": self.email,
+            "rating": self.rating,
+            "puzzle_rating": self.puzzle_rating,
+        }

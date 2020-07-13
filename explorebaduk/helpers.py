@@ -5,7 +5,10 @@ from typing import List, Union, Type, Any
 from marshmallow import validate, ValidationError
 
 from explorebaduk.models import User, Challenge, Game
-from explorebaduk.server import USERS, CHALLENGES, GAMES
+
+USERS = {}
+CHALLENGES = {}
+GAMES = {}
 
 
 class EnumValidator(validate.Validator):
