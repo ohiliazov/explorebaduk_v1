@@ -1,7 +1,7 @@
 from sanic import Sanic
 from sanic.request import Request
 from explorebaduk.database import DatabaseHandler
-from explorebaduk.resources.v1 import PlayerCardView, players_list_handler
+from explorebaduk.resources.v1 import PlayerCardView, players_feed_handler
 
 
 def create_app() -> Sanic:
@@ -22,7 +22,7 @@ def register_routes(app: Sanic):
     )
 
     app.add_websocket_route(
-        players_list_handler,
+        players_feed_handler,
         "/players",
         name="Players Feed"
     )

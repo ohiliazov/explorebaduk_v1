@@ -43,9 +43,5 @@ def create_db(database_uri):
 
 
 if __name__ == "__main__":
-    import sys
-
-    if len(sys.argv) < 2:
-        raise Exception("Please provide database uri")
-
-    create_db(sys.argv[1])
+    database_uri = input("Enter database uri: ")
+    create_db(database_uri)

@@ -15,4 +15,4 @@ test: install black
 	pytest tests
 
 init_db:
-	python explorebaduk/utils/database.py
+	python -m scripts.database

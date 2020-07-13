@@ -44,7 +44,7 @@ async def set_player_offline(request: Request, ws: WebSocketClientProtocol):
         logger.info(payload)
 
 
-async def players_list_handler(request: Request, ws: WebSocketClientProtocol):
+async def players_feed_handler(request: Request, ws: WebSocketClientProtocol):
     await send_player_list(request, ws)
     await set_player_online(request, ws)
     try:
