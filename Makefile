@@ -16,3 +16,6 @@ test: install black
 
 init_db:
 	python -m scripts.database
+
+serve:
+	python run_api.py --host 0.0.0.0 --port 8080 --debug

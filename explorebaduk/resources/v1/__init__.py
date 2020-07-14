@@ -1,2 +1,3 @@
-from explorebaduk.resources.v1.feeds.players_feed import players_feed_handler
-from explorebaduk.resources.v1.players import PlayerCardView
+from explorebaduk.resources.v1.feeds.players_feed import PlayerFeed
+from explorebaduk.resources.v1.player import PlayerView
+from explorebaduk.resources.v1.challenge import ChallengeView

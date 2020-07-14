@@ -1,55 +1,62 @@
 import asyncio
 import json
-from asyncio import CancelledError
-from sanic.request import Request
 from sanic.log import logger
-from websockets import WebSocketClientProtocol, ConnectionClosed
+
+from explorebaduk.resources.v1.feeds import BaseFeed
 
 
-def payload_user_online(user):
+def player_payload(user, status: str):
     return json.dumps({
-        "status": "online",
         "user_id": user.user_id,
         "last_name": user.last_name,
         "first_name": user.first_name,
         "rating": user.rating,
+        "status": status,
     })
+
+
+def payload_user_online(user):
+    return player_payload(user, "online")
 
 
 def payload_user_offline(user):
-    return json.dumps({
-        "status": "offline",
-        "user_id": user.user_id,
-    })
+    return player_payload(user, "offline")
 
 
-async def send_player_list(request: Request, ws: WebSocketClientProtocol):
-    await asyncio.gather(*[ws.send(payload_user_online(user)) for user in request.app.players.values()])
+class PlayerFeed(BaseFeed):
 
+    @property
+    def connected(self) -> set:
+        return self.app.feeds["players"]
 
-async def set_player_online(request: Request, ws: WebSocketClientProtocol):
+    async def setup_feed(self):
+        if user := self.request.ctx.user:
+            await self._spread_message(payload_user_online(user))
+            self._add_player(user)
 
-    if user := request.ctx.user:
-        payload = payload_user_online(user)
-        await asyncio.gather(*[ws.send(payload) for ws in request.app.players])
+        self.connected.add(self.ws)
 
-        request.app.players[ws] = user
-        logger.info(payload)
+    async def run_feed(self):
+        while True:
+            await self._refresh_players()
+            await self.ws.recv()
 
+    async def teardown_feed(self):
+        self.connected.remove(self.ws)
 
-async def set_player_offline(request: Request, ws: WebSocketClientProtocol):
-    if user := request.app.players.pop(ws, None):
-        payload = payload_user_offline(user)
-        await asyncio.gather(*[ws.send(payload) for ws in request.app.players])
-        logger.info(payload)
+        if user := self._remove_player():
+            await self._spread_message(payload_user_offline(user))
 
+    async def _refresh_players(self):
+        await asyncio.gather(*[self.ws.send(payload_user_online(user)) for user in self.app.players.values()])
 
-async def players_feed_handler(request: Request, ws: WebSocketClientProtocol):
-    await send_player_list(request, ws)
-    await set_player_online(request, ws)
-    try:
-        await ws.recv()
-    except (CancelledError, ConnectionClosed) as err:
-        raise err
-    finally:
-        await set_player_offline(request, ws)
+    def _add_player(self, user):
+        self.app.players[self.ws] = user
+
+    def _remove_player(self):
+        return self.app.players.pop(self.ws, None)
+
+    async def _spread_message(self, message: str):
+        if self.connected:
+            await asyncio.gather(*[ws.send(message) for ws in self.connected])
+            logger.info(message)
