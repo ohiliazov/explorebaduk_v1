@@ -1,7 +1,8 @@
 from sanic import Sanic
 from sanic.request import Request
 from explorebaduk.database import DatabaseHandler
-from explorebaduk.resources.v1 import PlayerView, ChallengeView, PlayerFeed
+from explorebaduk.resources.feeds import PlayerFeed
+from explorebaduk.resources.views import PlayerView, ChallengeView
 
 
 def create_app() -> Sanic:
