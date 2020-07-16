@@ -35,7 +35,7 @@ async def test_logout_players(test_cli):
     n = random.randint(2, 50)
     user_ids = random.sample(range(1, 101), n)
 
-    m = random.randint(1, n-1)
+    m = random.randint(1, n - 1)
     tokens = [f"{string.ascii_letters}{user_id:012d}" for user_id in user_ids]
 
     ws_list = [await test_cli.ws_connect(f"/players_feed", headers={"Authorization": token}) for token in tokens]

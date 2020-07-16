@@ -9,20 +9,14 @@ def factory_token():
 
 def factory_challenge_payload(with_time_settings: bool = False, with_opponent: bool = False):
     payload = {
-        "game_setup": {
-            "name": "Test Name",
-            "type": random.choice(["ranked", "free"]),
-            "opponent_id": None,
-        },
+        "game_setup": {"name": "Test Name", "type": random.choice(["ranked", "free"]), "opponent_id": None,},
         "rule_set": {
             "rules": random.choice(["japanese", "chinese"]),
             "board_size": random.randint(5, 52),
             "handicap": None,
             "komi": None,
         },
-        "time_settings": {
-            "time_system": random.choice(["unlimited", "absolute", "byo-yomi", "canadian", "fischer"]),
-        },
+        "time_settings": {"time_system": random.choice(["unlimited", "absolute", "byo-yomi", "canadian", "fischer"]),},
     }
 
     if with_time_settings:
