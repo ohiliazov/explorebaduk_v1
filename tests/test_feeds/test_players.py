@@ -38,3 +38,17 @@ async def test_logout_players(test_cli, users_data):
 
     results = [await receive_messages(ws, lambda item: item["user_id"]) for ws in ws_list if ws not in logout_ws]
     assert all([results[0] == result for result in results])
+
+
+async def test_refresh_player_list(test_cli, users_data):
+    tokens = [token for user_id, token in random.sample(users_data, 20)]
+    ws_list = [await test_cli.ws_connect(f"/players_feed", headers={"Authorization": token}) for token in tokens]
+
+    results = [await receive_messages(ws, lambda item: item["user_id"]) for ws in ws_list]
+    assert all([results[0] == result for result in results])
+
+    ws = random.choice(ws_list)
+    await ws.send_str("refresh")
+
+    result = await receive_messages(ws, lambda item: item["user_id"])
+    assert len(result) == 20
