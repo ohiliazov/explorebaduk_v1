@@ -16,7 +16,7 @@ async def test_post_challenge_only_required_fields(test_cli):
     assert resp.status == 200
 
     resp_json = await resp.json()
-    assert resp_json["challenge_data"] == expected
+    assert resp_json["message"] == "Challenge created"
 
 
 async def test_post_challenge_with_opponent(test_cli):
@@ -37,4 +37,4 @@ async def test_post_challenge_with_opponent(test_cli):
     assert resp.status == 200
 
     resp_json = await resp.json()
-    assert resp_json["challenge_data"] == expected
+    assert resp_json["message"] == "Challenge created"

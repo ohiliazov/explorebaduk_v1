@@ -24,8 +24,7 @@ def is_logged_in_from_another_device(auth_user: User):
 async def login_user(user: User):
     USERS[user.ws] = user
     await asyncio.gather(
-        user.send(f"auth/login: {user}"),
-        send_sync_messages(f"sync/players add {user}"),
+        user.send(f"auth/login: {user}"), send_sync_messages(f"sync/players add {user}"),
     )
 
 
@@ -33,8 +32,7 @@ async def logout_user(ws):
     user = USERS.pop(ws)
 
     await asyncio.gather(
-        ws.send(f"auth/logout: {user}"),
-        send_sync_messages(f"sync/players del {user}"),
+        ws.send(f"auth/logout: {user}"), send_sync_messages(f"sync/players del {user}"),
     )
 
 

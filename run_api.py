@@ -2,7 +2,7 @@ import argparse
 from explorebaduk.app import create_app
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="ExploreBaduk Game Server API")
     parser.add_argument("--host", type=str, default="localhost", help="Server IP (default localhost)")
     parser.add_argument("--port", type=int, default=8080, help="Server port (default 8080)")

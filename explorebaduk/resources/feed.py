@@ -1,4 +1,5 @@
 import asyncio
+import json
 from typing import Set
 from sanic.log import logger
 from sanic.request import Request
@@ -18,7 +19,6 @@ class WebSocketFeed:
 
     @classmethod
     def as_feed(cls):
-
         async def wrapper(request, ws):
             feed_handler = cls(request, ws)
 
@@ -31,15 +31,27 @@ class WebSocketFeed:
         return wrapper
 
     async def initialize(self):
-        pass
+        self.connected.add(self.ws)
 
     async def run(self):
         pass
 
     async def finalize(self):
-        pass
+        self.connected.remove(self.ws)
 
-    async def broadcast(self, message: str):
-        if self.connected:
-            await asyncio.gather(*[ws.send(message) for ws in self.connected])
-            logger.info(message)
+    async def receive_message(self):
+        message = await self.ws.recv()
+        logger.info("< %s", message)
+        return message
+
+    async def send_message(self, data: dict):
+        message = json.dumps(data)
+        await self.ws.send(message)
+        logger.info("> %s", message)
+
+    @classmethod
+    async def broadcast_message(cls, data: dict):
+        message = json.dumps(data)
+        if cls.connected:
+            await asyncio.gather(*[ws.send(message) for ws in cls.connected])
+            logger.info("@ %s", message)

@@ -10,6 +10,7 @@ from explorebaduk.messages.base import BaseSchema
 # game mark 777 sx
 # game done 777
 
+
 class GameIDSchema(BaseSchema):
     __pattern__ = re.compile(r"^(?P<game_id>\d+)$")
     game_id = fields.Integer(required=True)

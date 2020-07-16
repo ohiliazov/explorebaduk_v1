@@ -1,6 +1,8 @@
 import os
 import pytest
 
+from sanic.websocket import WebSocketProtocol
+
 from explorebaduk.app import create_app
 
 
@@ -13,4 +15,4 @@ def test_app():
 
 @pytest.fixture
 def test_cli(loop, test_app, test_client):
-    return loop.run_until_complete(test_client(test_app))
+    return loop.run_until_complete(test_client(test_app, protocol=WebSocketProtocol))

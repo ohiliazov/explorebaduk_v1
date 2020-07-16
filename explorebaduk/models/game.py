@@ -78,8 +78,7 @@ class Game:
     async def _out_of_time(self):
         self.status = GameStatus.FINISHED
         await asyncio.gather(
-            self.whose_turn.player.send("you lost"),
-            self.opponent.player.send("you won"),
+            self.whose_turn.player.send("you lost"), self.opponent.player.send("you won"),
         )
 
     async def _check_timer(self):
@@ -119,7 +118,7 @@ class Game:
             self.challenge.info.width,
             self.challenge.info.height,
             self.started_at,
-            str(self.kifu)
+            str(self.kifu),
         )
 
         self.status = GameStatus.PLAYING

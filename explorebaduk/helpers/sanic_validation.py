@@ -7,9 +7,9 @@ from functools import wraps
 from cerberus import Validator
 from sanic.response import json
 
-JSON_DATA_ENTRY_TYPE = 'json_data_property'
-QUERY_ARG_ENTRY_TYPE = 'query_argument'
-REQ_BODY_ENTRY_TYPE = 'request_body'
+JSON_DATA_ENTRY_TYPE = "json_data_property"
+QUERY_ARG_ENTRY_TYPE = "query_argument"
+REQ_BODY_ENTRY_TYPE = "request_body"
 
 
 def validate_json(schema, clean=False, status_code=400):
@@ -23,7 +23,7 @@ def validate_json(schema, clean=False, status_code=400):
             validation_passed = validator.validate(request.json or {})
             if validation_passed:
                 if clean:
-                    kwargs['valid_json'] = validator.document
+                    kwargs["valid_json"] = validator.document
                 return f(self, request, *args, **kwargs)
             else:
                 return _validation_failed_response(validator, JSON_DATA_ENTRY_TYPE, status_code)
@@ -36,20 +36,18 @@ def validate_json(schema, clean=False, status_code=400):
 async def _validation_failed_response(validator, entry_type, status_code=400):
     return json(
         {
-            'error': {
-                'type': 'validation_failed',
-                'message': 'Validation failed.',
-                'invalid': _validation_failures_list(validator, entry_type)
+            "error": {
+                "type": "validation_failed",
+                "message": "Validation failed.",
+                "invalid": _validation_failures_list(validator, entry_type),
             }
         },
-        status=status_code)
+        status=status_code,
+    )
 
 
 def _validation_failures_list(validator, entry_type):
-    return [
-        _validation_error_description(error, entry_type)
-        for error in _document_errors(validator)
-    ]
+    return [_validation_error_description(error, entry_type) for error in _document_errors(validator)]
 
 
 def _document_errors(validator):
@@ -67,23 +65,23 @@ def _traverse_tree(node):
 def _validation_error_description(error, entry_type):
     print(repr(error.schema_path))
     return {
-        'entry_type': entry_type,
-        'entry': _path_to_field(error),
-        'rule': _rule(error),
-        'constraint': _constraint(error)
+        "entry_type": entry_type,
+        "entry": _path_to_field(error),
+        "rule": _rule(error),
+        "constraint": _constraint(error),
     }
 
 
 def _path_to_field(error):
-    return '.'.join(map(str, error.document_path))
+    return ".".join(map(str, error.document_path))
 
 
 def _rule(error):
-    return error.rule or 'allowed_field'
+    return error.rule or "allowed_field"
 
 
 def _constraint(error):
-    if error.rule == 'coerce':
+    if error.rule == "coerce":
         return True
     return error.constraint or False
 
@@ -91,15 +89,11 @@ def _constraint(error):
 async def _request_body_not_json_response():
     return json(
         {
-            'error': {
-                'type': 'unsupported_media_type',
-                'message': 'Expected JSON body.',
-                'invalid': [{
-                    'entry_type': REQ_BODY_ENTRY_TYPE,
-                    'entry': '',
-                    'rule': 'json',
-                    'constraint': True
-                }],
+            "error": {
+                "type": "unsupported_media_type",
+                "message": "Expected JSON body.",
+                "invalid": [{"entry_type": REQ_BODY_ENTRY_TYPE, "entry": "", "rule": "json", "constraint": True}],
             }
         },
-        status=415)
+        status=415,
+    )

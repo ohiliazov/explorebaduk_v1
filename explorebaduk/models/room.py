@@ -2,7 +2,6 @@ import asyncio
 
 
 class Room:
-
     def __init__(self, ws_list=None):
         self.ws_list = ws_list or []
 
