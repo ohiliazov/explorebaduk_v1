@@ -1,5 +1,5 @@
 def is_valid_komi(field, value: float, error):
-    if value is not None and not (value * 2).is_integer():
+    if value is not None and not float(value * 2).is_integer():
         error(field, "Invalid komi")
 
 
@@ -27,6 +27,7 @@ challenge_create_schema = {
     "time_settings": {
         "type": "dict",
         "schema": {
+            "time_system": {"type": "string", "allowed": ["unlimited", "absolute", "byo-yomi", "canadian", "fischer"]},
             "main_time": {"type": "integer", "default": 0, "min": 0},
             "overtime": {"type": "integer", "default": 0, "min": 0},
             "periods": {"type": "integer", "default": 1, "min": 1},
