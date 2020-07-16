@@ -24,8 +24,10 @@ class PlayerView(HTTPMethodView):
     """View to get player card"""
 
     async def get(self, request: Request, player_id: str):
-        user = request.app.db.select_user(int(player_id))
-        return response.json(user.as_dict())
+        if user := request.app.db.select_user(int(player_id)):
+            return response.json(user.as_dict())
+
+        return response.json({"message": "User not found"}, 404)
 
 
 class PlayersFeed(WebSocketFeed):
