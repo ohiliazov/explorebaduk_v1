@@ -1,9 +1,8 @@
-import asyncio
 from sanic import Sanic
 from sanic.request import Request
 from explorebaduk.database import DatabaseHandler
 from explorebaduk.resources.player import PlayerView, PlayersFeed
-from explorebaduk.resources.challenge import ChallengeView, ChallengeFeed
+from explorebaduk.resources.challenge import ChallengeListFeed, ChallengeFeed
 
 
 def create_app() -> Sanic:
@@ -16,12 +15,11 @@ def create_app() -> Sanic:
 
 
 def register_routes(app: Sanic):
+    app.add_websocket_route(PlayersFeed.as_feed(), "/players/feed")
     app.add_route(PlayerView.as_view(), "/players/<player_id>", methods=["GET"], name="Player Info")
-    app.add_route(ChallengeView.as_view(), "/challenges", methods=["POST"])
-    app.add_route(ChallengeView.as_view(), "/challenges/<challenge_id>", methods=["GET", "POST", "DELETE"])
 
-    app.add_websocket_route(PlayersFeed.as_feed(), "/players_feed")
-    app.add_websocket_route(ChallengeFeed.as_feed(), "/challenges_feed")
+    app.add_websocket_route(ChallengeListFeed.as_feed(), "/challenges/feed")
+    app.add_websocket_route(ChallengeFeed.as_feed(), "/challenges/<challenge_id>/feed")
 
 
 def register_listeners(app: Sanic):
@@ -31,10 +29,9 @@ def register_listeners(app: Sanic):
 
     @app.listener("before_server_start")
     async def setup_data(app, loop):
-        app.connected = set()
-        app.players = set()
+        app.connected = {}
+        app.players = {}
         app.challenges = {}
-        app.challenge_queue = asyncio.Queue()
 
 
 def register_middleware(app: Sanic):

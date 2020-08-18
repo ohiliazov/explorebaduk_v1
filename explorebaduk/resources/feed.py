@@ -9,7 +9,7 @@ from websockets import WebSocketClientProtocol
 class WebSocketFeed:
     connected: Set = NotImplemented
 
-    def __init__(self, request: Request, ws: WebSocketClientProtocol):
+    def __init__(self, request: Request, ws: WebSocketClientProtocol, **kwargs):
         self.request = request
         self.ws = ws
 
@@ -19,8 +19,8 @@ class WebSocketFeed:
 
     @classmethod
     def as_feed(cls):
-        async def wrapper(request, ws):
-            feed_handler = cls(request, ws)
+        async def wrapper(request, ws, **kwargs):
+            feed_handler = cls(request, ws, **kwargs)
 
             await feed_handler.initialize()
             try:
@@ -43,6 +43,9 @@ class WebSocketFeed:
         message = await self.ws.recv()
         logger.info("< %s", message)
         return message
+
+    async def receive_json(self):
+        return json.loads(await self.receive_message())
 
     async def send_message(self, data: dict):
         message = json.dumps(data)

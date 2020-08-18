@@ -46,23 +46,24 @@ class PlayersFeed(WebSocketFeed):
         await super().initialize()
 
     async def run(self):
-        while True:
-            await self._send_player_list()
-            await self.receive_message()
+        await self.send_players_list()
+        while message := await self.receive_message():
+            if message == "refresh":
+                await self.send_players_list()
 
     async def finalize(self):
         await super().finalize()
         await self._set_offline()
 
-    async def _send_player_list(self):
-        await asyncio.gather(*[self.send_message(player_online(user)) for user in self.players])
+    async def send_players_list(self):
+        await asyncio.gather(*[self.send_message(player_online(user)) for user in self.players.values()])
 
     async def _set_online(self):
-        if self.user:
+        if self.user and self.user not in self.players.values():
             await self.broadcast_message(player_online(self.user))
-            self.players.add(self.user)
+            self.players[self.ws] = self.user
 
     async def _set_offline(self):
         if self.user:
             await self.broadcast_message(player_offline(self.user))
-            self.players.remove(self.user)
+            self.players.pop(self.ws, None)

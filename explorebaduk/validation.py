@@ -1,9 +1,12 @@
+from cerberus.validator import Validator
+
+
 def is_valid_komi(field, value: float, error):
     if value is not None and not float(value * 2).is_integer():
         error(field, "Invalid komi")
 
 
-challenge_create_schema = {
+challenge_schema = {
     "game_setup": {
         "type": "dict",
         "require_all": True,
@@ -36,3 +39,5 @@ challenge_create_schema = {
         },
     },
 }
+
+challenge_validator = Validator(challenge_schema, allow_unknown=False)

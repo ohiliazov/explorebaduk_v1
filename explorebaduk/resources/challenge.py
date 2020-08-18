@@ -1,110 +1,126 @@
 import asyncio
-import uuid
 
-from sanic import response
-from sanic.request import Request
-from sanic.views import HTTPMethodView
-
-from explorebaduk.helpers import validate_json
 from explorebaduk.resources.feed import WebSocketFeed
-from explorebaduk.validation import challenge_create_schema
+from explorebaduk.validation import challenge_validator
 
 
-class ChallengeStatus:
-    CREATED = "created"
-    UPDATED = "updated"
-    DELETED = "deleted"
+class Challenge:
+    def __init__(self, creator_id, challenge: dict):
+        self.creator_id = creator_id
+        self.challenge = challenge
+        self.is_active = True
+        self.joined = {}
+
+    def join(self, user_id, ws):
+        self.joined[user_id] = ws
+
+    def leave(self, user_id):
+        self.joined.pop(user_id, None)
+
+    def select(self, user_id):
+        return self.joined.get(user_id)
+
+    @property
+    def creator_ws(self):
+        return self.joined[self.creator_id]
 
 
-def challenge_created(challenge: dict) -> dict:
-    return {"status": ChallengeStatus.CREATED, **challenge}
+class ChallengeFeedBase(WebSocketFeed):
+    pass
 
 
-def challenge_updated(challenge: dict) -> dict:
-    return {"status": ChallengeStatus.UPDATED, **challenge}
+class ChallengeListFeed(WebSocketFeed):
+    connected = set()
 
+    @property
+    def user(self):
+        return self.request.ctx.user
 
-def challenge_deleted(challenge: dict) -> dict:
-    return {"status": ChallengeStatus.DELETED, **challenge}
+    @property
+    def challenges(self):
+        return self.app.challenges
 
+    async def run(self):
+        while True:
+            message = await self.receive_json()
+            action = message.get("action")
 
-class ChallengeView(HTTPMethodView):
-    @staticmethod
-    async def put_message(request, message):
-        await request.app.challenge_queue.put(message)
+            if action == "refresh":
+                await self.refresh()
 
-    async def get(self, request: Request, challenge_id: dict):
-        if challenge := request.app.challenges.get(challenge_id):
-            return response.json(challenge)
+            elif action == "delete":
+                await self.delete_challenge()
 
-        return response.json({"message": "Challenge not found"}, 404)
+            elif challenge := self.validate_challenge(message):
+                await self.create_challenge(challenge)
 
-    @validate_json(challenge_create_schema, clean=True)
-    async def post(self, request: Request, valid_json: dict):
-        if not (user := request.ctx.user):
-            return response.json({"message": "Forbidden to create challenge"}, 403)
+    async def refresh(self):
+        await asyncio.gather(*[self.send_message(challenge) for challenge in self.challenges.values()])
 
-        challenge_id = str(uuid.uuid4())
-        challenge = {
-            **valid_json,
-            "challenge_id": challenge_id,
-            "user_id": user.user_id,
+    def validate_challenge(self, challenge: dict):
+        if challenge_validator.validate(challenge):
+            return challenge_validator.normalized(challenge)
+
+    async def create_challenge(self, challenge):
+        self.challenges[self.user.user_id] = Challenge(self.user.user_id, challenge)
+
+        message = {
+            "user_id": self.user.user_id,
+            "challenge": challenge,
         }
-        request.app.challenges[challenge_id] = challenge
-        await self.put_message(request, challenge_created(challenge))
+        await self.broadcast_message(message)
 
-        return response.json({"challenge_id": challenge_id, "message": "Challenge created"})
+    async def delete_challenge(self):
+        if self.challenges.pop(self.user.user_id, None):
+            message = {"user_id": self.user.user_id, "challenge": None}
+            await self.broadcast_message(message)
 
-    @validate_json(challenge_create_schema, clean=True)
-    async def put(self, request: Request, challenge_id: str, valid_json: dict):
-        if not (challenge := request.app.challenges.get(challenge_id)):
-            return response.json({"message": "Challenge not found"}, 404)
-
-        if not (user := request.ctx.user) or user.user_id != challenge["user_id"]:
-            return response.json({"message": "Forbidden to update challenge"}, 403)
-
-        challenge.update(valid_json)
-        await self.put_message(request, challenge_updated(challenge))
-
-        return response.json({"challenge_id": challenge_id, "message": "Challenge updated"})
-
-    async def delete(self, request: Request, challenge_id: str):
-        if not request.ctx.user:
-            return response.json({"message": "Not authorized"}, 403)
-
-        if challenge := request.app.challenges.pop(challenge_id, None):
-            await self.put_message(request, challenge_deleted(challenge))
-            return response.json({"challenge_id": challenge_id, "message": "Challenge deleted"})
-
-        return response.json({"message": "Challenge not found"}, 404)
+    async def finalize(self):
+        await super().finalize()
+        await self.delete_challenge()
 
 
 class ChallengeFeed(WebSocketFeed):
     connected = set()
 
     @property
+    def user(self):
+        return self.request.ctx.user
+
+    @property
+    def user_id(self):
+        return self.user.user_id
+
+    @property
     def challenges(self):
         return self.app.challenges
 
     @property
-    def queue(self):
-        return self.app.challenge_queue
+    def challenge(self) -> Challenge:
+        return self.challenges[self.user_id]
+
+    async def initialize(self):
+        if not self.challenge:
+            return
+
+        if self.user_id == self.challenge.creator_id:
+            self.challenge.is_active = True
+
+        self.challenge.joined[self.user_id] = self.ws
 
     async def run(self):
-        await asyncio.gather(
-            self.handle_queue(),
-            self.handle_refresh(),
-        )
+        if not self.challenge:
+            return await self.send_message({"message": "Challenge not found"})
 
-    async def handle_queue(self):
-        while True:
-            message = await self.queue.get()
-            await self.broadcast_message(message)
+        if not self.challenge.is_active:
+            return await self.send_message({"message": "Challenge not active"})
 
-    async def handle_refresh(self):
-        while True:
-            await self._send_challenge_list()
-            await self.receive_message()
+    async def finalize(self):
+        if not self.challenge:
+            return
 
-    async def _send_challenge_list(self):
-        await asyncio.gather(*[self.send_message(challenge) for challenge in self.challenges.values()])
+        if self.user_id == self.challenge.creator_id:
+            await asyncio.gather(*[ws.close() for ws in self.challenge.joined.values()])
+            self.challenges.pop(self.user_id)
+        else:
+            self.challenge.joined.pop(self.user_id)
