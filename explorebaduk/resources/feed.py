@@ -1,15 +1,14 @@
 import asyncio
 import json
-from typing import Set
+
 from sanic.log import logger
 from sanic.request import Request
-from websockets import WebSocketClientProtocol
+from websockets import WebSocketCommonProtocol
 
 
 class WebSocketFeed:
-    connected: Set = NotImplemented
 
-    def __init__(self, request: Request, ws: WebSocketClientProtocol, **kwargs):
+    def __init__(self, request: Request, ws: WebSocketCommonProtocol, **kwargs):
         self.request = request
         self.ws = ws
 
@@ -17,44 +16,37 @@ class WebSocketFeed:
     def app(self):
         return self.request.app
 
+    @property
+    def connected(self) -> set:
+        raise NotImplementedError
+
+    async def handle_request(self):
+        raise NotImplementedError
+
     @classmethod
     def as_feed(cls):
         async def wrapper(request, ws, **kwargs):
             feed_handler = cls(request, ws, **kwargs)
 
-            await feed_handler.initialize()
-            try:
-                await feed_handler.run()
-            finally:
-                await feed_handler.finalize()
+            await feed_handler.handle_request()
 
         return wrapper
 
-    async def initialize(self):
-        self.connected.add(self.ws)
-
-    async def run(self):
-        pass
-
-    async def finalize(self):
-        self.connected.remove(self.ws)
-
     async def receive_message(self):
         message = await self.ws.recv()
-        logger.info("< %s", message)
-        return message
+        logger.info("< [%s:%d] %s", *self.ws.remote_address[:2], message)
+        try:
+            return json.loads(message)
+        except json.JSONDecodeError:
+            return message
 
-    async def receive_json(self):
-        return json.loads(await self.receive_message())
-
-    async def send_message(self, data: dict):
+    async def send_message(self, data: dict, ws: WebSocketCommonProtocol = None):
         message = json.dumps(data)
-        await self.ws.send(message)
-        logger.info("> %s", message)
+        recipient = ws or self.ws
 
-    @classmethod
-    async def broadcast_message(cls, data: dict):
-        message = json.dumps(data)
-        if cls.connected:
-            await asyncio.gather(*[ws.send(message) for ws in cls.connected])
-            logger.info("@ %s", message)
+        await recipient.send(message)
+        logger.info("> [%s:%d] %s", *recipient.remote_address[:2], message)
+
+    async def broadcast_message(self, data: dict):
+        if self.connected:
+            await asyncio.gather(*[self.send_message(data, ws) for ws in self.connected])

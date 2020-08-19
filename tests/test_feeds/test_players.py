@@ -1,5 +1,6 @@
 import random
 import asyncio
+import json
 
 from asyncio import TimeoutError
 
@@ -8,7 +9,7 @@ async def receive_messages(ws, sort_by: callable = None):
     messages = []
     try:
         while True:
-            messages.append(await ws.receive_json(timeout=0.5))
+            messages.append(json.loads(await ws.receive_message(timeout=0.5)))
     except TimeoutError:
         pass
 

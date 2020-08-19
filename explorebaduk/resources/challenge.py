@@ -1,15 +1,23 @@
 import asyncio
+from typing import List
 
 from explorebaduk.resources.feed import WebSocketFeed
 from explorebaduk.validation import challenge_validator
 
 
 class Challenge:
-    def __init__(self, creator_id, challenge: dict):
-        self.creator_id = creator_id
-        self.challenge = challenge
-        self.is_active = True
+    def __init__(self, user, data: dict = None):
+        self.user = user
+        self.data = data
         self.joined = {}
+
+    @property
+    def user_id(self):
+        return self.user.user_id
+
+    @property
+    def user_ws(self):
+        return self.joined.get(self.user_id)
 
     def join(self, user_id, ws):
         self.joined[user_id] = ws
@@ -20,107 +28,141 @@ class Challenge:
     def select(self, user_id):
         return self.joined.get(user_id)
 
-    @property
-    def creator_ws(self):
-        return self.joined[self.creator_id]
+    def is_active(self):
+        return self.data is not None
 
+    def set(self, data: dict):
+        if challenge_validator.validate(data):
+            self.data = challenge_validator.normalized(data)
 
-class ChallengeFeedBase(WebSocketFeed):
-    pass
+        return self.data
+
+    def unset(self):
+        if data := self.data:
+            self.data = None
+
+        return data
+
+    def as_dict(self):
+        return {
+            "user_id": self.user_id,
+            "challenge": self.data,
+        }
 
 
 class ChallengeListFeed(WebSocketFeed):
-    connected = set()
-
     @property
     def user(self):
         return self.request.ctx.user
 
     @property
+    def players(self):
+        return self.app.players.values()
+
+    @property
     def challenges(self):
         return self.app.challenges
 
-    async def run(self):
-        while True:
-            message = await self.receive_json()
-            action = message.get("action")
+    @property
+    def active_challenges(self):
+        return (challenge for challenge in self.challenges.values() if challenge.is_active())
 
-            if action == "refresh":
-                await self.refresh()
+    @property
+    def connected(self) -> set:
+        return set(self.challenges)
 
-            elif action == "delete":
-                await self.delete_challenge()
+    async def handle_request(self):
+        await self.set_online()
+        try:
+            await self._send_challenges_list()
+            await self.handle_message()
+        finally:
+            await self.set_offline()
 
-            elif challenge := self.validate_challenge(message):
-                await self.create_challenge(challenge)
+    async def set_online(self):
+        if not self.user or self.user not in self.players:
+            raise Exception("Not logged in")
 
-    async def refresh(self):
-        await asyncio.gather(*[self.send_message(challenge) for challenge in self.challenges.values()])
+        self.challenges[self.ws] = Challenge(self.ws, self.user)
 
-    def validate_challenge(self, challenge: dict):
-        if challenge_validator.validate(challenge):
-            return challenge_validator.normalized(challenge)
+    async def set_offline(self):
+        if self.user.user_id in self.challenges:
+            await self._unset_challenge()
+            self.challenges.pop(self.ws)
 
-    async def create_challenge(self, challenge):
-        self.challenges[self.user.user_id] = Challenge(self.user.user_id, challenge)
+    async def handle_message(self):
+        while message := await self.receive_message():
 
-        message = {
-            "user_id": self.user.user_id,
-            "challenge": challenge,
-        }
-        await self.broadcast_message(message)
+            if message == "refresh":
+                await self._send_challenges_list()
 
-    async def delete_challenge(self):
-        if self.challenges.pop(self.user.user_id, None):
-            message = {"user_id": self.user.user_id, "challenge": None}
-            await self.broadcast_message(message)
+            elif message == "delete":
+                await self._unset_challenge()
 
-    async def finalize(self):
-        await super().finalize()
-        await self.delete_challenge()
+            elif isinstance(message, dict):
+                await self._set_challenge(message)
+
+    async def _send_challenges_list(self):
+        await asyncio.gather(*[self.send_message(challenge.as_dict()) for challenge in self.active_challenges])
+
+    async def _set_challenge(self, message: dict):
+        challenge = self.challenges[self.ws]
+        if challenge.set(message):
+            await self.broadcast_message(challenge.as_dict())
+        else:
+            await self.send_message({"errors": challenge_validator.errors})
+
+    async def _unset_challenge(self):
+        challenge = self.challenges[self.ws]
+        if challenge.unset():
+            await self.broadcast_message(challenge.as_dict())
 
 
 class ChallengeFeed(WebSocketFeed):
-    connected = set()
+    @property
+    def connected(self) -> set:
+        return set(self.challenge.joined.values())
 
     @property
     def user(self):
         return self.request.ctx.user
 
     @property
-    def user_id(self):
-        return self.user.user_id
+    def players(self):
+        return self.app.players.values()
 
     @property
     def challenges(self):
         return self.app.challenges
 
     @property
-    def challenge(self) -> Challenge:
-        return self.challenges[self.user_id]
+    def active_challenges(self) -> List[Challenge]:
+        return [challenge for challenge in self.challenges.values() if challenge.is_active()]
 
-    async def initialize(self):
-        if not self.challenge:
-            return
+    def __init__(self, request, ws, challenge_id):
+        super(ChallengeFeed, self).__init__(request, ws)
+        self.challenge_id = challenge_id
+        self.challenge = None
 
-        if self.user_id == self.challenge.creator_id:
-            self.challenge.is_active = True
+    async def handle_request(self):
+        try:
+            await self.join_challenge()
+        finally:
+            await self.leave_challenge()
 
-        self.challenge.joined[self.user_id] = self.ws
+    async def join_challenge(self):
+        if not self.user:
+            raise Exception("Not logged in")
 
-    async def run(self):
-        if not self.challenge:
-            return await self.send_message({"message": "Challenge not found"})
+        for challenge in self.active_challenges:
+            if challenge.user_id == self.challenge_id:
+                self.challenge = challenge
 
-        if not self.challenge.is_active:
-            return await self.send_message({"message": "Challenge not active"})
+        if not self.challenge and self.challenge_id != self.user.user_id:
+            raise Exception("Not found")
 
-    async def finalize(self):
-        if not self.challenge:
-            return
+        self.challenge.join(self.user.user_id, self.ws)
+        await self.send_message({"status": "joined", "user": self.user.as_dict()}, self.challenge.user_ws)
 
-        if self.user_id == self.challenge.creator_id:
-            await asyncio.gather(*[ws.close() for ws in self.challenge.joined.values()])
-            self.challenges.pop(self.user_id)
-        else:
-            self.challenge.joined.pop(self.user_id)
+    async def leave_challenge(self):
+        pass
