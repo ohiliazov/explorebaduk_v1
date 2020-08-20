@@ -1,7 +1,7 @@
 import random
 import string
 import datetime
-from explorebaduk.database import BaseModel, UserModel, TokenModel, DatabaseHandler
+from explorebaduk.database import BaseModel, PlayerModel, TokenModel, DatabaseHandler
 
 
 def make_user(num: int):
@@ -13,7 +13,7 @@ def make_user(num: int):
         "rating": random.randint(0, 3000),
         "puzzle_rating": random.randint(0, 3000),
     }
-    return UserModel(**user_data)
+    return PlayerModel(**user_data)
 
 
 def make_token(num: int, user_id: int, minutes: int = 10):

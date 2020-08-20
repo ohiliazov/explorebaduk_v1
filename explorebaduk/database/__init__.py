@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from explorebaduk.database.base import BaseModel
 from explorebaduk.database.token import TokenModel
-from explorebaduk.database.user import UserModel
+from explorebaduk.database.user import PlayerModel
 from explorebaduk.database.game import GameModel, GamePlayerModel
 
 
@@ -37,14 +37,14 @@ class DatabaseHandler:
     def select_token(self, token: str) -> TokenModel:
         return self.fetch_one(TokenModel, token=token)
 
-    def select_user(self, user_id: int) -> UserModel:
-        return self.get_by_id(UserModel, user_id)
+    def select_player(self, user_id: int) -> PlayerModel:
+        return self.get_by_id(PlayerModel, user_id)
 
-    def get_user_by_token(self, auth_token: str) -> UserModel:
+    def get_user_by_token(self, auth_token: str) -> PlayerModel:
         token = self.session.query(TokenModel).filter_by(token=auth_token).first()
 
         if token:
-            return token.user
+            return token.player
 
     def select_game(self, game_id: int) -> GameModel:
         return self.get_by_id(GameModel, game_id)

@@ -4,7 +4,7 @@ from sqlalchemy.orm import relationship
 from explorebaduk.database.base import BaseModel
 
 
-class UserModel(BaseModel):
+class PlayerModel(BaseModel):
     __tablename__ = "users"
 
     user_id = Column(Integer, primary_key=True)
@@ -14,7 +14,7 @@ class UserModel(BaseModel):
     rating = Column(String(10))
     puzzle_rating = Column(String(10))
 
-    tokens = relationship("TokenModel", back_populates="user")
+    tokens = relationship("TokenModel", back_populates="player")
 
     @property
     def full_name(self):

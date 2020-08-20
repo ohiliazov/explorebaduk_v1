@@ -1,8 +1,19 @@
 import time
+from enum import IntEnum
 from abc import ABCMeta, abstractmethod
 
-from explorebaduk.constants import MOVE_DELAY, TimeSystem
 from explorebaduk.exceptions import TimerError
+
+# Delay before making a move
+MOVE_DELAY = 1
+
+
+class TimeSystem(IntEnum):
+    NO_TIME = 0
+    ABSOLUTE = 1
+    BYOYOMI = 2
+    CANADIAN = 3
+    FISCHER = 4
 
 
 class Timer(metaclass=ABCMeta):
@@ -22,7 +33,6 @@ class Timer(metaclass=ABCMeta):
         self.periods = periods
         self.stones = stones
         self.bonus = bonus
-        self.delay = MOVE_DELAY
 
         self.started_at = None
         self._time_left = time_left or self.initial_time_left()
@@ -43,7 +53,7 @@ class Timer(metaclass=ABCMeta):
         if self.started:
             raise TimerError("Already started")
 
-        self.started_at = time.monotonic() + self.delay
+        self.started_at = time.monotonic() + MOVE_DELAY
 
         return self.time_left
 

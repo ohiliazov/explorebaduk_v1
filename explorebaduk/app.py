@@ -45,4 +45,4 @@ def register_middleware(app: Sanic):
     @app.middleware("request")
     def authorize_user(request: Request):
         auth_token = request.headers.get("Authorization")
-        request.ctx.user = app.db.get_user_by_token(auth_token)
+        request.ctx.player = app.db.get_user_by_token(auth_token)

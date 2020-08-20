@@ -8,7 +8,7 @@ from explorebaduk.validation import challenge_validator
 class ChallengeListView(WebSocketView):
     @property
     def user(self):
-        return self.request.ctx.user
+        return self.request.ctx.player
 
     @property
     def players(self):
@@ -38,7 +38,7 @@ class ChallengeListView(WebSocketView):
         if not self.user or self.user not in self.players:
             raise Exception("Not logged in")
 
-        self.challenges[self.ws] = Challenge(self.ws, self.user)
+        self.challenges[self.ws] = Challenge(self.user)
 
     async def set_offline(self):
         if self.user.user_id in self.challenges:

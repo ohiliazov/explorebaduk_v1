@@ -26,8 +26,8 @@ class PlayerListView(WebSocketView):
         return set(self.players)
 
     @property
-    def user(self):
-        return self.request.ctx.user
+    def player(self):
+        return self.request.ctx.player
 
     async def handle_request(self):
         await self.set_online()
@@ -38,15 +38,15 @@ class PlayerListView(WebSocketView):
             await self.set_offline()
 
     async def set_online(self):
-        if self.user and self.user not in self.players.values():
+        if self.player and self.player not in self.players.values():
             await self._send_player_online()
 
-        self.players[self.ws] = self.user
+        self.players[self.ws] = self.player
 
     async def set_offline(self):
         self.players.pop(self.ws)
 
-        if self.user and self.user not in self.players.values():
+        if self.player and self.player not in self.players.values():
             await self._send_player_offline()
 
     async def handle_message(self):
@@ -58,9 +58,9 @@ class PlayerListView(WebSocketView):
         await asyncio.gather(*[self.send_message(player_online_payload(user)) for user in set(self.players.values())])
 
     async def _send_player_online(self):
-        message = player_online_payload(self.user)
+        message = player_online_payload(self.player)
         await self.broadcast_message(message)
 
     async def _send_player_offline(self):
-        message = player_offline_payload(self.user)
+        message = player_offline_payload(self.player)
         await self.broadcast_message(message)

@@ -7,7 +7,7 @@ import datetime
 from sanic.websocket import WebSocketProtocol
 
 from explorebaduk.app import create_app
-from explorebaduk.database import BaseModel, UserModel, TokenModel
+from explorebaduk.database import BaseModel, PlayerModel, TokenModel
 
 
 @pytest.yield_fixture()
@@ -34,7 +34,7 @@ async def users_data(test_app):
     for user_id in range(1, 101):
         token = f"{string.ascii_letters}{user_id:012d}"
 
-        user_data = {
+        player_data = {
             "user_id": user_id,
             "first_name": "John",
             "last_name": f"Doe#{user_id}",
@@ -48,7 +48,7 @@ async def users_data(test_app):
             "token": token,
             "expired_at": datetime.datetime.utcnow() + datetime.timedelta(minutes=10),
         }
-        db.save(UserModel(**user_data))
+        db.save(PlayerModel(**player_data))
         db.save(TokenModel(**token_data))
         users_data.append((user_id, token))
 

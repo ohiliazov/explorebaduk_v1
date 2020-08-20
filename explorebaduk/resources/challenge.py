@@ -24,7 +24,7 @@ class ChallengeRoomView(WebSocketView):
 
     @property
     def user(self):
-        return self.request.ctx.user
+        return self.request.ctx.player
 
     @property
     def players(self):
