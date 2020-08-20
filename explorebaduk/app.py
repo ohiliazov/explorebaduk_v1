@@ -1,8 +1,13 @@
 from sanic import Sanic
 from sanic.request import Request
 from explorebaduk.database import DatabaseHandler
-from explorebaduk.resources.player import PlayerView, PlayersFeed
-from explorebaduk.resources.challenge import ChallengeListFeed, ChallengeFeed
+from explorebaduk.resources import (
+    PlayerView,
+    PlayerListView,
+    ChallengeView,
+    ChallengeRoomView,
+    ChallengeListView,
+)
 
 
 def create_app() -> Sanic:
@@ -15,11 +20,13 @@ def create_app() -> Sanic:
 
 
 def register_routes(app: Sanic):
-    app.add_websocket_route(PlayersFeed.as_feed(), "/players/feed")
     app.add_route(PlayerView.as_view(), "/players/<player_id>", methods=["GET"], name="Player Info")
+    app.add_route(ChallengeView.as_view(), "/challenge/<challenge_id>", methods=["GET"], name="Challenge Info")
 
-    app.add_websocket_route(ChallengeListFeed.as_feed(), "/challenges/feed")
-    app.add_websocket_route(ChallengeFeed.as_feed(), "/challenges/<challenge_id>/feed")
+    app.add_websocket_route(PlayerListView.as_view(), "/players/feed")
+    app.add_websocket_route(ChallengeListView.as_view(), "/challenges/feed")
+
+    app.add_websocket_route(ChallengeRoomView.as_view(), "/challenges/<challenge_id>/feed")
 
 
 def register_listeners(app: Sanic):

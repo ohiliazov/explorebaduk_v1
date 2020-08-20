@@ -59,9 +59,7 @@ def factory_challenge_payload(with_time_settings: bool = False, with_opponent: b
 
 async def test_create_challenge(test_cli):
     resp = await test_cli.post(
-        "/challenges",
-        headers={"Authorization": factory_token()},
-        json=factory_challenge_payload(),
+        "/challenges", headers={"Authorization": factory_token()}, json=factory_challenge_payload(),
     )
     assert resp.status == 200
 
@@ -94,10 +92,7 @@ async def test_create_challenge_with_opponent(test_cli):
 
 
 async def test_create_challenge_no_user(test_cli):
-    resp = await test_cli.post(
-        "/challenges",
-        json=factory_challenge_payload(),
-    )
+    resp = await test_cli.post("/challenges", json=factory_challenge_payload(),)
 
     assert resp.status == 403
 
@@ -108,9 +103,7 @@ async def test_create_challenge_no_user(test_cli):
 async def test_update_challenge(test_cli, challenges):
     token, challenge_id = random.choice(challenges)
     resp = await test_cli.put(
-        f"/challenges/{challenge_id}",
-        headers={"Authorization": token},
-        json=factory_challenge_payload(),
+        f"/challenges/{challenge_id}", headers={"Authorization": token}, json=factory_challenge_payload(),
     )
     assert resp.status == 200
 
@@ -133,10 +126,7 @@ async def test_update_absent_challenge(test_cli, challenges):
 
 async def test_update_challenge_no_user(test_cli, challenges):
     _, challenge_id = random.choice(challenges)
-    resp = await test_cli.put(
-        f"/challenges/{challenge_id}",
-        json=factory_challenge_payload(),
-    )
+    resp = await test_cli.put(f"/challenges/{challenge_id}", json=factory_challenge_payload(),)
 
     assert resp.status == 403
 
@@ -151,9 +141,7 @@ async def test_update_challenge_wrong_user(test_cli, challenges):
         pass
 
     resp = await test_cli.put(
-        f"/challenges/{challenge_id}",
-        headers={"Authorization": wrong_token},
-        json=factory_challenge_payload(),
+        f"/challenges/{challenge_id}", headers={"Authorization": wrong_token}, json=factory_challenge_payload(),
     )
 
     assert resp.status == 403

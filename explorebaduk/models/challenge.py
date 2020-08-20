@@ -1,32 +1,46 @@
-from typing import Set
-
-from explorebaduk.models.user import User
-from explorebaduk.models.timer import TimeControl
-
-
-class ChallengeInfo:
-    def __init__(self, name: str, width: int, height: int, rules: str):
-        self.name = name
-        self.width = width
-        self.height = height
-        self.rules = rules
-
-    def __str__(self):
-        return f"GN[{self.name}]SZ[{self.width}:{self.height}]RU[{self.rules}]"
+from explorebaduk.validation import challenge_validator
 
 
 class Challenge:
-    def __init__(self, creator: User, data: dict):
-        self.creator = creator
-        self.info = ChallengeInfo(**data)
-        self.time_control = TimeControl(**data)
-        self.pending: Set[User] = set()
+    def __init__(self, user, data: dict = None):
+        self.user = user
+        self.data = data
+        self.joined = {}
 
-    def __str__(self):
-        return f"ID[{self.creator.id}]{self.info}{self.time_control}"
+    @property
+    def user_id(self):
+        return self.user.user_id
 
-    async def join_player(self, player: User):
-        self.pending.add(player)
+    @property
+    def user_ws(self):
+        return self.joined.get(self.user_id)
 
-    async def leave_player(self, player: User):
-        self.pending.remove(player)
+    def join(self, user_id, ws):
+        self.joined[user_id] = ws
+
+    def leave(self, user_id):
+        self.joined.pop(user_id, None)
+
+    def select(self, user_id):
+        return self.joined.get(user_id)
+
+    def is_active(self):
+        return self.data is not None
+
+    def set(self, data: dict):
+        if challenge_validator.validate(data):
+            self.data = challenge_validator.normalized(data)
+
+        return self.data
+
+    def unset(self):
+        if data := self.data:
+            self.data = None
+
+        return data
+
+    def as_dict(self):
+        return {
+            "user_id": self.user_id,
+            "challenge": self.data,
+        }

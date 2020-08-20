@@ -6,8 +6,7 @@ from sanic.request import Request
 from websockets import WebSocketCommonProtocol
 
 
-class WebSocketFeed:
-
+class WebSocketView:
     def __init__(self, request: Request, ws: WebSocketCommonProtocol, **kwargs):
         self.request = request
         self.ws = ws
@@ -24,7 +23,7 @@ class WebSocketFeed:
         raise NotImplementedError
 
     @classmethod
-    def as_feed(cls):
+    def as_view(cls):
         async def wrapper(request, ws, **kwargs):
             feed_handler = cls(request, ws, **kwargs)
 
