@@ -1,4 +1,4 @@
 from explorebaduk.resources.player import PlayerView
-from explorebaduk.resources.player_list import PlayerListView
-from explorebaduk.resources.challenge import ChallengeView, ChallengeRoomView
-from explorebaduk.resources.challenge_list import ChallengeListView
+from explorebaduk.resources.player_list import PlayersFeedView
+from explorebaduk.resources.challenge import ChallengeView
+from explorebaduk.resources.challenge_list import ChallengeFeedView

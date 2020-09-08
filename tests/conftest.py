@@ -1,3 +1,4 @@
+import asyncio
 import os
 import pytest
 import random
@@ -8,6 +9,24 @@ from sanic.websocket import WebSocketProtocol
 
 from explorebaduk.app import create_app
 from explorebaduk.database import BaseModel, PlayerModel, TokenModel
+
+
+async def receive_messages(ws, sort_by: callable = None):
+    messages = []
+    try:
+        while True:
+            messages.append(await ws.receive_json(timeout=0.5))
+    except asyncio.TimeoutError:
+        pass
+
+    if sort_by:
+        messages = sorted(messages, key=sort_by)
+
+    return messages
+
+
+async def receive_all(ws_list, sort_by: callable = None):
+    return await asyncio.gather(*[receive_messages(ws, sort_by) for ws in ws_list])
 
 
 @pytest.yield_fixture()
@@ -24,12 +43,12 @@ def test_cli(loop, test_app, test_client):
 
 
 @pytest.fixture
-async def users_data(test_app):
+async def players_data(test_app):
     db = test_app.db
     BaseModel.metadata.drop_all(db.engine)
     BaseModel.metadata.create_all(db.engine)
 
-    users_data = []
+    players_data = []
 
     for user_id in range(1, 101):
         token = f"{string.ascii_letters}{user_id:012d}"
@@ -48,8 +67,32 @@ async def users_data(test_app):
             "token": token,
             "expired_at": datetime.datetime.utcnow() + datetime.timedelta(minutes=10),
         }
-        db.save(PlayerModel(**player_data))
-        db.save(TokenModel(**token_data))
-        users_data.append((user_id, token))
+        player = PlayerModel(**player_data)
+        token = TokenModel(**token_data)
+        db.save(player)
+        db.save(token)
+        players_data.append({
+            "player": player,
+            "token": token,
+        })
 
-    return users_data
+    return players_data
+
+
+@pytest.fixture
+async def players_online(test_cli, players_data: list):
+    players_online = {}
+
+    for player_data in random.sample(players_data, 20):
+        player_ws = await test_cli.ws_connect("/players/feed", headers={"Authorization": player_data["token"].token})
+        players_online[player_ws] = player_data["player"]
+
+    # flush messages
+    await receive_all(players_online.keys())
+
+    return players_online
+
+
+@pytest.fixture
+async def challenges_data(test_cli):
+    pass

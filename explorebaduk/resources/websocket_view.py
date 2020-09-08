@@ -37,7 +37,7 @@ class WebSocketView:
         try:
             return json.loads(message)
         except json.JSONDecodeError:
-            return message
+            return await self.send_message({"error": "Unexpected error"})
 
     async def send_message(self, data: dict, ws: WebSocketCommonProtocol = None):
         message = json.dumps(data)

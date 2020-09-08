@@ -1,55 +1,57 @@
 import random
 import asyncio
-import json
 
-from asyncio import TimeoutError
-
-
-async def receive_messages(ws, sort_by: callable = None):
-    messages = []
-    try:
-        while True:
-            messages.append(json.loads(await ws.receive_message(timeout=0.5)))
-    except TimeoutError:
-        pass
-
-    if sort_by:
-        messages = sorted(messages, key=sort_by)
-
-    return messages
+from explorebaduk.resources.player_list import player_online_payload, player_offline_payload
+from tests.conftest import receive_messages, receive_all
 
 
-async def test_login_player(test_cli, users_data):
-    tokens = [token for user_id, token in random.sample(users_data, 20)]
-    ws_list = [await test_cli.ws_connect(f"/players/feed", headers={"Authorization": token}) for token in tokens]
+async def test_login_first_player(test_cli, players_data: list):
+    player_data = random.choice(players_data)
+    player = player_data["player"]
+    token = player_data["token"].token
 
-    results = [await receive_messages(ws, lambda item: item["user_id"]) for ws in ws_list]
-    assert all([results[0] == result for result in results])
-
-
-async def test_logout_players(test_cli, users_data):
-    tokens = [token for user_id, token in random.sample(users_data, 20)]
-    ws_list = [await test_cli.ws_connect(f"/players/feed", headers={"Authorization": token}) for token in tokens]
-
-    results = [await receive_messages(ws, lambda item: item["user_id"]) for ws in ws_list]
-    assert all([results[0] == result for result in results])
-
-    logout_ws = random.sample(ws_list, 10)
-    await asyncio.gather(*[ws.close() for ws in logout_ws])
-
-    results = [await receive_messages(ws, lambda item: item["user_id"]) for ws in ws_list if ws not in logout_ws]
-    assert all([results[0] == result for result in results])
+    player_ws = await test_cli.ws_connect("/players/feed", headers={"Authorization": token})
+    assert await player_ws.receive_json(timeout=0.5) == player.as_dict()
 
 
-async def test_refresh_player_list(test_cli, users_data):
-    tokens = [token for user_id, token in random.sample(users_data, 20)]
-    ws_list = [await test_cli.ws_connect(f"/players/feed", headers={"Authorization": token}) for token in tokens]
+async def test_login_player(test_cli, players_data: list, players_online: dict):
+    player_data = random.choice([player_data
+                                 for player_data in players_data
+                                 if player_data["player"] not in players_online.values()])
+    player = player_data["player"]
+    token = player_data["token"].token
 
-    results = [await receive_messages(ws, lambda item: item["user_id"]) for ws in ws_list]
-    assert all([results[0] == result for result in results])
+    player_ws = await test_cli.ws_connect("/players/feed", headers={"Authorization": token})
+    assert await player_ws.receive_json(timeout=0.5) == player.as_dict()
 
-    ws = random.choice(ws_list)
-    await ws.send_str("refresh")
+    for ws_messages in await receive_all(players_online):
+        assert ws_messages[0] == player_online_payload(player)
 
-    result = await receive_messages(ws, lambda item: item["user_id"])
-    assert len(result) == 20
+
+async def test_logout_players(test_cli, players_data: list, players_online: dict):
+    logout_ws = random.choice(list(players_online))
+    player = players_online.pop(logout_ws)
+    expected = player_offline_payload(player)
+
+    await logout_ws.close()
+    for ws in players_online:
+        assert expected == await ws.receive_json()
+
+
+async def test_refresh_player_list(test_cli, players_data: list):
+    data = random.sample(players_data, 20)
+    ws_list = await asyncio.gather(
+        *[test_cli.ws_connect("/players/feed", headers={"Authorization": player_data["token"].token})
+          for player_data in data]
+    )
+
+    expected = sorted([
+        player_online_payload(player_data["player"]) for player_data in data],
+        key=lambda item: item["player_id"]
+    )
+
+    await receive_all(ws_list)
+    await asyncio.gather(*[ws.send_json({"action": "refresh"}) for ws in ws_list])
+
+    for ws_messages in await receive_all(ws_list, sort_by=lambda item: item["player_id"]):
+        assert ws_messages == expected
