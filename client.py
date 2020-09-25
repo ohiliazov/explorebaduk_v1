@@ -22,7 +22,7 @@ def process_message():
 
 
 async def players_feed(token, ws_path: str):
-    uri = f"ws://localhost:8080/{ws_path}"
+    uri = f"ws://0.0.0.0:8080/{ws_path}"
     async with websockets.connect(uri, extra_headers={"Authorization": token}) as ws:
         while True:
             try:
