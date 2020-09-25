@@ -44,13 +44,11 @@ class PlayersFeedView(WebSocketView):
             await self.set_offline()
 
     async def set_online(self):
-        await self.send_message(player_login_payload(self.player))
-
-        if self.player:
-            if self.player not in self.players.values():
-                await self._send_player_online()
-
         self.players[self.ws] = self.player
+        if self.player:
+            await self._send_player_online()
+
+        await self.send_message(player_login_payload(self.player))
 
     async def set_offline(self):
         self.players.pop(self.ws)
@@ -59,6 +57,7 @@ class PlayersFeedView(WebSocketView):
             await self._send_player_offline()
 
     async def handle_message(self):
+        await self._send_players_list()
         while message := await self.receive_message():
             if message["action"] == "refresh":
                 await self._send_players_list()
@@ -67,7 +66,7 @@ class PlayersFeedView(WebSocketView):
         await asyncio.gather(*[
             self.send_message(player_online_payload(player))
             for player in set(self.players.values())
-            if player
+            if player and player is not self.player
         ])
 
     async def _send_player_online(self):

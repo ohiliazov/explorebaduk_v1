@@ -3,8 +3,10 @@ The documentation contains API
 ##  Players Feed
 ### Description
 Players feed shows users online
-### Endpoint path
-ws://\<host>:\<port>/players/feed
+### Endpoint URL
+```
+ws://<host>:<port>/players/feed
+```
 #### Authorization header
 ```
 Authorization=<token>
