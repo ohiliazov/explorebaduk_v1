@@ -43,5 +43,5 @@ def create_db(database_uri):
 
 
 if __name__ == "__main__":
-    database_uri = input("Enter database uri: ")
-    create_db(database_uri)
+    # database_uri = input("Enter database uri: ")
+    create_db("sqlite:///explorebaduk.sqlite3")

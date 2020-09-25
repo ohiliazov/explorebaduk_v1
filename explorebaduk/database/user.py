@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer
+from sqlalchemy import Column, String, Integer, Numeric
 from sqlalchemy.orm import relationship
 
 from explorebaduk.database.base import BaseModel
@@ -11,8 +11,8 @@ class PlayerModel(BaseModel):
     first_name = Column(String(60))
     last_name = Column(String(60))
     email = Column(String(255))
-    rating = Column(String(10))
-    puzzle_rating = Column(String(10))
+    rating = Column(Numeric(10))
+    puzzle_rating = Column(Numeric(10))
 
     tokens = relationship("TokenModel", back_populates="player")
 
@@ -22,10 +22,10 @@ class PlayerModel(BaseModel):
 
     def as_dict(self):
         return {
-            "user_id": self.user_id,
+            "player_id": self.user_id,
             "first_name": self.first_name,
             "last_name": self.last_name,
             "email": self.email,
-            "rating": self.rating,
-            "puzzle_rating": self.puzzle_rating,
+            "rating": round(self.rating, 2),
+            "puzzle_rating": round(self.puzzle_rating, 2),
         }

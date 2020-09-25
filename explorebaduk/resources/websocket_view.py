@@ -1,5 +1,5 @@
 import asyncio
-import json
+import simplejson as json
 
 from sanic.log import logger
 from sanic.request import Request

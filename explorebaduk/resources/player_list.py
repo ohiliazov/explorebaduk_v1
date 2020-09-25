@@ -6,12 +6,17 @@ lock = asyncio.Lock()
 
 
 class PlayerStatus:
+    LOGIN = "login"
     ONLINE = "online"
     OFFLINE = "offline"
 
 
+def player_login_payload(player) -> dict:
+    return {"status": PlayerStatus.LOGIN, "player": player.as_dict() if player else None}
+
+
 def player_online_payload(player) -> dict:
-    return {"status": PlayerStatus.ONLINE, "player_id": player.user_id, "player": player.as_dict()}
+    return {"status": PlayerStatus.ONLINE, "player": player.as_dict()}
 
 
 def player_offline_payload(player) -> dict:
@@ -39,9 +44,9 @@ class PlayersFeedView(WebSocketView):
             await self.set_offline()
 
     async def set_online(self):
-        if self.player:
-            await self.send_message(self.player.as_dict())
+        await self.send_message(player_login_payload(self.player))
 
+        if self.player:
             if self.player not in self.players.values():
                 await self._send_player_online()
 
