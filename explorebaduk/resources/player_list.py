@@ -1,8 +1,7 @@
 import asyncio
 
 from explorebaduk.resources.websocket_view import WebSocketView
-
-lock = asyncio.Lock()
+from explorebaduk.mixins import DatabaseMixin
 
 
 class PlayerStatus:
@@ -23,7 +22,11 @@ def player_offline_payload(player) -> dict:
     return {"status": PlayerStatus.OFFLINE, "player_id": player.user_id}
 
 
-class PlayersFeedView(WebSocketView):
+class PlayersFeedView(WebSocketView, DatabaseMixin):
+    def __init__(self, request, ws):
+        super().__init__(request, ws)
+        self.player = self.get_player_by_token(request)
+
     @property
     def players(self):
         return self.app.players
@@ -31,10 +34,6 @@ class PlayersFeedView(WebSocketView):
     @property
     def connected(self) -> set:
         return set(self.players)
-
-    @property
-    def player(self):
-        return self.request.ctx.player
 
     async def handle_request(self):
         await self.set_online()

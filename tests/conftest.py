@@ -6,6 +6,7 @@ import string
 import datetime
 
 from sanic.websocket import WebSocketProtocol
+from sqlalchemy.orm import create_session
 
 from explorebaduk.app import create_app
 from explorebaduk.database import BaseModel, PlayerModel, TokenModel
@@ -44,9 +45,9 @@ def test_cli(loop, test_app, test_client):
 
 @pytest.fixture
 async def players_data(test_app):
-    db = test_app.db
-    BaseModel.metadata.drop_all(db.engine)
-    BaseModel.metadata.create_all(db.engine)
+    session = create_session(test_app.db_engine)
+    BaseModel.metadata.drop_all(test_app.db_engine)
+    BaseModel.metadata.create_all(test_app.db_engine)
 
     players_data = []
 
@@ -69,12 +70,13 @@ async def players_data(test_app):
         }
         player = PlayerModel(**player_data)
         token = TokenModel(**token_data)
-        db.save(player)
-        db.save(token)
+        session.add(player)
+        session.add(token)
         players_data.append({
             "player": player,
             "token": token,
         })
+    session.flush()
 
     return players_data
 
