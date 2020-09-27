@@ -1,12 +1,16 @@
 import random
 import string
 import datetime
-from explorebaduk.database import BaseModel, PlayerModel, TokenModel, DatabaseHandler
+
+from sqlalchemy import create_engine
+from sqlalchemy.orm import create_session
+from explorebaduk.database import BaseModel, PlayerModel, TokenModel
 
 
 def make_user(num: int):
     user_data = {
         "user_id": num,
+        "username": f"johndoe{num}",
         "first_name": "John",
         "last_name": f"Doe#{num}",
         "email": f"johndoe{num}@explorebaduk.com",
@@ -26,20 +30,22 @@ def make_token(num: int, user_id: int, minutes: int = 10):
     return TokenModel(**token_data)
 
 
-def populate_database_with_data(db, num_users: int):
+def populate_database_with_data(session, num_users: int):
     for i in range(num_users):
         user = make_user(i)
         token = make_token(i, i, random.randint(0, 3600))
 
-        db.save(user)
-        db.save(token)
+        session.add_all([user, token])
+
+    session.flush()
 
 
 def create_db(database_uri):
-    db_handler = DatabaseHandler(database_uri)
-    BaseModel.metadata.drop_all(db_handler.engine)
-    BaseModel.metadata.create_all(db_handler.engine)
-    populate_database_with_data(db_handler, 1000)
+    engine = create_engine(database_uri)
+    session = create_session(engine)
+    BaseModel.metadata.drop_all(engine)
+    BaseModel.metadata.create_all(engine)
+    populate_database_with_data(session, 1000)
 
 
 if __name__ == "__main__":

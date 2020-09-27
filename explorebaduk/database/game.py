@@ -28,7 +28,7 @@ class GamePlayerModel(BaseModel):
 
     timer_id = Column(Integer, primary_key=True)
     game_id = Column(Integer, ForeignKey("games.game_id"))
-    player_id = Column(Integer, ForeignKey("users.user_id"))
+    player_id = Column(Integer, ForeignKey("users.User_ID"))
 
     time_system = Column(Integer, nullable=False)
     main_time = Column(Integer, default=0)

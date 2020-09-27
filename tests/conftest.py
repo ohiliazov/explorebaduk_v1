@@ -56,6 +56,7 @@ async def players_data(test_app):
 
         player_data = {
             "user_id": user_id,
+            "username": f"johndoe{user_id}",
             "first_name": "John",
             "last_name": f"Doe#{user_id}",
             "email": f"johndoe{user_id}@explorebaduk.com",
