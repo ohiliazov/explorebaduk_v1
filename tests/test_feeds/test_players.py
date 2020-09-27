@@ -15,7 +15,10 @@ async def test_login_first_player(test_cli, players_data: list):
     player = player_data["player"]
     token = player_data["token"].token
 
-    player_ws = await test_cli.ws_connect("/players/feed", headers={"Authorization": token})
+    player_ws = await test_cli.ws_connect(
+        test_cli.app.url_for("Players Feed"),
+        headers={"Authorization": token},
+    )
 
     actual = [msg for msg in await receive_messages(player_ws) if msg["status"] == "login"]
     compare_message(actual[0]["player"], player.as_dict())
@@ -28,7 +31,10 @@ async def test_login_player(test_cli, players_data: list, players_online: dict):
     player = player_data["player"]
     token = player_data["token"].token
 
-    player_ws = await test_cli.ws_connect("/players/feed", headers={"Authorization": token})
+    player_ws = await test_cli.ws_connect(
+        test_cli.app.url_for("Players Feed"),
+        headers={"Authorization": token},
+    )
     await receive_messages(player_ws)
 
     for ws_messages in await receive_all(players_online):

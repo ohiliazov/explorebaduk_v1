@@ -1,3 +1,5 @@
+import os
+
 from sanic import Sanic
 from sanic.request import Request
 from explorebaduk.database import DatabaseHandler
@@ -11,19 +13,29 @@ from explorebaduk.resources import (
 
 def create_app() -> Sanic:
     app = Sanic("ExploreBaduk Game Server API")
-    app.config.from_envvar("CONFIG_PATH")
+
+    register_config(app)
     register_listeners(app)
     register_routes(app)
     register_middleware(app)
+
     return app
 
 
+def register_config(app):
+    if "CONFIG_PATH" in os.environ:
+        app.config.from_envvar("CONFIG_PATH")
+
+    if "DATABASE_API" in os.environ:
+        app.config["DATABASE_API"] = os.getenv("DATABASE_API")
+
+
 def register_routes(app: Sanic):
+
+    app.add_websocket_route(PlayersFeedView.as_view(), "/players", name="Players Feed")
+    app.add_websocket_route(ChallengeFeedView.as_view(), "/challenges", name="Challenges Feed")
     app.add_route(PlayerView.as_view(), "/players/<player_id>", methods=["GET"], name="Player Info")
     app.add_route(ChallengeView.as_view(), "/challenge/<challenge_id>", methods=["GET"], name="Challenge Info")
-
-    app.add_websocket_route(PlayersFeedView.as_view(), "/players/feed")
-    app.add_websocket_route(ChallengeFeedView.as_view(), "/challenges/feed")
 
 
 def register_listeners(app: Sanic):

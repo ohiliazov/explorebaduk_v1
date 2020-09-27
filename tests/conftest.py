@@ -84,7 +84,10 @@ async def players_online(test_cli, players_data: list):
     players_online = {}
 
     for player_data in random.sample(players_data, 20):
-        player_ws = await test_cli.ws_connect("/players/feed", headers={"Authorization": player_data["token"].token})
+        player_ws = await test_cli.ws_connect(
+            test_cli.app.url_for("Players Feed"),
+            headers={"Authorization": player_data["token"].token},
+        )
         players_online[player_ws] = player_data["player"]
 
     # flush messages
