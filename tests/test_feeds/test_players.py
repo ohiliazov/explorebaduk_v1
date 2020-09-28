@@ -1,8 +1,6 @@
 import random
-import asyncio
 import simplejson as json
 
-from explorebaduk.resources.player_list import player_online_payload, player_offline_payload
 from tests.conftest import receive_messages, receive_all
 
 
@@ -25,11 +23,15 @@ async def test_login_first_player(test_cli, players_data: list):
 
 
 async def test_login_player(test_cli, players_data: list, players_online: dict):
-    player_data = random.choice([player_data
-                                 for player_data in players_data
-                                 if player_data["player"] not in players_online.values()])
+    player_data = random.choice([
+        player_data
+        for player_data in players_data
+        if player_data["player"] not in players_online.values()
+    ])
     player = player_data["player"]
     token = player_data["token"].token
+
+    expected = {"status": "online", "player": player.as_dict()}
 
     player_ws = await test_cli.ws_connect(
         test_cli.app.url_for("Players Feed"),
@@ -38,17 +40,17 @@ async def test_login_player(test_cli, players_data: list, players_online: dict):
     await receive_messages(player_ws)
 
     for ws_messages in await receive_all(players_online):
-        compare_message(ws_messages[0], player_online_payload(player))
+        compare_message(ws_messages[0], expected)
 
 
 async def test_logout_players(test_cli, players_data: list, players_online: dict):
     logout_ws = random.choice(list(players_online))
     player = players_online.pop(logout_ws)
-    expected = player_offline_payload(player)
+    expected = {"status": "offline", "player": player.as_dict()}
 
     await logout_ws.close()
     for ws in players_online:
-        assert expected == await ws.receive_json()
+        compare_message(await ws.receive_json(), expected)
 
 
 async def test_refresh_player_list(test_cli, players_data: list, players_online: dict):
@@ -56,11 +58,11 @@ async def test_refresh_player_list(test_cli, players_data: list, players_online:
 
     expected_messages = sorted(
         [
-            player_online_payload(player)
+            {"status": "online", "player": player.as_dict()}
             for player in players_online.values()
             if player is not players_online[player_ws]
         ],
-        key=lambda item: item["player"]["player_id"]
+        key=lambda item: item["player"]["player_id"],
     )
 
     await player_ws.send_json({"action": "refresh"})

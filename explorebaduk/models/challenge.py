@@ -1,3 +1,5 @@
+import asyncio
+
 from websockets import WebSocketCommonProtocol
 from explorebaduk.validation import challenge_validator
 
@@ -8,6 +10,8 @@ class Challenge:
         self.user = user
         self.data = data
         self.joined = {}
+
+        self.exit_event = asyncio.Event()
 
     @property
     def user_id(self):
@@ -31,12 +35,14 @@ class Challenge:
         else:
             self.data = data  # TODO: remove after test
 
+        self.exit_event.clear()
         return self.data
 
     def unset(self):
+        self.exit_event.set()
+
         if data := self.data:
             self.data = None
-            self.joined.clear()
 
         return data
 
@@ -44,5 +50,5 @@ class Challenge:
         return {
             "user_id": self.user_id,
             "challenge": self.data,
-            "joined": len(self.joined)
+            "joined": len(self.joined),
         }

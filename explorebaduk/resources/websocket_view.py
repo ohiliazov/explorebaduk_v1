@@ -39,13 +39,15 @@ class WebSocketView:
         except json.JSONDecodeError:
             return await self.send_message({"error": "Unexpected error"})
 
-    async def send_message(self, data: dict, ws: WebSocketCommonProtocol = None):
+    async def send_message(self, data: dict):
         message = json.dumps(data)
-        recipient = ws or self.ws
 
-        await recipient.send(message)
-        logger.info("> [%s:%d] %s", *recipient.remote_address[:2], message)
+        await self.ws.send(message)
+        logger.info("> [%s:%d] %s", *self.ws.remote_address[:2], message)
 
     async def broadcast_message(self, data: dict):
+        message = json.dumps(data)
+
         if self.connected:
-            await asyncio.gather(*[self.send_message(data, ws) for ws in self.connected])
+            await asyncio.gather(*[ws.send(message) for ws in self.connected])
+            logger.info("> [broadcast] %s", message)

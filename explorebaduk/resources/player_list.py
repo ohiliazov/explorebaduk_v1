@@ -1,39 +1,17 @@
 import asyncio
 
 from explorebaduk.resources.websocket_view import WebSocketView
+from explorebaduk.resources.explorebaduk import ExploreBadukPlayers
 from explorebaduk.mixins import DatabaseMixin
+from explorebaduk.models.player import Player
 
 
-class PlayerStatus:
-    LOGIN = "login"
-    ONLINE = "online"
-    OFFLINE = "offline"
+class PlayersFeedView(WebSocketView, ExploreBadukPlayers, DatabaseMixin):
+    connected = set()
 
-
-def player_login_payload(player) -> dict:
-    return {"status": PlayerStatus.LOGIN, "player": player.as_dict() if player else None}
-
-
-def player_online_payload(player) -> dict:
-    return {"status": PlayerStatus.ONLINE, "player": player.as_dict()}
-
-
-def player_offline_payload(player) -> dict:
-    return {"status": PlayerStatus.OFFLINE, "player_id": player.user_id}
-
-
-class PlayersFeedView(WebSocketView, DatabaseMixin):
     def __init__(self, request, ws):
         super().__init__(request, ws)
-        self.player = self.get_player_by_token(request)
-
-    @property
-    def players(self):
-        return self.app.players
-
-    @property
-    def connected(self) -> set:
-        return set(self.players)
+        self.player = Player(self.ws, self.get_player_by_token(request))
 
     async def handle_request(self):
         await self.set_online()
@@ -42,36 +20,33 @@ class PlayersFeedView(WebSocketView, DatabaseMixin):
         finally:
             await self.set_offline()
 
-    async def set_online(self):
-        self.players[self.ws] = self.player
-        if self.player:
-            await self._send_player_online()
-
-        await self.send_message(player_login_payload(self.player))
-
-    async def set_offline(self):
-        self.players.pop(self.ws)
-
-        if self.player and self.player not in self.players.values():
-            await self._send_player_offline()
-
     async def handle_message(self):
-        await self._send_players_list()
+        await self._refresh_list()
         while message := await self.receive_message():
             if message["action"] == "refresh":
-                await self._send_players_list()
+                await self._refresh_list()
 
-    async def _send_players_list(self):
-        await asyncio.gather(*[
-            self.send_message(player_online_payload(player))
-            for player in set(self.players.values())
-            if player and player is not self.player
-        ])
+    async def set_online(self):
+        self.connected.add(self.ws)
 
-    async def _send_player_online(self):
-        message = player_online_payload(self.player)
-        await self.broadcast_message(message)
+        if self.player.authorized:
+            self.players.add(self.player)
+            await self.broadcast_message({"status": "online", "player": self.player.as_dict()})
 
-    async def _send_player_offline(self):
-        message = player_offline_payload(self.player)
-        await self.broadcast_message(message)
+        await self.send_message({"status": "login", "player": self.player.as_dict()})
+
+    async def set_offline(self):
+        self.connected.remove(self.ws)
+
+        if self.player.authorized:
+            self.players.remove(self.player)
+            await self.broadcast_message({"status": "offline", "player": self.player.as_dict()})
+
+    async def _refresh_list(self):
+        await asyncio.gather(
+            *[
+                self.send_message({"status": "online", "player": player.as_dict()})
+                for player in self.players
+                if player.ws is not self.ws
+            ]
+        )
