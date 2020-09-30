@@ -1,42 +1,33 @@
 import asyncio
 from typing import Optional
 
-from explorebaduk.database import PlayerModel
+from explorebaduk.database import UserModel
 
 
 class Player:
-    def __init__(self, player: Optional[PlayerModel]):
+    def __init__(self, user: Optional[UserModel]):
         self.ws_list = set()
-        self.player = player
+        self.user = user
 
-        self.exit_event = asyncio.Event()
-
-    def add_ws(self, ws):
-        self.ws_list.add(ws)
-
-    def remove_ws(self, ws):
-        self.ws_list.remove(ws)
+        self.online_event = asyncio.Event()
+        self.offline_event = asyncio.Event()
 
     @property
     def player_id(self):
-        return self.player.user_id
+        return self.user.user_id
+
+    async def add_ws(self, ws):
+        self.ws_list.add(ws)
+
+        if len(self.ws_list) == 1:
+            self.online_event.set()
+
+    async def remove_ws(self, ws):
+        self.ws_list.discard(ws)
+
+        if not self.ws_list:
+            self.offline_event.set()
 
     def as_dict(self):
-        if self.player:
-            return {
-                "player_id": self.player.user_id,
-                "username": self.player.username,
-                "first_name": self.player.first_name,
-                "last_name": self.player.last_name,
-                "email": self.player.email,
-                "rating": round(self.player.rating, 2),
-                "puzzle_rating": round(self.player.puzzle_rating, 2),
-            }
-
-    @property
-    def authorized(self) -> bool:
-        return self.player is not None
-
-    @property
-    def online(self) -> bool:
-        return len(self.ws_list) > 0
+        if self.user:
+            return self.user.as_dict()

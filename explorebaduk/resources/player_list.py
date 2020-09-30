@@ -13,13 +13,20 @@ class PlayersFeedView(WebSocketView, PlayersMixin, DatabaseMixin):
 
         player = self.get_player_by_token(request)
         self.player = self.get_player_by_model(player) or Player(player)
+        asyncio.create_task(self._set_online())
+        asyncio.create_task(self._set_offline())
 
     async def handle_request(self):
-        await self.set_online()
+        await self.connect_ws()
         try:
             await self.handle_message()
         finally:
-            await self.set_offline()
+            await self.disconnect_ws()
+
+    async def connect_ws(self):
+        self.connected.add(self.ws)
+        await self.player.add_ws(self.ws)
+        await self.send_message({"status": "login", "player": self.player.as_dict()})
 
     async def handle_message(self):
         await self._refresh_list()
@@ -27,28 +34,21 @@ class PlayersFeedView(WebSocketView, PlayersMixin, DatabaseMixin):
             if message["action"] == "refresh":
                 await self._refresh_list()
 
-    async def set_online(self):
-        self.connected.add(self.ws)
-        self.player.add_ws(self.ws)
-
-        if self.player.authorized:
-            self.app.players.add(self.player)
-
-            if len(self.player.ws_list) == 1:
-                await self.broadcast_message({"status": "online", "player": self.player.as_dict()})
-
-        await self.send_message({"status": "login", "player": self.player.as_dict()})
-
-    async def set_offline(self):
+    async def disconnect_ws(self):
         self.connected.remove(self.ws)
-        self.player.remove_ws(self.ws)
+        await self.player.remove_ws(self.ws)
 
-        if not self.player.online:
-            self.app.players.remove(self.player)
-            self.player.exit_event.set()
+    async def _set_online(self):
+        await self.player.online_event.wait()
+        self.app.players.add(self.player)
+        await self.broadcast_message({"status": "online", "player": self.player.as_dict()})
+        await self.player.online_event.clear()
 
-            if self.player.authorized:
-                await self.broadcast_message({"status": "offline", "player": self.player.as_dict()})
+    async def _set_offline(self):
+        await self.player.offline_event.wait()
+        self.app.players.remove(self.player)
+        await self.broadcast_message({"status": "offline", "player": self.player.as_dict()})
+        await self.player.offline_event.clear()
 
     async def _refresh_list(self):
         await asyncio.gather(

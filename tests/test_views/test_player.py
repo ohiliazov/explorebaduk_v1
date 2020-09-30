@@ -2,21 +2,15 @@ import random
 
 
 async def test_get_user(test_cli, players_data: list):
-    player_id = random.choice(players_data)["player"].user_id
-    resp = await test_cli.get(f"/players/{player_id}")
+    user = random.choice(players_data)["user"]
+    resp = await test_cli.get(f"/players/{user.user_id}")
 
     assert resp.status == 200
 
     resp_json = await resp.json()
-    assert resp_json["player_id"] == player_id
+    assert resp_json == user.as_dict()
 
 
 async def test_get_absent_user(test_cli, players_data: list):
-    user_id = 666
-
-    resp = await test_cli.get(f"/players/{user_id}")
-
+    resp = await test_cli.get("/players/666")
     assert resp.status == 404
-
-    resp_json = await resp.json()
-    assert resp_json["message"] == "User not found"

@@ -5,11 +5,8 @@ from sqlalchemy import (
     Numeric,
     DateTime,
     Text,
-    ForeignKey,
     Boolean,
 )
-from sqlalchemy.sql import func
-from sqlalchemy.orm import relationship
 
 
 from explorebaduk.database.base import BaseModel
@@ -125,6 +122,3 @@ class TeacherPlansModel(BaseModel):
     teacher_id = Column(Integer, name="Teacher_ID", nullable=False)
     plan = Column(String(255), name="Plan", nullable=False)
     price = Column(Numeric(6, 2), name="Price", nullable=False)
-
-
-# TODO: add users table + update signin_token table

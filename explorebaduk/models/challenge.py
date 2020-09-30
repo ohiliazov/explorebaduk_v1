@@ -12,11 +12,11 @@ class Challenge:
         self.exit_event = asyncio.Event()
 
     def is_active(self):
-        return self.data and self.player.online
+        return self.data and self.player.ws_list
 
     def as_dict(self):
         return {
-            "player_id": self.player.player_id,
+            "player_id": self.player.user.user_id,
             "challenge": self.data,
             "joined": len(self.joined),
         }

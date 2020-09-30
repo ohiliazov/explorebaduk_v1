@@ -13,7 +13,7 @@ class TokenModel(BaseModel):
     token = Column(String(64))
     expired_at = Column(DateTime)
 
-    player = relationship("PlayerModel", back_populates="tokens")
+    user = relationship("UserModel", back_populates="tokens")
 
     @property
     def is_active(self):

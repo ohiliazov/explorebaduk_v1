@@ -2,7 +2,7 @@ from contextlib import contextmanager
 
 from sqlalchemy.orm import create_session
 
-from explorebaduk.database import PlayerModel, TokenModel
+from explorebaduk.database import UserModel, TokenModel
 
 
 @contextmanager
@@ -24,22 +24,24 @@ class DatabaseError(Exception):
 
 class DatabaseMixin:
     @staticmethod
-    def get_player_by_id(request, player_id: int) -> PlayerModel:
+    def get_player_by_id(request, player_id: int) -> UserModel:
         with scoped_session(request) as session:
-            return session.query(PlayerModel).get(player_id)
+            return session.query(UserModel).get(player_id)
 
     @staticmethod
-    def get_player_by_token(request) -> PlayerModel:
+    def get_player_by_token(request) -> UserModel:
         token = request.headers.get("Authorization")
         with scoped_session(request) as session:
             auth_token = session.query(TokenModel).filter_by(token=token).first()
 
             if auth_token:
-                return auth_token.player
+                return auth_token.user
 
 
 class PlayersMixin:
-    def get_player_by_model(self, player: PlayerModel):
+    app = NotImplemented
+
+    def get_player_by_model(self, player: UserModel):
         for player_online in self.app.players:
-            if player.user_id == player_online.player_id:
+            if player.user_id == player_online.user.user_id:
                 return player_online

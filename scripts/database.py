@@ -4,7 +4,7 @@ import datetime
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import create_session
-from explorebaduk.database import BaseModel, PlayerModel, TokenModel
+from explorebaduk.database import BaseModel, UserModel, TokenModel
 
 
 def make_user(num: int):
@@ -17,7 +17,7 @@ def make_user(num: int):
         "rating": random.randint(0, 3000),
         "puzzle_rating": random.randint(0, 3000),
     }
-    return PlayerModel(**user_data)
+    return UserModel(**user_data)
 
 
 def make_token(num: int, user_id: int, minutes: int = 10):

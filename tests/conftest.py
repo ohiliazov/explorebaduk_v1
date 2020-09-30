@@ -9,7 +9,7 @@ from sanic.websocket import WebSocketProtocol
 from sqlalchemy.orm import create_session
 
 from explorebaduk.app import create_app
-from explorebaduk.database import BaseModel, PlayerModel, TokenModel
+from explorebaduk.database import BaseModel, UserModel, TokenModel
 
 
 async def receive_messages(ws, sort_by: callable = None):
@@ -69,14 +69,12 @@ async def players_data(test_app):
             "token": token,
             "expired_at": datetime.datetime.utcnow() + datetime.timedelta(minutes=10),
         }
-        player = PlayerModel(**player_data)
+        user = UserModel(**player_data)
         token = TokenModel(**token_data)
-        session.add(player)
-        session.add(token)
-        players_data.append({
-            "player": player,
-            "token": token,
-        })
+
+        session.add_all([user, token])
+        players_data.append({"user": user, "token": token})
+
     session.flush()
 
     return players_data
@@ -91,7 +89,7 @@ async def players_online(test_cli, players_data: list):
             test_cli.app.url_for("Players Feed"),
             headers={"Authorization": player_data["token"].token},
         )
-        players_online[player_ws] = player_data["player"]
+        players_online[player_ws] = player_data
 
     # flush messages
     await receive_all(players_online.keys())
