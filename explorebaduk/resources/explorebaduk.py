@@ -1,24 +1,17 @@
-import asyncio
-from typing import Iterable, Union
-import simplejson as json
-
-from websockets import WebSocketCommonProtocol
+from explorebaduk.database import PlayerModel
+from explorebaduk.models.player import Player
 
 
-async def send_json(ws_list: Union[WebSocketCommonProtocol, Iterable[WebSocketCommonProtocol]], data: dict):
-    if isinstance(ws_list, WebSocketCommonProtocol):
-        ws_list = {ws_list}
-
-    payload = json.dumps(data, indent=2)
-    await asyncio.gather(*[ws.send(payload) for ws in ws_list])
-
-
-class ExploreBadukPlayers:
-    players = set()
+class PlayersMixin:
+    def get_player_by_model(self, player: PlayerModel):
+        for player_online in self.app.players:
+            if player.user_id == player_online.player_id:
+                return player_online
+        return Player(player)
 
 
 class ExploreBadukChallenges:
-    challenges = {}
+    challenges = set()
 
 
 class ExploreBadukGames:

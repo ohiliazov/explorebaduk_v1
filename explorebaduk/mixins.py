@@ -23,7 +23,6 @@ class DatabaseError(Exception):
 
 
 class DatabaseMixin:
-
     @staticmethod
     def get_player_by_id(request, player_id: int) -> PlayerModel:
         with scoped_session(request) as session:
@@ -37,3 +36,10 @@ class DatabaseMixin:
 
             if auth_token:
                 return auth_token.player
+
+
+class PlayersMixin:
+    def get_player_by_model(self, player: PlayerModel):
+        for player_online in self.app.players:
+            if player.user_id == player_online.player_id:
+                return player_online

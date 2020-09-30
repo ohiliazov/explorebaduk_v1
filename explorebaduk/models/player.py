@@ -1,16 +1,25 @@
 import asyncio
 from typing import Optional
-from websockets import WebSocketCommonProtocol
 
 from explorebaduk.database import PlayerModel
 
 
 class Player:
-    def __init__(self, ws: WebSocketCommonProtocol, player: Optional[PlayerModel]):
-        self.ws = ws
+    def __init__(self, player: Optional[PlayerModel]):
+        self.ws_list = set()
         self.player = player
 
         self.exit_event = asyncio.Event()
+
+    def add_ws(self, ws):
+        self.ws_list.add(ws)
+
+    def remove_ws(self, ws):
+        self.ws_list.remove(ws)
+
+    @property
+    def player_id(self):
+        return self.player.user_id
 
     def as_dict(self):
         if self.player:
@@ -27,3 +36,7 @@ class Player:
     @property
     def authorized(self) -> bool:
         return self.player is not None
+
+    @property
+    def online(self) -> bool:
+        return len(self.ws_list) > 0

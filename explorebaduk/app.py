@@ -40,5 +40,11 @@ def register_routes(app: Sanic):
 
 def register_listeners(app: Sanic):
     @app.listener("before_server_start")
+    async def setup_data(app, loop):
+        app.players = set()
+        app.challenges = set()
+        app.games = set()
+
+    @app.listener("before_server_start")
     async def setup_db(app, loop):
         app.db_engine = create_engine(app.config["DATABASE_URI"])
