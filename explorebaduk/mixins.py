@@ -29,7 +29,7 @@ class DatabaseMixin:
             return session.query(UserModel).get(player_id)
 
     @staticmethod
-    def get_player_by_token(request) -> UserModel:
+    def get_user_by_token(request) -> UserModel:
         token = request.headers.get("Authorization")
         with scoped_session(request) as session:
             auth_token = session.query(TokenModel).filter_by(token=token).first()
@@ -41,7 +41,7 @@ class DatabaseMixin:
 class PlayersMixin:
     app = NotImplemented
 
-    def get_player_by_model(self, player: UserModel):
+    def get_player_by_model(self, user: UserModel):
         for player_online in self.app.players:
-            if player.user_id == player_online.user.user_id:
+            if user.user_id == player_online.player_id:
                 return player_online

@@ -45,9 +45,11 @@ class WebSocketView:
         await self.ws.send(message)
         logger.info("> [%s:%d] %s", *self.ws.remote_address[:2], message)
 
-    async def broadcast_message(self, data: dict):
+    async def broadcast_message(self, data: dict, exclude_ws: set = None):
         message = json.dumps(data)
 
         if self.connected:
-            await asyncio.gather(*[ws.send(message) for ws in self.connected])
+            await asyncio.gather(
+                *[ws.send(message) for ws in self.connected - exclude_ws]
+            )
             logger.info("> [broadcast] %s", message)

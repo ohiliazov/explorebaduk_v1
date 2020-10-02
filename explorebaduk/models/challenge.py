@@ -1,22 +1,35 @@
 import asyncio
 
-from explorebaduk.models.player import Player
+from explorebaduk.database import UserModel
 
 
 class Challenge:
-    def __init__(self, player: Player, data: dict = None):
-        self.player = player
+    def __init__(self, user: UserModel, data: dict = None):
+
+        self.ws_list = set()
+        self._user = user
+
         self.data = data
-        self.joined = {}
+        self.joined = set()
 
-        self.exit_event = asyncio.Event()
+        self._event = asyncio.Event()
 
-    def is_active(self):
-        return self.data and self.player.ws_list
+    @property
+    def user_id(self):
+        return self._user.user_id
+
+    def add_ws(self, ws):
+        self.ws_list.add(ws)
+
+    def remove_ws(self, ws):
+        self.ws_list.discard(ws)
+
+        if not self.ws_list:
+            self._event.set()
 
     def as_dict(self):
         return {
-            "player_id": self.player.user.user_id,
+            "player_id": self.user_id,
             "challenge": self.data,
             "joined": len(self.joined),
         }
