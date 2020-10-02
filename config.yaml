@@ -1,9 +1,0 @@
-app_name: "ExploreBaduk"
-dev:
-  server_host: "localhost"
-  server_port: 8080
-  database_uri: "postgresql://ohili:ohili@localhost:5432/explorebaduk"
-test:
-  server_host: "localhost"
-  server_port: 8082
-  database_uri: "postgresql://ohili:ohili@localhost:5432/explorebaduk_test"

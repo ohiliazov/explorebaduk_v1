@@ -20,7 +20,8 @@ To authorize, provide valid Authorization header.
 {
     "status": "login",
     "player": {
-        "player_id": 1,
+        "user_id": 1,
+        "username": "johndoe1",
         "first_name": "John",
         "last_name": "Doe",
         "email": "johndoe@email.com",
@@ -42,7 +43,8 @@ Sent each time player connects to the feed.
 {
     "status": "online",
     "player": {
-        "player_id": 2,
+        "user_id": 2,
+        "username": "janedoe2",
         "first_name": "Jane",
         "last_name": "Doe",
         "email": "janedoe@email.com",
@@ -56,7 +58,15 @@ Sent each time player disconnects from the feed.
 ```json
 {
     "status": "offline",
-    "player_id": 3
+    "player": {
+        "user_id": 1,
+        "username": "johndoe1",
+        "first_name": "John",
+        "last_name": "Doe",
+        "email": "johndoe@email.com",
+        "rating": 1200.00,
+        "puzzle_rating": 1000.00
+    }
 }
 ```
 #### Client messages
