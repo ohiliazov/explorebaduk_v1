@@ -54,7 +54,7 @@ async def users_data(test_app):
     for user_id in range(1, 101):
         token = f"{string.ascii_letters}{user_id:012d}"
 
-        player_data = {
+        user_data = {
             "user_id": user_id,
             "username": f"johndoe{user_id}",
             "first_name": "John",
@@ -69,7 +69,7 @@ async def users_data(test_app):
             "token": token,
             "expired_at": datetime.datetime.utcnow() + datetime.timedelta(minutes=10),
         }
-        user = UserModel(**player_data)
+        user = UserModel(**user_data)
         token = TokenModel(**token_data)
 
         session.add_all([user, token])
@@ -98,5 +98,17 @@ async def players_online(test_cli, users_data: list):
 
 
 @pytest.fixture
-async def challenges_data(test_cli):
-    pass
+async def challenges_online(test_cli, users_data: list):
+    challenges_online = {}
+
+    for user_data in random.sample(users_data, 20):
+        ws = await test_cli.ws_connect(
+            test_cli.app.url_for("Challenges Feed"),
+            headers={"Authorization": user_data["token"].token},
+        )
+        challenges_online[ws] = user_data
+
+    # flush messages
+    await receive_all(challenges_online.keys())
+
+    return challenges_online

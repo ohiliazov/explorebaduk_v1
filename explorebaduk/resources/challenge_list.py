@@ -41,6 +41,7 @@ class ChallengeFeedView(WebSocketView, DatabaseMixin):
     async def connect_ws(self):
         self.connected.add(self.ws)
         self.challenge.add_ws(self.ws)
+        await self.send_message({"status": "login", "user": self.challenge.user_data})
 
     async def disconnect_ws(self):
         self.connected.remove(self.ws)

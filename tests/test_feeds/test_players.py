@@ -9,26 +9,7 @@ def compare_message(actual, expected):
     assert actual == json.loads(json.dumps(expected))
 
 
-async def test_login_player(test_cli, users_data: list):
-    user_data = random.choice(users_data)
-    user = user_data["user"]
-    token = user_data["token"].token
-
-    ws = await test_cli.ws_connect(
-        test_cli.app.url_for("Players Feed"),
-        headers={"Authorization": token},
-    )
-
-    expected = {"status": "login", "player": user.as_dict()}
-    assert any(
-        actual == json.loads(json.dumps(expected))
-        for actual in await receive_messages(ws)
-    )
-
-
-async def test_login_player_online_message(
-    test_cli, users_data: list, players_online: dict
-):
+async def test_player_login_as_user(test_cli, users_data: list, players_online: dict):
     user_data = random.choice(
         [
             user_data
@@ -39,19 +20,23 @@ async def test_login_player_online_message(
     user = user_data["user"]
     token = user_data["token"].token
 
-    expected = {"status": "online", "player": user.as_dict()}
-
-    player_ws = await test_cli.ws_connect(
+    ws = await test_cli.ws_connect(
         test_cli.app.url_for("Players Feed"),
         headers={"Authorization": token},
     )
-    await receive_messages(player_ws)
 
+    expected = {"status": "login", "user": user.as_dict()}
+    assert any(
+        actual == json.loads(json.dumps(expected))
+        for actual in await receive_messages(ws)
+    )
+
+    expected = {"status": "online", "player": user.as_dict()}
     for ws_messages in await receive_all(players_online):
         compare_message(ws_messages[0], expected)
 
 
-async def test_logout_players_offline_message(test_cli, players_online: dict):
+async def test_player_logout_as_user(test_cli, players_online: dict):
     logout_ws = random.choice(list(players_online))
     user = players_online.pop(logout_ws)["user"]
     expected = {"status": "offline", "player": user.as_dict()}
@@ -61,7 +46,27 @@ async def test_logout_players_offline_message(test_cli, players_online: dict):
         compare_message(await ws.receive_json(), expected)
 
 
-async def test_refresh_player_list(test_cli, players_online: dict):
+async def test_player_login_as_guest(test_cli, players_online: dict):
+
+    player_ws = await test_cli.ws_connect(test_cli.app.url_for("Players Feed"))
+
+    expected = {"status": "login", "user": None}
+    assert any(
+        actual == json.loads(json.dumps(expected))
+        for actual in await receive_messages(player_ws)
+    )
+
+
+async def test_player_logout_as_guest(test_cli, players_online: dict):
+    guest_ws = await test_cli.ws_connect(test_cli.app.url_for("Players Feed"))
+    await guest_ws.close()
+    not_expected = {"status": "offline", "player": None}
+
+    for ws_messages in await receive_all(players_online):
+        assert not_expected not in ws_messages
+
+
+async def test_player_refresh_list(test_cli, players_online: dict):
     player_ws = random.choice(list(players_online))
 
     expected_messages = sorted(
@@ -84,7 +89,7 @@ async def test_refresh_player_list(test_cli, players_online: dict):
         compare_message(actual, expected)
 
 
-async def test_login_player_multiple_devices(test_cli, players_online: dict):
+async def test_player_multiple_login_as_user(test_cli, players_online: dict):
     _, user_data = random.choice(list(players_online.items()))
     user = user_data["user"]
     token = user_data["token"].token
@@ -105,7 +110,7 @@ async def test_login_player_multiple_devices(test_cli, players_online: dict):
         assert not_expected not in ws_messages
 
 
-async def test_logout_player_multiple_devices(test_cli, players_online: dict):
+async def test_player_multiple_logout_as_user(test_cli, players_online: dict):
     player_ws, user_data = random.choice(list(players_online.items()))
     user = user_data["user"]
     token = user_data["token"].token
@@ -130,18 +135,7 @@ async def test_logout_player_multiple_devices(test_cli, players_online: dict):
         assert not_expected not in ws_messages
 
 
-async def test_login_guest(test_cli, players_online: dict):
-
-    player_ws = await test_cli.ws_connect(test_cli.app.url_for("Players Feed"))
-
-    expected = {"status": "login", "player": None}
-    assert any(
-        actual == json.loads(json.dumps(expected))
-        for actual in await receive_messages(player_ws)
-    )
-
-
-async def test_login_multiple_guests(test_cli, players_online: dict):
+async def test_player_multiple_login_as_guests(test_cli, players_online: dict):
 
     await asyncio.gather(
         *[test_cli.ws_connect(test_cli.app.url_for("Players Feed")) for _ in range(20)]
@@ -153,16 +147,7 @@ async def test_login_multiple_guests(test_cli, players_online: dict):
         assert not_expected not in ws_messages
 
 
-async def test_logout_guest(test_cli, players_online: dict):
-    guest_ws = await test_cli.ws_connect(test_cli.app.url_for("Players Feed"))
-    await guest_ws.close()
-    not_expected = {"status": "offline", "player": None}
-
-    for ws_messages in await receive_all(players_online):
-        assert not_expected not in ws_messages
-
-
-async def test_logout_multiple_guests(test_cli, players_online: dict):
+async def test_player_multiple_logout_as_guest(test_cli, players_online: dict):
 
     guest_ws_list = await asyncio.gather(
         *[test_cli.ws_connect(test_cli.app.url_for("Players Feed")) for _ in range(20)]

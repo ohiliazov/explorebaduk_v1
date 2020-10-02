@@ -27,6 +27,11 @@ class Challenge:
     def authorized(self):
         return self._user is not None
 
+    @property
+    def user_data(self):
+        if self._user:
+            return self._user.as_dict()
+
     async def wait_offline(self):
         await self._event.wait()
 

@@ -33,7 +33,7 @@ class PlayersFeedView(WebSocketView, DatabaseMixin):
     async def connect_ws(self):
         self.connected.add(self.ws)
         self.player.add_ws(self.ws)
-        await self.send_message({"status": "login", "player": self.player.as_dict()})
+        await self.send_message({"status": "login", "user": self.player.as_dict()})
 
         if self.player.authorized and self.player not in self.app.players:
             self.app.players.add(self.player)
