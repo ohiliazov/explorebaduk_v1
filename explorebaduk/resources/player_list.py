@@ -12,6 +12,7 @@ class PlayersFeedView(WebSocketView, DatabaseMixin):
         super().__init__(request, ws)
 
         self.player = self._get_player()
+        self._task = None
 
     def _get_player(self):
         if user := self.get_user_by_token(self.request):
@@ -19,7 +20,6 @@ class PlayersFeedView(WebSocketView, DatabaseMixin):
                 if user.user_id == player.user_id:
                     return player
             return Player(user)
-
         return Player()
 
     async def handle_request(self):
@@ -43,7 +43,7 @@ class PlayersFeedView(WebSocketView, DatabaseMixin):
             )
 
             # TODO: make proper finish
-            asyncio.create_task(self._set_offline())
+            self._task = asyncio.create_task(self._set_offline())
 
     async def handle_message(self):
         while message := await self.receive_message():

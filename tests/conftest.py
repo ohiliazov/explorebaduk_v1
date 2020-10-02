@@ -44,12 +44,12 @@ def test_cli(loop, test_app, test_client):
 
 
 @pytest.fixture
-async def players_data(test_app):
+async def users_data(test_app):
     session = create_session(test_app.db_engine)
     BaseModel.metadata.drop_all(test_app.db_engine)
     BaseModel.metadata.create_all(test_app.db_engine)
 
-    players_data = []
+    users_data = []
 
     for user_id in range(1, 101):
         token = f"{string.ascii_letters}{user_id:012d}"
@@ -73,23 +73,23 @@ async def players_data(test_app):
         token = TokenModel(**token_data)
 
         session.add_all([user, token])
-        players_data.append({"user": user, "token": token})
+        users_data.append({"user": user, "token": token})
 
     session.flush()
 
-    return players_data
+    return users_data
 
 
 @pytest.fixture
-async def players_online(test_cli, players_data: list):
+async def players_online(test_cli, users_data: list):
     players_online = {}
 
-    for player_data in random.sample(players_data, 20):
+    for user_data in random.sample(users_data, 20):
         player_ws = await test_cli.ws_connect(
             test_cli.app.url_for("Players Feed"),
-            headers={"Authorization": player_data["token"].token},
+            headers={"Authorization": user_data["token"].token},
         )
-        players_online[player_ws] = player_data
+        players_online[player_ws] = user_data
 
     # flush messages
     await receive_all(players_online.keys())
