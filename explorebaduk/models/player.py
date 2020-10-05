@@ -8,7 +8,7 @@ class Player:
         self.ws_list = set()
         self._user = user
 
-        self._event = asyncio.Event()
+        self.lock = asyncio.Lock()
 
     @property
     def user_id(self):
@@ -22,17 +22,11 @@ class Player:
     def authorized(self):
         return self._user is not None
 
-    async def wait_offline(self):
-        await self._event.wait()
-
     def add_ws(self, ws):
         self.ws_list.add(ws)
 
     def remove_ws(self, ws):
-        self.ws_list.discard(ws)
-
-        if not self.ws_list:
-            self._event.set()
+        self.ws_list.remove(ws)
 
     def as_dict(self):
         if self._user:

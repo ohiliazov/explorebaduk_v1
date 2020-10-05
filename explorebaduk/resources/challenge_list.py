@@ -20,7 +20,10 @@ class ChallengeFeedView(WebSocketView, DatabaseMixin):
         super().__init__(request, ws)
 
         self.challenge = self._get_challenge()
-        self._task = None
+
+    @property
+    def excluded(self) -> set:
+        return self.challenge.ws_list
 
     def _get_challenge(self):
         if user := self.get_user_by_token(self.request):
@@ -46,6 +49,7 @@ class ChallengeFeedView(WebSocketView, DatabaseMixin):
     async def disconnect_ws(self):
         self.connected.remove(self.ws)
         self.challenge.remove_ws(self.ws)
+        await self._unset_challenge()
 
     async def handle_message(self):
         while message := await self.receive_message():
@@ -68,32 +72,23 @@ class ChallengeFeedView(WebSocketView, DatabaseMixin):
         )
 
     async def _set_challenge(self, data: dict):
-        self.challenge.set(data)
-        await self.broadcast_message(
-            {
-                "status": "active",
-                "user_id": self.challenge.user_id,
-                "challenge": self.challenge.as_dict(),
-            },
-            exclude_ws=self.challenge.ws_list,
-        )
-        if self._task is not None:
-            self._task.cancel()
-        self._task = asyncio.create_task(self._unset_when_offline())
-
-    async def _unset_when_offline(self):
-        await self.challenge.wait_offline()
-        await self._unset_challenge()
+        async with self.challenge.lock:
+            self.challenge.set(data)
+            await self.broadcast_message(
+                {
+                    "status": "active",
+                    "user_id": self.challenge.user_id,
+                    "challenge": self.challenge.as_dict(),
+                },
+            )
 
     async def _unset_challenge(self):
-        self.challenge.unset()
-        await self.broadcast_message(
-            {
-                "status": "inactive",
-                "user_id": self.challenge.user_id,
-                "challenge": self.challenge.as_dict(),
-            },
-            exclude_ws=self.challenge.ws_list,
-        )
-        if self._task is not None:
-            self._task.cancel()
+        async with self.challenge.lock:
+            if self.challenge.unset():
+                await self.broadcast_message(
+                    {
+                        "status": "inactive",
+                        "user_id": self.challenge.user_id,
+                        "challenge": self.challenge.as_dict(),
+                    },
+                )

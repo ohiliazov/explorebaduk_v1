@@ -14,10 +14,9 @@ class Challenge:
         self.ws_list = set()
         self._user = user
 
+        self.lock = asyncio.Lock()
         self.data = None
         self.joined = set()
-
-        self._event = asyncio.Event()
 
     @property
     def user_id(self):
@@ -32,9 +31,6 @@ class Challenge:
         if self._user:
             return self._user.as_dict()
 
-    async def wait_offline(self):
-        await self._event.wait()
-
     def is_active(self):
         return bool(self.data)
 
@@ -42,10 +38,7 @@ class Challenge:
         self.ws_list.add(ws)
 
     def remove_ws(self, ws):
-        self.ws_list.discard(ws)
-
-        if not self.ws_list:
-            self._event.set()
+        self.ws_list.remove(ws)
 
     def as_dict(self):
         return self.data
@@ -54,4 +47,6 @@ class Challenge:
         self.data = data
 
     def unset(self):
+        data = self.data
         self.data = None
+        return data

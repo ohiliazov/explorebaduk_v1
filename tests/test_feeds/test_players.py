@@ -115,8 +115,6 @@ async def test_player_multiple_logout_as_user(test_cli, players_online: dict):
     user = user_data["user"]
     token = user_data["token"].token
 
-    not_expected = {"status": "offline", "player": user.as_dict()}
-
     player_ws_list = await asyncio.gather(
         *[
             test_cli.ws_connect(
@@ -131,8 +129,16 @@ async def test_player_multiple_logout_as_user(test_cli, players_online: dict):
 
     await asyncio.gather(*[ws.close() for ws in player_ws_list])
 
+    not_expected = {"status": "offline", "player": user.as_dict()}
     for ws_messages in await receive_all(players_online):
         assert not_expected not in ws_messages
+
+    await player_ws.close()
+    players_online.pop(player_ws)
+
+    expected = {"status": "offline", "player": user.as_dict()}
+    for ws_messages in await receive_all(players_online):
+        assert expected in ws_messages
 
 
 async def test_player_multiple_login_as_guests(test_cli, players_online: dict):

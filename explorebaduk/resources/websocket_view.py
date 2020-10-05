@@ -10,6 +10,7 @@ class WebSocketView:
     def __init__(self, request: Request, ws: WebSocketCommonProtocol, **kwargs):
         self.request = request
         self.ws = ws
+        self.queue = asyncio.Queue()
 
     @property
     def app(self):
@@ -18,6 +19,10 @@ class WebSocketView:
     @property
     def connected(self) -> set:
         raise NotImplementedError
+
+    @property
+    def excluded(self) -> set:
+        raise set()
 
     async def handle_request(self):
         raise NotImplementedError
@@ -45,11 +50,11 @@ class WebSocketView:
         await self.ws.send(message)
         logger.info("> [%s:%d] %s", *self.ws.remote_address[:2], message)
 
-    async def broadcast_message(self, data: dict, exclude_ws: set = None):
+    async def broadcast_message(self, data: dict):
         message = json.dumps(data)
 
         if self.connected:
             await asyncio.gather(
-                *[ws.send(message) for ws in self.connected - exclude_ws]
+                *[ws.send(message) for ws in self.connected - self.excluded]
             )
             logger.info("> [broadcast] %s", message)
