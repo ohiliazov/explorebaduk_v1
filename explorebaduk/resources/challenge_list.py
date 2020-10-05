@@ -72,6 +72,7 @@ class ChallengeFeedView(WebSocketView, DatabaseMixin):
         await self.broadcast_message(
             {
                 "status": "active",
+                "user_id": self.challenge.user_id,
                 "challenge": self.challenge.as_dict(),
             },
             exclude_ws=self.challenge.ws_list,
@@ -89,6 +90,7 @@ class ChallengeFeedView(WebSocketView, DatabaseMixin):
         await self.broadcast_message(
             {
                 "status": "inactive",
+                "user_id": self.challenge.user_id,
                 "challenge": self.challenge.as_dict(),
             },
             exclude_ws=self.challenge.ws_list,

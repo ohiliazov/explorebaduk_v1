@@ -37,9 +37,41 @@ async def test_challenge_connect_as_guest(test_cli, users_data: list):
 
 async def test_challenge_set(test_cli, challenges_online: dict):
     ws, user_data = random.choice(list(challenges_online.items()))
+    user_id = user_data["user"].user_id
 
     await ws.send_json({"action": "set", "challenge": {"dummy": "dummy"}})
 
-    expected = {"status": "active", "challenge": {"dummy": "dummy"}}
+    expected = {"status": "active", "user_id": user_id, "challenge": {"dummy": "dummy"}}
+    for ws_messages in await receive_all(set(challenges_online) - {ws}):
+        assert expected in ws_messages
+
+
+async def test_challenge_set_twice(test_cli, challenges_online: dict):
+    ws, user_data = random.choice(list(challenges_online.items()))
+    challenge_data = {"dummy": "dummy"}
+    user_id = user_data["user"].user_id
+    await ws.send_json({"action": "set", "challenge": challenge_data})
+
+    expected = {"status": "active", "user_id": user_id, "challenge": challenge_data}
+    for ws_messages in await receive_all(set(challenges_online) - {ws}):
+        assert expected in ws_messages
+
+    challenge_data = {"dummy": "dummy2"}
+    await ws.send_json({"action": "set", "challenge": challenge_data})
+
+    expected = {"status": "active", "user_id": user_id, "challenge": challenge_data}
+    for ws_messages in await receive_all(set(challenges_online) - {ws}):
+        assert expected in ws_messages
+
+
+async def test_challenge_unset(test_cli, challenges_online: dict):
+    ws, user_data = random.choice(list(challenges_online.items()))
+    challenge_data = {"dummy": "dummy"}
+    user_id = user_data["user"].user_id
+    await ws.send_json({"action": "set", "challenge": challenge_data})
+    await receive_all(challenges_online)
+
+    await ws.send_json({"action": "unset"})
+    expected = {"status": "inactive", "user_id": user_id, "challenge": None}
     for ws_messages in await receive_all(set(challenges_online) - {ws}):
         assert expected in ws_messages
