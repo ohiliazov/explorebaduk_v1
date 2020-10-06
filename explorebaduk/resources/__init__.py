@@ -1,4 +1,3 @@
-from explorebaduk.resources.player import PlayerView
-from explorebaduk.resources.player_list import PlayersFeedView
-from explorebaduk.resources.challenge import ChallengeView
-from explorebaduk.resources.challenge_list import ChallengeFeedView
+# flake8: noqa: F401
+from explorebaduk.resources.players import PlayersFeedView
+from explorebaduk.resources.challenges import ChallengeFeedView

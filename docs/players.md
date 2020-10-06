@@ -5,7 +5,7 @@ The documentation contains API
 Players feed shows users online
 ### Endpoint URL
 ```
-ws://<host>:<port>/players/feed
+ws://<host>:<port>/players
 ```
 #### Authorization header
 ```

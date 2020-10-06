@@ -5,9 +5,7 @@ from sqlalchemy import create_engine
 from sanic import Sanic
 
 from explorebaduk.resources import (
-    PlayerView,
     PlayersFeedView,
-    ChallengeView,
     ChallengeFeedView,
 )
 
@@ -41,18 +39,6 @@ def register_routes(app: Sanic):
         ChallengeFeedView.as_view(),
         uri="/challenges",
         name="Challenges Feed",
-    )
-    app.add_route(
-        PlayerView.as_view(),
-        "/players/<player_id>",
-        methods=["GET"],
-        name="Player Info",
-    )
-    app.add_route(
-        ChallengeView.as_view(),
-        "/challenge/<challenge_id>",
-        methods=["GET"],
-        name="Challenge Info",
     )
 
 
