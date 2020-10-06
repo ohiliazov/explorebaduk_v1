@@ -73,12 +73,20 @@ class ChallengeFeedView(WebSocketView, DatabaseMixin):
 
     async def _set_challenge(self, data: dict):
         async with self.challenge.lock:
-            self.challenge.set(data)
-            await self.broadcast_message(
+            if not (errors := self.challenge.set(data)):
+                await self.broadcast_message(
+                    {
+                        "status": "active",
+                        "user_id": self.challenge.user_id,
+                        "challenge": self.challenge.as_dict(),
+                    },
+                )
+
+            await self.send_message(
                 {
-                    "status": "active",
-                    "user_id": self.challenge.user_id,
-                    "challenge": self.challenge.as_dict(),
+                    "action": "set",
+                    "data": self.challenge.as_dict(),
+                    "errors": errors,
                 },
             )
 
@@ -92,3 +100,10 @@ class ChallengeFeedView(WebSocketView, DatabaseMixin):
                         "challenge": self.challenge.as_dict(),
                     },
                 )
+
+            await self.send_message(
+                {
+                    "action": "unset",
+                    "data": self.challenge.as_dict(),
+                },
+            )

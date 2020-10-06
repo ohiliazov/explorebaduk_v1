@@ -1,6 +1,7 @@
 import asyncio
-
+from cerberus import Validator
 from explorebaduk.database import UserModel
+from explorebaduk.validation import challenge_schema
 
 
 class ChallengeStatus:
@@ -44,7 +45,10 @@ class Challenge:
         return self.data
 
     def set(self, data: dict):
-        self.data = data
+        v = Validator(challenge_schema)
+        self.data = v.validated(data)
+
+        return v.errors
 
     def unset(self):
         data = self.data

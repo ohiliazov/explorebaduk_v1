@@ -32,10 +32,14 @@ def register_config(app):
 
 def register_routes(app: Sanic):
 
-    app.add_websocket_route(PlayersFeedView.as_view(), "/players", name="Players Feed")
+    app.add_websocket_route(
+        PlayersFeedView.as_view(),
+        uri="/players",
+        name="Players Feed",
+    )
     app.add_websocket_route(
         ChallengeFeedView.as_view(),
-        "/challenges",
+        uri="/challenges",
         name="Challenges Feed",
     )
     app.add_route(
