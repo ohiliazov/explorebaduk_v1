@@ -48,13 +48,19 @@ class WebSocketView:
         message = json.dumps(data)
 
         await self.ws.send(message)
-        logger.info("> [%s:%d] %s", *self.ws.remote_address[:2], message)
+        logger.info("> [send_message] %s", message)
+
+    @staticmethod
+    async def send_messages(ws_list, data: dict):
+        message = json.dumps(data)
+
+        if ws_list:
+            await asyncio.gather(*[ws.send(message) for ws in ws_list])
+            logger.info("> [send_messages] %s", message)
 
     async def broadcast_message(self, data: dict):
         message = json.dumps(data)
 
         if self.connected:
-            await asyncio.gather(
-                *[ws.send(message) for ws in self.connected - self.excluded]
-            )
-            logger.info("> [broadcast] %s", message)
+            await asyncio.gather(*[ws.send(message) for ws in self.connected - self.excluded])
+            logger.info("> [broadcast_message] %s", message)

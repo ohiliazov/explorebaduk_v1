@@ -19,6 +19,7 @@ class ChallengeFeedView(WebSocketView, DatabaseMixin):
     def __init__(self, request, ws):
         super().__init__(request, ws)
 
+        self.user = self.get_user_by_token(request)
         self.challenge = self._get_challenge()
 
     @property
@@ -26,12 +27,17 @@ class ChallengeFeedView(WebSocketView, DatabaseMixin):
         return self.challenge.ws_list
 
     def _get_challenge(self):
-        if user := self.get_user_by_token(self.request):
+        if self.user:
             for challenge in self.app.challenges:
-                if user.user_id == challenge.user_id:
+                if self.user.user_id == challenge.user_id:
                     return challenge
-            return Challenge(user)
+            return Challenge(self.user)
         return Challenge()
+
+    def _get_challenge_by_id(self, challenge_id: int):
+        for challenge in self.app.challenges:
+            if challenge_id == challenge.user_id:
+                return challenge
 
     async def handle_request(self):
         await self.connect_ws()
@@ -44,12 +50,18 @@ class ChallengeFeedView(WebSocketView, DatabaseMixin):
     async def connect_ws(self):
         self.connected.add(self.ws)
         self.challenge.add_ws(self.ws)
+        self.app.challenges.add(self.challenge)
         await self.send_message({"status": "login", "user": self.challenge.user_data})
 
     async def disconnect_ws(self):
         self.connected.remove(self.ws)
-        self.challenge.remove_ws(self.ws)
-        await self._unset_challenge()
+
+        async with self.challenge.lock:
+            self.challenge.remove_ws(self.ws)
+
+            if not self.challenge.ws_list:
+                await self._inactivate_challenge()
+                self.app.challenges.discard(self.challenge)
 
     async def handle_message(self):
         while message := await self.receive_message():
@@ -59,6 +71,8 @@ class ChallengeFeedView(WebSocketView, DatabaseMixin):
                 await self._set_challenge(message["challenge"])
             if message["action"] == "unset":
                 await self._unset_challenge()
+            if message["action"] == "join":
+                await self._join_challenge(message["challenge_id"])
 
     async def _refresh_list(self):
         await asyncio.gather(
@@ -90,20 +104,40 @@ class ChallengeFeedView(WebSocketView, DatabaseMixin):
                 },
             )
 
+    async def _inactivate_challenge(self):
+        if self.challenge.unset():
+            await self.broadcast_message(
+                {
+                    "status": "inactive",
+                    "user_id": self.challenge.user_id,
+                    "challenge": self.challenge.as_dict(),
+                },
+            )
+
     async def _unset_challenge(self):
         async with self.challenge.lock:
-            if self.challenge.unset():
-                await self.broadcast_message(
-                    {
-                        "status": "inactive",
-                        "user_id": self.challenge.user_id,
-                        "challenge": self.challenge.as_dict(),
-                    },
-                )
-
+            await self._inactivate_challenge()
             await self.send_message(
                 {
                     "action": "unset",
                     "data": self.challenge.as_dict(),
                 },
             )
+
+    async def _join_challenge(self, challenge_id: int):
+        if not self.user:
+            return await self.send_message({"action": "join", "status": "error", "message": "Not authorized"})
+
+        if not (challenge := self._get_challenge_by_id(challenge_id)):
+            return await self.send_message({"action": "join", "status": "error", "message": "Not found"})
+
+        if challenge.user_id == self.user.user_id:
+            return await self.send_message({"action": "join", "status": "error", "message": "Cannot join yourself"})
+
+        async with challenge.lock:
+            if not challenge.is_active():
+                return await self.send_message({"action": "join", "status": "error", "message": "Not active"})
+
+            if challenge.join(self.ws, self.user):
+                await self.send_messages(challenge.ws_list, {"action": "joined", "user_id": self.user.user_id})
+            await self.send_message({"action": "join", "status": "OK"})

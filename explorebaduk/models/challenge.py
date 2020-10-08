@@ -17,7 +17,7 @@ class Challenge:
 
         self.lock = asyncio.Lock()
         self.data = None
-        self.joined = set()
+        self.joined = {}
 
     @property
     def user_id(self):
@@ -54,3 +54,8 @@ class Challenge:
         data = self.data
         self.data = None
         return data
+
+    def join(self, ws, user_id: int):
+        self.joined[ws] = user_id
+
+        return len({joined_id for joined_id in self.joined.values() if joined_id == user_id}) == 1
