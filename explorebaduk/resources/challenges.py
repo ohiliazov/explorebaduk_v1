@@ -73,6 +73,8 @@ class ChallengeFeedView(WebSocketView, DatabaseMixin):
                 await self._unset_challenge()
             if message["action"] == "join":
                 await self._join_challenge(message["challenge_id"])
+            if message["action"] == "leave":
+                await self._leave_challenge(message["challenge_id"])
 
     async def _refresh_list(self):
         await asyncio.gather(
@@ -132,12 +134,30 @@ class ChallengeFeedView(WebSocketView, DatabaseMixin):
             return await self.send_message({"action": "join", "status": "error", "message": "Not found"})
 
         if challenge.user_id == self.user.user_id:
-            return await self.send_message({"action": "join", "status": "error", "message": "Cannot join yourself"})
+            return await self.send_message({"action": "join", "status": "error", "message": "Owner cannot join"})
 
         async with challenge.lock:
             if not challenge.is_active():
                 return await self.send_message({"action": "join", "status": "error", "message": "Not active"})
 
-            if challenge.join(self.ws, self.user):
+            if challenge.join(self.ws, self.user.user_id):
                 await self.send_messages(challenge.ws_list, {"action": "joined", "user_id": self.user.user_id})
             await self.send_message({"action": "join", "status": "OK"})
+
+    async def _leave_challenge(self, challenge_id: int):
+        if not self.user:
+            return await self.send_message({"action": "leave", "status": "error", "message": "Not authorized"})
+
+        if not (challenge := self._get_challenge_by_id(challenge_id)):
+            return await self.send_message({"action": "leave", "status": "error", "message": "Not found"})
+
+        if challenge.user_id == self.user.user_id:
+            return await self.send_message({"action": "leave", "status": "error", "message": "Owner cannot leave"})
+
+        async with challenge.lock:
+            if not challenge.is_active():
+                return await self.send_message({"action": "leave", "status": "error", "message": "Not active"})
+
+            if challenge.leave(self.ws, self.user.user_id):
+                await self.send_messages(challenge.ws_list, {"action": "left", "user_id": self.user.user_id})
+            await self.send_message({"action": "leave", "status": "OK"})

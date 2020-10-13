@@ -226,3 +226,34 @@ async def test_challenge_join_not_found(test_cli, challenges_online: dict):
 
     messages = await receive_messages(ws)
     assert {"action": "join", "status": "error", "message": "Not found"} in messages
+
+
+async def test_challenge_leave_ok(test_cli, challenges_online: dict):
+    (ws1, user1_data), (ws2, user2_data) = random.sample(list(challenges_online.items()), 2)
+
+    await ws1.send_json({"action": "set", "challenge": generate_challenge_data()})
+    await receive_all(challenges_online)
+
+    user1_id = user1_data["user"].user_id
+    user2_id = user2_data["user"].user_id
+
+    await ws2.send_json({"action": "join", "challenge_id": user1_id})
+    await receive_all({ws1, ws2})
+
+    await ws2.send_json({"action": "leave", "challenge_id": user1_id})
+
+    user1_messages = await receive_messages(ws1)
+    assert {"action": "left", "user_id": user2_id} in user1_messages
+
+    user2_messages = await receive_messages(ws2)
+    assert {"action": "leave", "status": "OK"} in user2_messages
+
+
+async def test_challenge_leave_not_found(test_cli, challenges_online: dict):
+    ws = random.choice(list(challenges_online))
+    user_id = 666
+
+    await ws.send_json({"action": "leave", "challenge_id": user_id})
+
+    messages = await receive_messages(ws)
+    assert {"action": "leave", "status": "error", "message": "Not found"} in messages

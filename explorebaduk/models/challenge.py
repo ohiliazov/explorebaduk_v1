@@ -1,4 +1,6 @@
 import asyncio
+from collections import defaultdict
+
 from cerberus import Validator
 from explorebaduk.database import UserModel
 from explorebaduk.validation import challenge_schema
@@ -17,7 +19,7 @@ class Challenge:
 
         self.lock = asyncio.Lock()
         self.data = None
-        self.joined = {}
+        self.joined = defaultdict(set)
 
     @property
     def user_id(self):
@@ -56,6 +58,10 @@ class Challenge:
         return data
 
     def join(self, ws, user_id: int):
-        self.joined[ws] = user_id
+        self.joined[user_id].add(ws)
+        return len(self.joined[user_id]) == 1
 
-        return len({joined_id for joined_id in self.joined.values() if joined_id == user_id}) == 1
+    def leave(self, ws, user_id):
+        if self.joined[user_id]:
+            self.joined[user_id].remove(ws)
+            return not self.joined[user_id]
