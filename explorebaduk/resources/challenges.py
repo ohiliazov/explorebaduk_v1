@@ -6,13 +6,6 @@ from explorebaduk.mixins import DatabaseMixin
 
 
 class ChallengeFeedView(WebSocketView, DatabaseMixin):
-    # not authorized -> cannot create challenge
-    # not online -> cannot create challenge
-    # not in players feed -> cannot create challenge
-    # create - broadcast
-    # remove - broadcast
-    # update - broadcast
-    # player offline -> remove
 
     connected = set()
 
@@ -75,6 +68,8 @@ class ChallengeFeedView(WebSocketView, DatabaseMixin):
                 await self._join_challenge(message["challenge_id"])
             if message["action"] == "leave":
                 await self._leave_challenge(message["challenge_id"])
+            if message["action"] == "accept":
+                await self._accept_request(message["opponent_id"])
 
     async def _refresh_list(self):
         await asyncio.gather(
@@ -142,7 +137,8 @@ class ChallengeFeedView(WebSocketView, DatabaseMixin):
 
             if challenge.join(self.ws, self.user.user_id):
                 await self.send_messages(challenge.ws_list, {"action": "joined", "user_id": self.user.user_id})
-            await self.send_message({"action": "join", "status": "OK"})
+
+        await self.send_message({"action": "join", "status": "OK"})
 
     async def _leave_challenge(self, challenge_id: int):
         if not self.user:
@@ -158,6 +154,23 @@ class ChallengeFeedView(WebSocketView, DatabaseMixin):
             if not challenge.is_active():
                 return await self.send_message({"action": "leave", "status": "error", "message": "Not active"})
 
-            if challenge.leave(self.ws, self.user.user_id):
+            if ws_list := challenge.leave(self.user.user_id):
                 await self.send_messages(challenge.ws_list, {"action": "left", "user_id": self.user.user_id})
-            await self.send_message({"action": "leave", "status": "OK"})
+                await self.send_messages(ws_list, {"action": "leave", "status": "OK"})
+
+    async def _accept_request(self, opponent_id: int):
+        if not self.user:
+            return await self.send_message({"action": "accept", "status": "error", "message": "Not authorized"})
+
+        async with self.challenge.lock:
+            if not self.challenge.is_active():
+                return await self.send_message({"action": "accept", "status": "error", "message": "Not active"})
+
+            if self.challenge.opponent:
+                return await self.send_message({"action": "accept", "status": "error", "message": "Already accepted"})
+
+            if opponent_ws := self.challenge.accept(opponent_id):
+                await self.send_messages(opponent_ws, {"action": "accepted", "user_id": self.user.user_id})
+                await self.send_message({"action": "accept", "status": "OK"})
+            else:
+                await self.send_message({"action": "accept", "status": "error", "message": "Not joined"})

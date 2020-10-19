@@ -16,6 +16,7 @@ class Challenge:
 
         self.ws_list = set()
         self._user = user
+        self.opponent = None
 
         self.lock = asyncio.Lock()
         self.data = None
@@ -61,7 +62,10 @@ class Challenge:
         self.joined[user_id].add(ws)
         return len(self.joined[user_id]) == 1
 
-    def leave(self, ws, user_id):
-        if self.joined[user_id]:
-            self.joined[user_id].remove(ws)
-            return not self.joined[user_id]
+    def leave(self, user_id):
+        return self.joined.pop(user_id)
+
+    def accept(self, user_id):
+        if user_id in self.joined:
+            self.opponent = self.joined[user_id]
+        return self.opponent
