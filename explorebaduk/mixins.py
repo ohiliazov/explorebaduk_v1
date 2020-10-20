@@ -1,5 +1,9 @@
+import asyncio
+from sanic.log import logger
+from sanic.websocket import WebSocketCommonProtocol
 from contextlib import contextmanager
 
+import simplejson as json
 from sqlalchemy.orm import create_session
 
 from explorebaduk.database import UserModel, TokenModel
@@ -36,3 +40,23 @@ class DatabaseMixin:
 
             if auth_token:
                 return auth_token.user
+
+
+class SubscriberMixin:
+    ws_list: set
+
+    def is_online(self) -> bool:
+        return bool(self.ws_list)
+
+    def subscribe(self, ws: WebSocketCommonProtocol):
+        self.ws_list.add(ws)
+
+    def unsubscribe(self, ws: WebSocketCommonProtocol):
+        self.ws_list.remove(ws)
+
+    async def send_json(self, data: dict):
+        message = json.dumps(data)
+
+        if self.ws_list:
+            await asyncio.gather(*[ws.send(message) for ws in self.ws_list], return_exceptions=True)
+            logger.info("> [send_json] %s", message)

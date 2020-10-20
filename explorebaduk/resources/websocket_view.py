@@ -10,7 +10,6 @@ class WebSocketView:
     def __init__(self, request: Request, ws: WebSocketCommonProtocol, **kwargs):
         self.request = request
         self.ws = ws
-        self.queue = asyncio.Queue()
 
     @property
     def app(self):

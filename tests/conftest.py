@@ -12,11 +12,11 @@ from explorebaduk.app import create_app
 from explorebaduk.database import BaseModel, UserModel, TokenModel
 
 
-async def receive_messages(ws, sort_by: callable = None):
+async def receive_messages(ws, sort_by: callable = None, timeout: float = 0.5):
     messages = []
     try:
         while True:
-            messages.append(await ws.receive_json(timeout=0.5))
+            messages.append(await ws.receive_json(timeout=timeout))
     except asyncio.TimeoutError:
         pass
 
@@ -26,8 +26,8 @@ async def receive_messages(ws, sort_by: callable = None):
     return messages
 
 
-async def receive_all(ws_list, sort_by: callable = None):
-    return await asyncio.gather(*[receive_messages(ws, sort_by) for ws in ws_list])
+async def receive_all(ws_list, sort_by: callable = None, timeout: float = 0.5):
+    return await asyncio.gather(*[receive_messages(ws, sort_by, timeout) for ws in ws_list])
 
 
 @pytest.yield_fixture()
@@ -92,7 +92,7 @@ async def players_online(test_cli, users_data: list):
         players_online[player_ws] = user_data
 
     # flush messages
-    await receive_all(players_online.keys())
+    await receive_all(players_online.keys(), timeout=0.5)
 
     return players_online
 
@@ -109,6 +109,6 @@ async def challenges_online(test_cli, users_data: list):
         challenges_online[ws] = user_data
 
     # flush messages
-    await receive_all(challenges_online.keys())
+    await receive_all(challenges_online.keys(), timeout=1)
 
     return challenges_online

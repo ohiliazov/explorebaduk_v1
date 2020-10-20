@@ -11,11 +11,7 @@ def compare_message(actual, expected):
 
 async def test_player_login_as_user(test_cli, users_data: list, players_online: dict):
     user_data = random.choice(
-        [
-            user_data
-            for user_data in users_data
-            if user_data not in players_online.values()
-        ],
+        [user_data for user_data in users_data if user_data not in players_online.values()],
     )
     user = user_data["user"]
     token = user_data["token"].token
@@ -26,10 +22,7 @@ async def test_player_login_as_user(test_cli, users_data: list, players_online: 
     )
 
     expected = {"status": "login", "user": user.as_dict()}
-    assert any(
-        actual == json.loads(json.dumps(expected))
-        for actual in await receive_messages(ws)
-    )
+    assert any(actual == json.loads(json.dumps(expected)) for actual in await receive_messages(ws))
 
     expected = {"status": "online", "player": user.as_dict()}
     for ws_messages in await receive_all(players_online):
@@ -51,10 +44,7 @@ async def test_player_login_as_guest(test_cli, players_online: dict):
     player_ws = await test_cli.ws_connect(test_cli.app.url_for("Players Feed"))
 
     expected = {"status": "login", "user": None}
-    assert any(
-        actual == json.loads(json.dumps(expected))
-        for actual in await receive_messages(player_ws)
-    )
+    assert all(actual != json.loads(json.dumps(expected)) for actual in await receive_messages(player_ws))
 
 
 async def test_player_logout_as_guest(test_cli, players_online: dict):
@@ -70,11 +60,7 @@ async def test_player_refresh_list(test_cli, players_online: dict):
     player_ws = random.choice(list(players_online))
 
     expected_messages = sorted(
-        [
-            {"status": "online", "player": user_data["user"].as_dict()}
-            for ws, user_data in players_online.items()
-            if ws is not player_ws
-        ],
+        [{"status": "online", "player": user_data["user"].as_dict()} for ws, user_data in players_online.items()],
         key=lambda item: item["player"]["user_id"],
     )
 
@@ -143,9 +129,7 @@ async def test_player_multiple_logout_as_user(test_cli, players_online: dict):
 
 async def test_player_multiple_login_as_guests(test_cli, players_online: dict):
 
-    await asyncio.gather(
-        *[test_cli.ws_connect(test_cli.app.url_for("Players Feed")) for _ in range(20)]
-    )
+    await asyncio.gather(*[test_cli.ws_connect(test_cli.app.url_for("Players Feed")) for _ in range(20)])
 
     not_expected = {"status": "online", "player": None}
 
