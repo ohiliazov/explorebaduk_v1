@@ -278,3 +278,22 @@ async def test_challenge_accept_ok(test_cli, challenges_online: dict):
 
     user2_messages = await receive_messages(ws2)
     assert {"action": "accepted", "user_id": user1_id} in user2_messages
+
+
+async def test_challenge_accept_accepted(test_cli, challenges_online: dict):
+    (ws1, user1_data), (ws2, user2_data) = random.sample(list(challenges_online.items()), 2)
+
+    await ws1.send_json({"action": "set", "challenge": generate_challenge_data()})
+    await receive_all(challenges_online)
+
+    user1_id = user1_data["user"].user_id
+    user2_id = user2_data["user"].user_id
+
+    await ws2.send_json({"action": "join", "challenge_id": user1_id})
+    await receive_all({ws1, ws2})
+
+    await ws1.send_json({"action": "accept", "opponent_id": user2_id})
+    await ws1.send_json({"action": "accept", "opponent_id": user2_id})
+
+    user1_messages = await receive_messages(ws1)
+    assert {"action": "accept", "status": "error", "message": "Already accepted"} in user1_messages

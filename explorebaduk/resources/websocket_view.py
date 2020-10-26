@@ -1,39 +1,73 @@
 import asyncio
 import simplejson as json
-
+from typing import Type
 from sanic.log import logger
 from sanic.request import Request
 from websockets import WebSocketCommonProtocol
 
+from explorebaduk.helpers import get_user_by_token
+from explorebaduk.mixins import Subscriber
 
-class WebSocketView:
+
+class ExploreBadukView:
+    connected: set
+    conn_class: Type[Subscriber]
+
     def __init__(self, request: Request, ws: WebSocketCommonProtocol, **kwargs):
         self.request = request
         self.ws = ws
+        self.user = None
+        self.conn = None
 
     @property
     def app(self):
         return self.request.app
 
     @property
-    def connected(self) -> set:
-        raise NotImplementedError
+    def excluded(self) -> set:
+        return set()
 
     @property
-    def excluded(self) -> set:
-        raise set()
-
-    async def handle_request(self):
+    def connections(self) -> set:
         raise NotImplementedError
 
     @classmethod
     def as_view(cls):
         async def wrapper(request, ws, **kwargs):
             feed_handler = cls(request, ws, **kwargs)
+            feed_handler._initialize()
 
-            await feed_handler.handle_request()
+            feed_handler.connected.add(ws)
+            await feed_handler.connect_ws()
+            try:
+                await feed_handler.handle_request()
+            finally:
+                feed_handler.connected.remove(ws)
+                await feed_handler.disconnect_ws()
 
         return wrapper
+
+    async def connect_ws(self):
+        pass
+
+    async def handle_request(self):
+        pass
+
+    async def disconnect_ws(self):
+        pass
+
+    def _initialize(self):
+        self.user = get_user_by_token(self.request)
+
+        if user := get_user_by_token(self.request):
+            self.user = user
+
+            for conn in self.connections:
+                if conn.user_id == self.user.user_id:
+                    self.conn = conn
+
+        if not self.conn:
+            self.conn = self.conn_class(self.user)
 
     async def receive_message(self):
         message = await self.ws.recv()

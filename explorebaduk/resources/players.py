@@ -1,59 +1,51 @@
 import asyncio
 
-from explorebaduk.resources.websocket_view import WebSocketView
-from explorebaduk.mixins import DatabaseMixin
-from explorebaduk.models import Player
+from explorebaduk.resources.websocket_view import ExploreBadukView
+from explorebaduk.database import UserModel
+from explorebaduk.mixins import Subscriber
 
 
-class PlayersFeedView(WebSocketView, DatabaseMixin):
+class Player(Subscriber):
+    def __init__(self, user: UserModel = None):
+        super().__init__(user)
+
+        self.lock = asyncio.Lock()
+
+
+class PlayersFeedView(ExploreBadukView):
     connected = set()
+    conn_class = Player
 
-    def __init__(self, request, ws):
-        super().__init__(request, ws)
-
-        self.player = self._get_player()
+    @property
+    def connections(self):
+        return self.app.players
 
     @property
     def excluded(self) -> set:
-        return self.player.ws_list
-
-    def _get_player(self):
-        if user := self.get_user_by_token(self.request):
-            for player in self.app.players:
-                if user.user_id == player.user_id:
-                    return player
-            return Player(user)
-        return Player()
+        return self.conn.ws_list
 
     async def handle_request(self):
-        await self.connect_ws()
-        try:
-            await self._send_player_list()
-            await self.handle_message()
-        finally:
-            await self.disconnect_ws()
+        await self._send_player_list()
+        await self.handle_message()
 
     async def connect_ws(self):
-        self.connected.add(self.ws)
+        async with self.conn.lock:
+            self.conn.subscribe(self.ws)
+            self.app.players.add(self.conn)
 
-        async with self.player.lock:
-            self.player.subscribe(self.ws)
-            self.app.players.add(self.player)
-
-            if self.player.authorized:
+            if self.conn.authorized:
                 await self._send_login_info()
 
-                if len(self.player.ws_list) == 1:
+                if len(self.conn.ws_list) == 1:
                     await self._broadcast_online()
 
     async def disconnect_ws(self):
-        self.connected.remove(self.ws)
-        async with self.player.lock:
-            self.player.unsubscribe(self.ws)
-            if not self.player.ws_list:
-                self.app.players.remove(self.player)
+        async with self.conn.lock:
+            self.conn.unsubscribe(self.ws)
+            if not self.conn.ws_list:
+                self.app.players.remove(self.conn)
 
-                if self.player.authorized:
+                if self.conn.authorized:
                     await self._broadcast_offline()
 
     async def handle_message(self):
@@ -62,13 +54,13 @@ class PlayersFeedView(WebSocketView, DatabaseMixin):
                 await self._send_player_list()
 
     async def _send_login_info(self):
-        await self.send_message({"status": "login", "user": self.player.as_dict()})
+        await self.send_message({"status": "login", "user": self.conn.as_dict()})
 
     async def _broadcast_online(self):
-        await self.broadcast_message({"status": "online", "player": self.player.as_dict()})
+        await self.broadcast_message({"status": "online", "player": self.conn.as_dict()})
 
     async def _broadcast_offline(self):
-        await self.broadcast_message({"status": "offline", "player": self.player.as_dict()})
+        await self.broadcast_message({"status": "offline", "player": self.conn.as_dict()})
 
     async def _send_player_list(self):
         await asyncio.gather(

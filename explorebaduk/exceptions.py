@@ -8,3 +8,7 @@ class MessageHandlerError(Exception):
 
 class GameStatusError(Exception):
     pass
+
+
+class ExploreBadukError(Exception):
+    pass

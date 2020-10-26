@@ -7,6 +7,7 @@ from sanic import Sanic
 from explorebaduk.resources import (
     PlayersFeedView,
     ChallengeFeedView,
+    RatingView,
 )
 
 
@@ -39,6 +40,12 @@ def register_routes(app: Sanic):
         ChallengeFeedView.as_view(),
         uri="/challenges",
         name="Challenges Feed",
+    )
+
+    app.add_route(
+        RatingView.as_view(),
+        uri="/rating",
+        name="Rating",
     )
 
 
