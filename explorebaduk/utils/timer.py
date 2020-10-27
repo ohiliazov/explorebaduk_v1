@@ -63,7 +63,7 @@ class Timer(metaclass=ABCMeta):
 
         self._time_left -= max(0, self.time_used)
         if self._time_left <= 0:
-            raise TimerError(f"Out of time")
+            raise TimerError("Out of time")
 
         self.process_overtime()
 

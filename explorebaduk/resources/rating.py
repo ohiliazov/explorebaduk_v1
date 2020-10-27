@@ -2,7 +2,7 @@ from decimal import Decimal, InvalidOperation
 from sanic import response
 from sanic.views import HTTPMethodView
 
-from explorebaduk.rating.egd import egd_rating
+from explorebaduk.utils.egd import egd_rating
 
 
 class RatingView(HTTPMethodView):
