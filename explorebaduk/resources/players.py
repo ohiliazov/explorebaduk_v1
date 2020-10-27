@@ -1,6 +1,6 @@
 import asyncio
 
-from explorebaduk.resources.websocket_view import ExploreBadukView
+from explorebaduk.feeds import GlobalFeed
 from explorebaduk.database import UserModel
 from explorebaduk.mixins import Subscriber
 
@@ -12,7 +12,7 @@ class Player(Subscriber):
         self.lock = asyncio.Lock()
 
 
-class PlayersFeedView(ExploreBadukView):
+class PlayersFeedView(GlobalFeed):
     connected = set()
     conn_class = Player
 

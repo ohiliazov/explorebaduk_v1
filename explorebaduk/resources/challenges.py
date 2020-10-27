@@ -2,7 +2,7 @@ import asyncio
 from collections import defaultdict
 
 from cerberus import Validator
-from explorebaduk.resources.websocket_view import ExploreBadukView
+from explorebaduk.feeds import GlobalFeed
 from explorebaduk.database import UserModel
 from explorebaduk.validation import challenge_schema
 from explorebaduk.mixins import Subscriber
@@ -46,7 +46,7 @@ class Challenge(Subscriber):
         return self.opponent
 
 
-class ChallengeFeedView(ExploreBadukView):
+class ChallengeFeedView(GlobalFeed):
     connected = set()
     conn_class = Challenge
 

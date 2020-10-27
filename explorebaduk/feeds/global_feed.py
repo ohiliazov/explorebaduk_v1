@@ -9,7 +9,8 @@ from explorebaduk.helpers import get_user_by_token
 from explorebaduk.mixins import Subscriber
 
 
-class ExploreBadukView:
+class GlobalFeed:
+
     connected: set
     conn_class: Type[Subscriber]
 
