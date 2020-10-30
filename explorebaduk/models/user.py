@@ -1,7 +1,7 @@
 from sqlalchemy import Column, String, Integer, Numeric
 from sqlalchemy.orm import relationship
 
-from explorebaduk.database.base import BaseModel
+from explorebaduk.models.base import BaseModel
 
 
 class UserModel(BaseModel):

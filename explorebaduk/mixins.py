@@ -4,7 +4,7 @@ import simplejson as json
 from sanic.log import logger
 from websockets import WebSocketCommonProtocol
 
-from explorebaduk.database import UserModel
+from explorebaduk.models import UserModel
 
 
 class Subscriber:

@@ -2,7 +2,7 @@ import asyncio
 from collections import defaultdict
 
 from cerberus import Validator
-from explorebaduk.database import UserModel
+from explorebaduk.models import UserModel
 from explorebaduk.validation import challenge_schema
 from explorebaduk.mixins import Subscriber
 
@@ -45,7 +45,6 @@ class Challenge(Subscriber):
 
 
 class ChallengeFeedView(BaseFeed):
-    connected = set()
     conn_class = Challenge
 
     @property

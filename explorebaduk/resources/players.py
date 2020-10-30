@@ -45,15 +45,16 @@ class PlayersFeedView(BaseFeed):
         return self.app.players
 
     async def run(self):
-        await self._send_player_list()
-        while message := await self.receive_message():
-            if message["action"] == "refresh":
-                await self._send_player_list()
+        try:
+            await self._connect()
+            await self._send_player_list()
+            await self.ws.wait_closed()
+        finally:
+            await self._disconnect()
 
-    async def connect(self):
+    async def _connect(self):
         async with self.conn.lock:
             self.conn.subscribe(self.ws)
-            self.app.players.add(self.conn)
 
             if self.conn.authorized:
                 await self._send_login_info()
@@ -61,7 +62,7 @@ class PlayersFeedView(BaseFeed):
                 if len(self.conn.ws_list) == 1:
                     await self._broadcast_online()
 
-    async def disconnect(self):
+    async def _disconnect(self):
         async with self.conn.lock:
             self.conn.unsubscribe(self.ws)
             if not self.conn.ws_list:

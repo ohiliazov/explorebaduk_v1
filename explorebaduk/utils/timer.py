@@ -2,10 +2,12 @@ import time
 from enum import IntEnum
 from abc import ABCMeta, abstractmethod
 
-from explorebaduk.exceptions import TimerError
-
 # Delay before making a move
 MOVE_DELAY = 1
+
+
+class TimerError(Exception):
+    pass
 
 
 class TimeSystem(IntEnum):

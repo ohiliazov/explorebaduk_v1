@@ -9,7 +9,7 @@ from sqlalchemy import (
 )
 
 
-from explorebaduk.database.base import BaseModel
+from explorebaduk.models.base import BaseModel
 
 
 class NotificationTypeModel(BaseModel):

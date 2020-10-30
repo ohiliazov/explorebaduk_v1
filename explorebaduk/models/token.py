@@ -2,7 +2,7 @@ import datetime
 from sqlalchemy import Column, String, Integer, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 
-from explorebaduk.database.base import BaseModel
+from explorebaduk.models.base import BaseModel
 
 
 class TokenModel(BaseModel):

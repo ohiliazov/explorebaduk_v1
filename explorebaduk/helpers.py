@@ -1,7 +1,7 @@
 from contextlib import contextmanager
 from sqlalchemy.orm import create_session
 
-from explorebaduk.database import UserModel, TokenModel
+from explorebaduk.models import UserModel, TokenModel
 
 
 @contextmanager
@@ -15,11 +15,6 @@ def scoped_session(request):
         raise ex
     finally:
         session.close()
-
-
-def get_player_by_id(request, player_id: int) -> UserModel:
-    with scoped_session(request) as session:
-        return session.query(UserModel).get(player_id)
 
 
 def get_user_by_token(request) -> UserModel:

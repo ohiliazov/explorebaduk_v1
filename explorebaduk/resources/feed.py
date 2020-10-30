@@ -34,6 +34,7 @@ class BaseFeed:
 
         if not self.conn:
             self.conn = self.conn_class(self.user)
+            self.connected.add(self.conn)
 
     @classmethod
     def as_view(cls):

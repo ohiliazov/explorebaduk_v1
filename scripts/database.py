@@ -4,7 +4,7 @@ import datetime
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import create_session
-from explorebaduk.database import BaseModel, UserModel, TokenModel
+from explorebaduk.models import BaseModel, UserModel, TokenModel
 
 
 def make_user(num: int):

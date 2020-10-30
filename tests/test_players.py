@@ -56,25 +56,6 @@ async def test_player_logout_as_guest(test_cli, players_online: dict):
         assert not_expected not in ws_messages
 
 
-async def test_player_refresh_list(test_cli, players_online: dict):
-    player_ws = random.choice(list(players_online))
-
-    expected_messages = sorted(
-        [{"status": "online", "player": user_data["user"].as_dict()} for ws, user_data in players_online.items()],
-        key=lambda item: item["player"]["user_id"],
-    )
-
-    await player_ws.send_json({"action": "refresh"})
-    actual_messages = sorted(
-        await receive_messages(player_ws),
-        key=lambda item: item["player"]["user_id"],
-    )
-
-    assert len(actual_messages) == len(expected_messages)
-    for actual, expected in zip(actual_messages, expected_messages):
-        compare_message(actual, expected)
-
-
 async def test_post_refresh_player_list(test_cli, players_online: dict):
     player_ws, user_data = random.choice(list(players_online.items()))
     token = user_data["token"].token
@@ -86,7 +67,21 @@ async def test_post_refresh_player_list(test_cli, players_online: dict):
     assert resp.status == 200
     resp_json = await resp.json()
     assert resp_json["message"] == "Player list refreshed"
-    # TODO: check player list refreshed on all devices
+
+    assert await player_ws.receive_json() == {"action": "refresh"}
+
+    actual_messages = sorted(
+        await receive_messages(player_ws),
+        key=lambda item: item["player"]["user_id"],
+    )
+    expected_messages = sorted(
+        [{"status": "online", "player": user_data["user"].as_dict()} for ws, user_data in players_online.items()],
+        key=lambda item: item["player"]["user_id"],
+    )
+
+    assert len(actual_messages) == len(expected_messages)
+    for actual, expected in zip(actual_messages, expected_messages):
+        compare_message(actual, expected)
 
 
 async def test_player_multiple_login_as_user(test_cli, players_online: dict):

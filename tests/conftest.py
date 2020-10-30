@@ -9,7 +9,7 @@ from sanic.websocket import WebSocketProtocol
 from sqlalchemy.orm import create_session
 
 from explorebaduk.app import create_app
-from explorebaduk.database import BaseModel, UserModel, TokenModel
+from explorebaduk.models import BaseModel, UserModel, TokenModel
 
 
 async def receive_messages(ws, sort_by: callable = None, timeout: float = 0.5):
