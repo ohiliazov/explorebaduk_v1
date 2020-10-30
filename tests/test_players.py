@@ -75,8 +75,22 @@ async def test_player_refresh_list(test_cli, players_online: dict):
         compare_message(actual, expected)
 
 
+async def test_post_refresh_player_list(test_cli, players_online: dict):
+    player_ws, user_data = random.choice(list(players_online.items()))
+    token = user_data["token"].token
+
+    resp = await test_cli.post(
+        test_cli.app.url_for("Refresh Player List"),
+        headers={"Authorization": token},
+    )
+    assert resp.status == 200
+    resp_json = await resp.json()
+    assert resp_json["message"] == "Player list refreshed"
+    # TODO: check player list refreshed on all devices
+
+
 async def test_player_multiple_login_as_user(test_cli, players_online: dict):
-    _, user_data = random.choice(list(players_online.items()))
+    user_data = random.choice(list(players_online.values()))
     user = user_data["user"]
     token = user_data["token"].token
 

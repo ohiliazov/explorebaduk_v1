@@ -2,10 +2,11 @@ import asyncio
 from collections import defaultdict
 
 from cerberus import Validator
-from explorebaduk.feeds import GlobalFeed
 from explorebaduk.database import UserModel
 from explorebaduk.validation import challenge_schema
 from explorebaduk.mixins import Subscriber
+
+from .feed import BaseFeed
 
 
 class Challenge(Subscriber):
@@ -13,11 +14,8 @@ class Challenge(Subscriber):
         super().__init__(user)
         self.opponent = None
 
-        self.lock = asyncio.Lock()
         self.data = None
         self.joined = defaultdict(set)
-        self.connected = set()
-        self.connections = set()
 
     def is_active(self):
         return bool(self.data)
@@ -46,13 +44,13 @@ class Challenge(Subscriber):
         return self.opponent
 
 
-class ChallengeFeedView(GlobalFeed):
+class ChallengeFeedView(BaseFeed):
     connected = set()
     conn_class = Challenge
 
     @property
-    def connections(self):
-        return self.app.players
+    def connected(self):
+        return self.app.challenges
 
     @property
     def excluded(self) -> set:
@@ -63,16 +61,16 @@ class ChallengeFeedView(GlobalFeed):
             if challenge_id == challenge.user_id:
                 return challenge
 
-    async def handle_request(self):
+    async def run(self):
         await self._refresh_list()
         await self._handle_message()
 
-    async def connect_ws(self):
+    async def connect(self):
         self.conn.subscribe(self.ws)
         self.app.challenges.add(self.conn)
-        await self.send_message({"status": "login", "user": self.conn.as_dict()})
+        await self.send_message({"status": "login", "user": self.conn.user_dict()})
 
-    async def disconnect_ws(self):
+    async def disconnect(self):
         async with self.conn.lock:
             self.conn.unsubscribe(self.ws)
 

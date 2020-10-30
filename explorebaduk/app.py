@@ -8,6 +8,7 @@ from explorebaduk.resources import (
     PlayersFeedView,
     ChallengeFeedView,
     RatingView,
+    RefreshPlayersView,
 )
 
 
@@ -40,6 +41,13 @@ def register_routes(app: Sanic):
         ChallengeFeedView.as_view(),
         uri="/challenges",
         name="Challenges Feed",
+    )
+
+    app.add_route(
+        RefreshPlayersView.as_view(),
+        uri="/players/refresh",
+        name="Refresh Player List",
+        methods=["POST"],
     )
 
     app.add_route(
