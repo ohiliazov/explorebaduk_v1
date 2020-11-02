@@ -32,7 +32,7 @@ async def receive_all(ws_list, sort_by: callable = None, timeout: float = 0.5):
 
 @pytest.yield_fixture()
 def test_app():
-    os.environ["CONFIG_PATH"] = "config/test.cfg"
+    os.environ["DATABASE_URI"] = "sqlite:///explorebaduk_test.sqlite3"
     app = create_app()
 
     return app

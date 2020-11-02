@@ -11,6 +11,8 @@ from explorebaduk.resources import (
     RefreshPlayersView,
 )
 
+DATABASE_URI = os.getenv("DATABASE_URI", "sqlite:///explorebaduk.sqlite3")
+
 
 def create_app() -> Sanic:
     app = Sanic("ExploreBaduk Game Server API")
@@ -23,11 +25,7 @@ def create_app() -> Sanic:
 
 
 def register_config(app):
-    if "CONFIG_PATH" in os.environ:
-        app.config.from_envvar("CONFIG_PATH")
-
-    if "DATABASE_URI" in os.environ:
-        app.config["DATABASE_URI"] = os.getenv("DATABASE_URI")
+    app.config["DATABASE_URI"] = DATABASE_URI
 
 
 def register_routes(app: Sanic):

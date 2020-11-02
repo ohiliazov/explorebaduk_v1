@@ -8,10 +8,10 @@ from explorebaduk.models.base import BaseModel
 class TokenModel(BaseModel):
     __tablename__ = "signin_tokens"
 
-    token_id = Column(Integer, primary_key=True, name="SignIn_Token_ID")
-    user_id = Column(Integer, ForeignKey("users.User_ID"))
-    token = Column(String(64))
-    expired_at = Column(DateTime)
+    token_id = Column(Integer, primary_key=True, name="ID")
+    user_id = Column(Integer, ForeignKey("users.User_ID"), name="User_ID")
+    token = Column(String(64), name="Token")
+    expired_at = Column(DateTime, name="Expire")
 
     user = relationship("UserModel", back_populates="tokens")
 
