@@ -19,7 +19,8 @@ class Subscriber:
 
     @property
     def user_id(self):
-        return self._user.user_id
+        if self._user:
+            return self._user.user_id
 
     def user_dict(self):
         if self._user:
