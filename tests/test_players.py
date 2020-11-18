@@ -56,19 +56,10 @@ async def test_player_logout_as_guest(test_cli, players_online: dict):
         assert not_expected not in ws_messages
 
 
-async def test_post_refresh_player_list(test_cli, players_online: dict):
+async def test_refresh_player_list(test_cli, players_online: dict):
     player_ws, user_data = random.choice(list(players_online.items()))
-    token = user_data["token"].token
 
-    resp = await test_cli.post(
-        test_cli.app.url_for("Refresh Player List"),
-        headers={"Authorization": token},
-    )
-    assert resp.status == 200
-    resp_json = await resp.json()
-    assert resp_json["message"] == "Player list refreshed"
-
-    assert await player_ws.receive_json() == {"action": "refresh"}
+    await player_ws.send_str("refresh")
 
     actual_messages = sorted(
         await receive_messages(player_ws),

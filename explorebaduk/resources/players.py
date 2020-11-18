@@ -1,40 +1,8 @@
 import asyncio
-from sanic import response
-from sanic.views import HTTPMethodView
 
 from explorebaduk.mixins import Subscriber
-from explorebaduk.helpers import get_user_by_token
 
 from .feed import BaseFeed
-
-
-class RefreshPlayersView(HTTPMethodView):
-    @staticmethod
-    def _get_players(request):
-        return request.app.players
-
-    def _get_connection(self, request, user_id):
-        for conn in self._get_players(request):
-            if conn.user_id == user_id:
-                return conn
-
-    async def post(self, request):
-        user = get_user_by_token(request)
-        conn = self._get_connection(request, user.user_id)
-
-        if conn is None:
-            return response.json({"message": "Not connected to websocket feed"})
-
-        await conn.send_json({"action": "refresh"})
-        await asyncio.gather(
-            *[
-                conn.send_json({"status": "online", "player": player.user_dict()})
-                for player in self._get_players(request)
-                if player.authorized
-            ]
-        )
-
-        return response.json({"message": "Player list refreshed"})
 
 
 class PlayersFeedView(BaseFeed):
@@ -48,7 +16,7 @@ class PlayersFeedView(BaseFeed):
         try:
             await self._connect()
             await self._send_player_list()
-            await self.ws.wait_closed()
+            await self._handle()
         finally:
             await self._disconnect()
 
@@ -61,6 +29,11 @@ class PlayersFeedView(BaseFeed):
 
                 if len(self.conn.ws_list) == 1:
                     await self._broadcast_online()
+
+    async def _handle(self):
+        while message := await self.ws.recv():
+            if message == "refresh":
+                await self._send_player_list()
 
     async def _disconnect(self):
         async with self.conn.lock:

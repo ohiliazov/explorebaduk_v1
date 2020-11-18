@@ -14,6 +14,7 @@ class UserModel(BaseModel):
     username = Column(String(255), name="Username")
     rating = Column(Numeric(10), name="Rating")
     puzzle_rating = Column(Numeric(10), name="Puzzle_rating")
+    avatar = Column(String(255), name="Avatar")
 
     tokens = relationship("TokenModel", back_populates="user")
 
@@ -30,4 +31,5 @@ class UserModel(BaseModel):
             "email": self.email,
             "rating": round(self.rating, 2),
             "puzzle_rating": round(self.puzzle_rating, 2),
+            "avatar": self.avatar,
         }

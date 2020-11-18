@@ -62,6 +62,7 @@ async def users_data(test_app):
             "email": f"johndoe{user_id}@explorebaduk.com",
             "rating": random.randint(0, 3000),
             "puzzle_rating": random.randint(0, 3000),
+            "avatar": f"johndoe{user_id}.png",
         }
         token_data = {
             "token_id": user_id,

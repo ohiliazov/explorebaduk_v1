@@ -1,4 +1,5 @@
 import os
+from collections import defaultdict
 
 from sqlalchemy import create_engine
 
@@ -8,7 +9,6 @@ from explorebaduk.resources import (
     PlayersFeedView,
     ChallengeFeedView,
     RatingView,
-    RefreshPlayersView,
 )
 
 DATABASE_URI = os.getenv("DATABASE_URI", "sqlite:///explorebaduk.sqlite3")
@@ -42,13 +42,6 @@ def register_routes(app: Sanic):
     )
 
     app.add_route(
-        RefreshPlayersView.as_view(),
-        uri="/players/refresh",
-        name="Refresh Player List",
-        methods=["POST"],
-    )
-
-    app.add_route(
         RatingView.as_view(),
         uri="/rating",
         name="Rating",
@@ -65,3 +58,4 @@ def register_listeners(app: Sanic):
         app.players = set()
         app.challenges = set()
         app.games = set()
+        app.subscribers = defaultdict(set)
