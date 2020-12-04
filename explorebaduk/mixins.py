@@ -9,7 +9,7 @@ from explorebaduk.models import UserModel
 
 class Subscriber:
     def __init__(self, user: UserModel = None):
-        self._user = user
+        self.user = user
         self._ws_list = set()
         self.lock = asyncio.Lock()
 
@@ -19,16 +19,12 @@ class Subscriber:
 
     @property
     def user_id(self):
-        if self._user:
-            return self._user.user_id
-
-    def user_dict(self):
-        if self._user:
-            return self._user.as_dict()
+        if self.user:
+            return self.user.user_id
 
     @property
     def authorized(self):
-        return self._user is not None
+        return self.user is not None
 
     def subscribe(self, ws: WebSocketCommonProtocol):
         self._ws_list.add(ws)
@@ -43,3 +39,6 @@ class Subscriber:
 
     async def send_json(self, data: dict):
         await self.send(json.dumps(data))
+
+    async def send_event(self, event: str, data: dict):
+        await self.send_json({"event": event, "data": data})

@@ -1,13 +1,4 @@
-from sqlalchemy import (
-    Column,
-    String,
-    Integer,
-    Numeric,
-    DateTime,
-    Text,
-    Boolean,
-)
-
+from sqlalchemy import Column, DateTime, Integer, Numeric, String, Text
 
 from explorebaduk.models.base import BaseModel
 
@@ -30,16 +21,6 @@ class NotificationModel(BaseModel):
     added = Column(DateTime, name="Added", nullable=False)
     content = Column(Text, name="Content")
     status = Column(Integer, name="Status", nullable=False, default=0)
-
-
-class FriendModel(BaseModel):
-    __tablename__ = "friends"
-
-    id = Column(Integer, name="ID", primary_key=True)
-    user_id = Column(Integer, name="User_ID", nullable=False)
-    friend_id = Column(Integer, name="Friend_ID", nullable=False)
-    muted = Column(Boolean, name="Muted", default=False)
-    blocked = Column(Boolean, name="Blocked", default=False)
 
 
 class MessageModel(BaseModel):

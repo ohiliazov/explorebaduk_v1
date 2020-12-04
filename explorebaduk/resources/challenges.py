@@ -2,9 +2,10 @@ import asyncio
 from collections import defaultdict
 
 from cerberus import Validator
+
+from explorebaduk.mixins import Subscriber
 from explorebaduk.models import UserModel
 from explorebaduk.validation import challenge_schema
-from explorebaduk.mixins import Subscriber
 
 from .feed import BaseFeed
 
@@ -67,7 +68,7 @@ class ChallengeFeedView(BaseFeed):
     async def connect(self):
         self.conn.subscribe(self.ws)
         self.app.challenges.add(self.conn)
-        await self.send_message({"status": "login", "user": self.conn.user_dict()})
+        await self.send_message({"status": "login", "user": self.user.as_dict() if self.user else None})
 
     async def disconnect(self):
         async with self.conn.lock:

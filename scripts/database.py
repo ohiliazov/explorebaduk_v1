@@ -1,10 +1,11 @@
+import datetime
 import random
 import string
-import datetime
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import create_session
-from explorebaduk.models import BaseModel, UserModel, TokenModel
+
+from explorebaduk.models import BaseModel, FriendModel, TokenModel, UserModel
 
 
 def make_user(num: int):
@@ -20,6 +21,18 @@ def make_user(num: int):
     return UserModel(**user_data)
 
 
+def make_friend(user_id: int, friend_id: int, **kwargs):
+    user_data = {
+        "user_id": user_id,
+        "friend_id": friend_id,
+        "friend": kwargs.get("friend", random.choice([True, False])),
+        "watched": kwargs.get("watched", random.choice([True, False])),
+        "muted": kwargs.get("muted", random.choice([True, False])),
+        "blocked": kwargs.get("blocked", random.choice([True, False])),
+    }
+    return FriendModel(**user_data)
+
+
 def make_token(num: int, user_id: int, minutes: int = 10):
     token_data = {
         "token_id": num,
@@ -30,7 +43,7 @@ def make_token(num: int, user_id: int, minutes: int = 10):
     return TokenModel(**token_data)
 
 
-def populate_database_with_data(session, num_users: int):
+def populate_database_with_data(session, num_users: int, num_friends: int = 0):
     for i in range(num_users):
         user = make_user(i)
         token = make_token(i, i, random.randint(0, 3600))

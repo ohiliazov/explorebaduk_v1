@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, Numeric
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, Numeric, String
 from sqlalchemy.orm import relationship
 
 from explorebaduk.models.base import BaseModel
@@ -17,6 +17,7 @@ class UserModel(BaseModel):
     avatar = Column(String(255), name="Avatar")
 
     tokens = relationship("TokenModel", back_populates="user")
+    friends = relationship("FriendModel", back_populates="user", foreign_keys="FriendModel.user_id", lazy="subquery")
 
     @property
     def full_name(self):
@@ -33,3 +34,27 @@ class UserModel(BaseModel):
             "puzzle_rating": round(self.puzzle_rating, 2),
             "avatar": self.avatar,
         }
+
+    def get_friend_ids(self):
+        return {friend.user_id for friend in self.friends}
+
+    def is_friend(self, user_id: int):
+        for friend in self.friends:
+            if friend.friend_id == user_id:
+                return True
+        return False
+
+
+class FriendModel(BaseModel):
+    __tablename__ = "friends"
+
+    id = Column(Integer, name="ID", primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.User_ID"), name="User_ID", nullable=False)
+    friend_id = Column(Integer, ForeignKey("users.User_ID"), name="Friend_ID", nullable=False)
+
+    # friend = Column(Boolean, name="Friend", default=False)
+    # watched = Column(Boolean, name="Watched", default=False)
+    muted = Column(Boolean, name="Muted", default=False)
+    blocked = Column(Boolean, name="Blocked", default=False)
+
+    user = relationship("UserModel", back_populates="friends", foreign_keys="FriendModel.user_id")

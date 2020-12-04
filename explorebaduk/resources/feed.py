@@ -1,6 +1,7 @@
 import asyncio
-import simplejson as json
 from typing import Type
+
+import simplejson as json
 from sanic.log import logger
 from sanic.request import Request
 from websockets import WebSocketCommonProtocol
@@ -87,3 +88,11 @@ class BaseFeed:
         if self.connected:
             await asyncio.gather(*[conn.send(message) for conn in self.connected if conn != self.conn])
             logger.info("> [broadcast_message] %s", message)
+
+    async def send_event(self, event: str, data: dict):
+        logger.info("> [%s] %s", event, data)
+        await self.send_message({"event": event, "data": data})
+
+    async def broadcast_event(self, event: str, data: dict):
+        logger.info("> [%s] %s", event, data)
+        await self.broadcast_message({"event": event, "data": data})
