@@ -1,15 +1,10 @@
 import os
 from collections import defaultdict
 
+from sanic import Sanic
 from sqlalchemy import create_engine
 
-from sanic import Sanic
-
-from explorebaduk.resources import (
-    PlayersFeedView,
-    ChallengeFeedView,
-    RatingView,
-)
+from explorebaduk.resources import PlayersFeedView, RatingView
 
 DATABASE_URI = os.getenv("DATABASE_URI", "sqlite:///explorebaduk.sqlite3")
 
@@ -34,11 +29,6 @@ def register_routes(app: Sanic):
         PlayersFeedView.as_view(),
         uri="/players",
         name="Players Feed",
-    )
-    app.add_websocket_route(
-        ChallengeFeedView.as_view(),
-        uri="/challenges",
-        name="Challenges Feed",
     )
 
     app.add_route(
