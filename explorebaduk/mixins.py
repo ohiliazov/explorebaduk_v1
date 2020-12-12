@@ -1,44 +1,42 @@
-import asyncio
+from typing import Optional
 
 import simplejson as json
 from sanic.log import logger
+from sanic.request import Request
 from websockets import WebSocketCommonProtocol
 
-from explorebaduk.models import UserModel
+from explorebaduk.helpers import get_user_by_token
+from explorebaduk.models.user import UserModel
 
 
 class Subscriber:
-    def __init__(self, user: UserModel = None):
-        self.user = user
-        self._ws_list = set()
-        self.lock = asyncio.Lock()
+    def __init__(self, request: Request, ws: WebSocketCommonProtocol):
+        self.request = request
+        self.ws = ws
+        self.user: Optional[UserModel] = None
+        self.data = {}
 
     @property
-    def ws_list(self):
-        return self._ws_list
+    def authorized(self):
+        return self.user is not None
 
     @property
     def user_id(self):
         if self.user:
             return self.user.user_id
 
-    @property
-    def authorized(self):
-        return self.user is not None
+    def authorize(self, token):
+        self.user = get_user_by_token(self.request, token)
 
-    def subscribe(self, ws: WebSocketCommonProtocol):
-        self._ws_list.add(ws)
+        return self.authorized
 
-    def unsubscribe(self, ws: WebSocketCommonProtocol):
-        self._ws_list.remove(ws)
+    async def _send(self, message: str):
+        await self.ws.send(message)
+        logger.info("> [send] %s", message)
 
-    async def send(self, message: str):
-        if self._ws_list:
-            await asyncio.gather(*[ws.send(message) for ws in self._ws_list], return_exceptions=True)
-            logger.info("> [send] %s", message)
+    async def send(self, event: str, data: dict):
+        await self._send(json.dumps({"event": event, "data": data}))
 
-    async def send_json(self, data: dict):
-        await self.send(json.dumps(data))
-
-    async def send_event(self, event: str, data: dict):
-        await self.send_json({"event": event, "data": data})
+    async def receive(self):
+        message = json.loads(await self.ws.recv())
+        return message["event"], message.get("data")

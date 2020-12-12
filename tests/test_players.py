@@ -13,10 +13,9 @@ async def test_player_login_as_user(test_cli, users_data: list, players_online: 
     user = user_data["user"]
     token = user_data["token"].token
 
-    ws = await test_cli.ws_connect(
-        test_cli.app.url_for("Players Feed"),
-        headers={"Authorization": token},
-    )
+    ws = await test_cli.ws_connect(test_cli.app.url_for("Players Feed"))
+
+    await ws.send_json({"event": "authorize", "data": {"token": token}})
 
     expected = {"event": "players.whoami", "data": user.as_dict()}
     assert any([actual == json.loads(json.dumps(expected)) for actual in await receive_messages(ws)])
@@ -57,7 +56,7 @@ async def test_player_logout_as_guest(test_cli, players_online: dict):
 async def test_refresh_player_list(test_cli, players_online: dict):
     player_ws, user_data = random.choice(list(players_online.items()))
 
-    await player_ws.send_str("refresh")
+    await player_ws.send_json({"event": "refresh"})
 
     actual_messages = sorted(
         await receive_messages(player_ws),

@@ -1,23 +1,18 @@
 import asyncio
-from typing import Type
 
 import simplejson as json
 from sanic.log import logger
 from sanic.request import Request
 from websockets import WebSocketCommonProtocol
 
-from explorebaduk.helpers import get_user_by_token
 from explorebaduk.mixins import Subscriber
 
 
 class BaseFeed:
-    conn_class: Type[Subscriber]
-
     def __init__(self, request: Request, ws: WebSocketCommonProtocol, **kwargs):
         self.request = request
         self.ws = ws
-        self.user = get_user_by_token(self.request)
-        self.conn = None
+        self.conn = Subscriber(request, ws)
 
     @property
     def app(self):
@@ -27,27 +22,10 @@ class BaseFeed:
     def connected(self) -> set:
         return set()
 
-    def _setup_connection(self):
-        if self.user:
-            for conn in self.connected:
-                if conn.user_id == self.user.user_id:
-                    self.conn = conn
-
-        if not self.conn:
-            self.conn = self.conn_class(self.user)
-            self.connected.add(self.conn)
-
     @classmethod
     def as_view(cls):
         async def wrapper(request, ws, **kwargs):
-            feed_handler = cls(request, ws, **kwargs)
-            feed_handler._setup_connection()
-
-            await feed_handler.connect()
-            try:
-                await feed_handler.run()
-            finally:
-                await feed_handler.disconnect()
+            await cls(request, ws, **kwargs).run()
 
         return wrapper
 
@@ -95,4 +73,7 @@ class BaseFeed:
 
     async def broadcast_event(self, event: str, data: dict):
         logger.info("> [%s] %s", event, data)
-        await self.broadcast_message({"event": event, "data": data})
+
+        if self.connected:
+            await asyncio.gather(*[conn.send(event, data) for conn in self.connected])
+            logger.info("> [%s] %s", event, data)

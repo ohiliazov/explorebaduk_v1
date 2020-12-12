@@ -1,15 +1,15 @@
 import asyncio
+import datetime
 import os
-import pytest
 import random
 import string
-import datetime
 
+import pytest
 from sanic.websocket import WebSocketProtocol
 from sqlalchemy.orm import create_session
 
 from explorebaduk.app import create_app
-from explorebaduk.models import BaseModel, UserModel, TokenModel
+from explorebaduk.models import BaseModel, TokenModel, UserModel
 
 
 async def receive_messages(ws, sort_by: callable = None, timeout: float = 0.5):
@@ -86,10 +86,8 @@ async def players_online(test_cli, users_data: list):
     players_online = {}
 
     for user_data in random.sample(users_data, 20):
-        player_ws = await test_cli.ws_connect(
-            test_cli.app.url_for("Players Feed"),
-            headers={"Authorization": user_data["token"].token},
-        )
+        player_ws = await test_cli.ws_connect(test_cli.app.url_for("Players Feed"))
+        await player_ws.send_json({"event": "authorize", "data": {"token": user_data["token"].token}})
         players_online[player_ws] = user_data
 
     # flush messages

@@ -1,7 +1,8 @@
 from contextlib import contextmanager
+
 from sqlalchemy.orm import create_session
 
-from explorebaduk.models import UserModel, TokenModel
+from explorebaduk.models import TokenModel, UserModel
 
 
 @contextmanager
@@ -17,8 +18,7 @@ def scoped_session(request):
         session.close()
 
 
-def get_user_by_token(request) -> UserModel:
-    token = request.headers.get("Authorization")
+def get_user_by_token(request, token) -> UserModel:
     with scoped_session(request) as session:
         auth_token = session.query(TokenModel).filter_by(token=token).first()
 

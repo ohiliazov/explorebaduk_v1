@@ -21,14 +21,13 @@ def make_user(num: int):
     return UserModel(**user_data)
 
 
-def make_friend(user_id: int, friend_id: int, **kwargs):
+def make_friend(user_id: int, friend_id: int, *, is_friend=False, is_muted=False, is_blocked=False):
     user_data = {
         "user_id": user_id,
         "friend_id": friend_id,
-        "friend": kwargs.get("friend", random.choice([True, False])),
-        "watched": kwargs.get("watched", random.choice([True, False])),
-        "muted": kwargs.get("muted", random.choice([True, False])),
-        "blocked": kwargs.get("blocked", random.choice([True, False])),
+        "is_friend": is_friend,
+        "is_muted": is_muted,
+        "is_blocked": is_blocked,
     }
     return FriendModel(**user_data)
 
@@ -50,6 +49,11 @@ def populate_database_with_data(session, num_users: int, num_friends: int = 0):
 
         session.add_all([user, token])
 
+    for i in range(5):
+        for j in range(i + 1, 5):
+            friends = make_friend(i, j, is_friend=True)
+            session.add(friends)
+
     session.flush()
 
 
@@ -62,5 +66,4 @@ def create_db(database_uri):
 
 
 if __name__ == "__main__":
-    # database_uri = input("Enter database uri: ")
     create_db("sqlite:///explorebaduk.sqlite3")

@@ -40,7 +40,7 @@ class UserModel(BaseModel):
 
     def is_friend(self, user_id: int):
         for friend in self.friends:
-            if friend.friend_id == user_id:
+            if friend.friend_id == user_id and friend.is_friend:
                 return True
         return False
 
@@ -52,9 +52,8 @@ class FriendModel(BaseModel):
     user_id = Column(Integer, ForeignKey("users.User_ID"), name="User_ID", nullable=False)
     friend_id = Column(Integer, ForeignKey("users.User_ID"), name="Friend_ID", nullable=False)
 
-    # friend = Column(Boolean, name="Friend", default=False)
-    # watched = Column(Boolean, name="Watched", default=False)
-    muted = Column(Boolean, name="Muted", default=False)
-    blocked = Column(Boolean, name="Blocked", default=False)
+    is_friend = Column(Boolean, name="Friend", default=False)
+    is_muted = Column(Boolean, name="Muted", default=False)
+    is_blocked = Column(Boolean, name="Blocked", default=False)
 
     user = relationship("UserModel", back_populates="friends", foreign_keys="FriendModel.user_id")
