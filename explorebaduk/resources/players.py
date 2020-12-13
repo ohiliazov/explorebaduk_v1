@@ -1,41 +1,34 @@
 import asyncio
 
-from .feed import BaseFeed
+from .view import Observer, Subject
 
 
-class PlayersFeedView(BaseFeed):
+class PlayerObserver(Observer):
+    def get_friends_list(self) -> set:
+        return self.user.get_friends_list() if self.authorized else set()
+
+
+class PlayersFeedView(Subject):
+    observer_class = PlayerObserver
+
     @property
-    def connected(self):
+    def observers(self):
         return self.app.players
 
     async def run(self):
-        try:
-            await self._connect()
-            await self._refresh()
-            await self._handle()
-        finally:
-            await self._disconnect()
+        await self._refresh()
 
-    async def _connect(self):
-        self.connected.add(self.conn)
-
-    async def _handle(self):
         while True:
-            try:
-                event, data = await self.conn.receive()
-            except Exception:
-                continue
+            event, data = await self.conn.receive()
 
             if event == "authorize":
                 await self._authorize(data)
             if event == "refresh":
                 await self._refresh()
 
-    async def _disconnect(self):
-        self.connected.remove(self.conn)
-
+    async def disconnect(self):
         if self.conn.authorized:
-            for conn in self.connected:
+            for conn in self.observers:
                 if conn.user_id == self.conn.user_id:
                     break
             else:
@@ -43,11 +36,11 @@ class PlayersFeedView(BaseFeed):
 
     async def _authorize(self, data):
         if self.conn.authorized:
-            await self.conn.send("error", {"message": "WebSocket is already authorized"})
+            await self._broadcast_offline()
 
         if self.conn.authorize(data.get("token")):
             await self._send_login_info()
-            for conn in self.connected:
+            for conn in self.observers:
                 if conn.user_id == self.conn.user_id and conn is not self.conn:
                     break
             else:
@@ -57,30 +50,34 @@ class PlayersFeedView(BaseFeed):
         await self.conn.send("players.whoami", self.conn.user.as_dict())
 
     async def _broadcast_online(self):
-        tasks = []
-        data = {
-            "status": "online",
-            **self.conn.user.as_dict(),
-        }
-        for conn in self.connected:
-            conn_friend_ids = conn.user.get_friend_ids() if conn.user else []
-            data["friend"] = self.conn.user_id in conn_friend_ids
-            tasks.append(conn.send("players.add", data))
+        friends_list = self.conn.get_friends_list()
 
-        await asyncio.gather(*tasks)
-
-    async def _broadcast_offline(self):
-        await self.broadcast_event("players.remove", {"user_id": self.conn.user_id})
-
-    async def _refresh(self):
-        friend_ids = self.conn.user.get_friend_ids() if self.conn.authorized else []
         await asyncio.gather(
             *[
-                self.send_event(
+                conn.send(
                     "players.add",
                     {
-                        "friend": player.user_id in friend_ids,
                         "status": "online",
+                        "friend": conn.user_id in friends_list,
+                        **self.conn.user.as_dict(),
+                    },
+                )
+                for conn in self.observers
+            ]
+        )
+
+    async def _broadcast_offline(self):
+        await self.broadcast("players.remove", {"user_id": self.conn.user_id})
+
+    async def _refresh(self):
+        friends_list = self.conn.get_friends_list()
+        await asyncio.gather(
+            *[
+                self.conn.send(
+                    "players.add",
+                    {
+                        "status": "online",
+                        "friend": player.user_id in friends_list,
                         **player.user.as_dict(),
                     },
                 )

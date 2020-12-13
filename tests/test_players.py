@@ -66,24 +66,17 @@ async def test_refresh_player_list(test_cli, players_online: dict):
 
     assert len(actual_messages) == len(expected_ids)
     for actual, expected_id in zip(actual_messages, expected_ids):
+        assert actual["data"]["status"] == "online"
         assert actual["event"] == "players.add"
         assert actual["data"]["user_id"] == expected_id
-        assert actual["data"]["status"] == "online"
 
 
 async def test_player_multiple_login_as_user(test_cli, players_online: dict):
     user_data = random.choice(list(players_online.values()))
     token = user_data["token"].token
 
-    await asyncio.gather(
-        *[
-            test_cli.ws_connect(
-                test_cli.app.url_for("Players Feed"),
-                headers={"Authorization": token},
-            )
-            for _ in range(20)
-        ]
-    )
+    ws_list = await asyncio.gather(*[test_cli.ws_connect(test_cli.app.url_for("Players Feed")) for _ in range(20)])
+    await asyncio.gather(*[ws.send_json({"event": "authorize", "data": {"token": token}}) for ws in ws_list])
 
     for ws_messages in await receive_all(players_online):
         assert all([message["event"] != "players.add" for message in ws_messages])
@@ -94,7 +87,7 @@ async def test_player_multiple_logout_as_user(test_cli, players_online: dict):
     user = user_data["user"]
     token = user_data["token"].token
 
-    player_ws_list = await asyncio.gather(
+    ws_list = await asyncio.gather(
         *[
             test_cli.ws_connect(
                 test_cli.app.url_for("Players Feed"),
@@ -103,10 +96,10 @@ async def test_player_multiple_logout_as_user(test_cli, players_online: dict):
             for _ in range(20)
         ]
     )
-
+    await asyncio.gather(*[ws.send_json({"event": "authorize", "data": {"token": token}}) for ws in ws_list])
     await receive_all(players_online)
 
-    await asyncio.gather(*[ws.close() for ws in player_ws_list])
+    await asyncio.gather(*[ws.close() for ws in ws_list])
 
     event_message = {"event": "players.remove", "data": {"user_id": user.user_id}}
     for ws_messages in await receive_all(players_online):
