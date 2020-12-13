@@ -2,9 +2,9 @@ from cerberus.validator import Validator
 
 from explorebaduk.constants import (
     ALLOWED_GAME_TYPES,
+    ALLOWED_HANDICAP_STONES,
     ALLOWED_RULES,
     ALLOWED_TIME_SYSTEMS,
-    ALLOWED_HANDICAP_STONES,
 )
 
 
@@ -13,9 +13,10 @@ def is_valid_komi(field, value: float, error):
         error(field, "Invalid komi")
 
 
-challenge_schema = {
+create_game_schema = {
     "game_setup": {
         "type": "dict",
+        "required": True,
         "require_all": True,
         "schema": {
             "name": {"type": "string", "empty": False},
@@ -25,6 +26,7 @@ challenge_schema = {
     },
     "rule_set": {
         "type": "dict",
+        "required": True,
         "require_all": True,
         "schema": {
             "rules": {"type": "string", "allowed": ALLOWED_RULES},
@@ -33,6 +35,8 @@ challenge_schema = {
     },
     "time_settings": {
         "type": "dict",
+        "required": True,
+        "require_all": True,
         "schema": {
             "time_system": {"type": "string", "allowed": ALLOWED_TIME_SYSTEMS},
             "main_time": {"type": "integer", "default": 0, "min": 0},
@@ -44,7 +48,7 @@ challenge_schema = {
     },
 }
 
-join_schema = {
+join_game_schema = {
     "handicap": {
         "type": "integer",
         "nullable": True,
@@ -53,5 +57,5 @@ join_schema = {
     "komi": {"type": "float", "nullable": True, "check_with": is_valid_komi},
 }
 
-challenge_validator = Validator(challenge_schema, allow_unknown=False)
-join_validator = Validator(join_schema, allow_unknown=False)
+create_game_validator = Validator(create_game_schema, allow_unknown=False)
+join_game_validator = Validator(join_game_schema, allow_unknown=False)

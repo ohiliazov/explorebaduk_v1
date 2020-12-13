@@ -43,7 +43,7 @@ class Observer:
         return message["event"], message.get("data")
 
 
-class Subject:
+class Feed:
     observer_class: Type[Observer] = Observer
 
     def __init__(self, request: Request, ws: WebSocketCommonProtocol, **kwargs):
@@ -65,14 +65,14 @@ class Subject:
             view = cls(request, ws, **kwargs)
             view.observers.add(view.conn)
             try:
-                await view.run()
+                await view.handle()
             finally:
                 view.observers.remove(view.conn)
                 await view.disconnect()
 
         return wrapper
 
-    async def run(self):
+    async def handle(self):
         raise NotImplementedError()
 
     async def disconnect(self):

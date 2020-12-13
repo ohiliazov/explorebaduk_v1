@@ -1,6 +1,6 @@
 import asyncio
 
-from .view import Observer, Subject
+from .view import Feed, Observer
 
 
 class PlayerObserver(Observer):
@@ -8,14 +8,14 @@ class PlayerObserver(Observer):
         return self.user.get_friends_list() if self.authorized else set()
 
 
-class PlayersFeedView(Subject):
+class PlayersFeed(Feed):
     observer_class = PlayerObserver
 
     @property
     def observers(self):
         return self.app.players
 
-    async def run(self):
+    async def handle(self):
         await self._refresh()
 
         while True:
@@ -38,7 +38,7 @@ class PlayersFeedView(Subject):
         if self.conn.authorized:
             await self._broadcast_offline()
 
-        if self.conn.authorize(data.get("token")):
+        if self.conn.authorized(data.get("token")):
             await self._send_login_info()
             for conn in self.observers:
                 if conn.user_id == self.conn.user_id and conn is not self.conn:
