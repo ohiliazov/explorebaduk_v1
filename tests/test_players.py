@@ -87,15 +87,7 @@ async def test_player_multiple_logout_as_user(test_cli, players_online: dict):
     user = user_data["user"]
     token = user_data["token"].token
 
-    ws_list = await asyncio.gather(
-        *[
-            test_cli.ws_connect(
-                test_cli.app.url_for("Players Feed"),
-                headers={"Authorization": token},
-            )
-            for _ in range(20)
-        ]
-    )
+    ws_list = await asyncio.gather(*[test_cli.ws_connect(test_cli.app.url_for("Players Feed")) for _ in range(20)])
     await asyncio.gather(*[ws.send_json({"event": "authorize", "data": {"token": token}}) for ws in ws_list])
     await receive_all(players_online)
 

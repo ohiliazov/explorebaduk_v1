@@ -1,4 +1,5 @@
 import asyncio
+import json
 
 import websockets
 
@@ -10,23 +11,21 @@ AUTH_TOKENS = [
 ]
 
 
-async def players_feed(ws):
+async def players_feed(token):
+    ws = await websockets.connect("ws://localhost:8080/players")
+    if token:
+        await ws.send(json.dumps({"event": "authorize", "data": {"token": token}}))
+
     while True:
         try:
             message = await asyncio.wait_for(ws.recv(), timeout=0.5)
-            print(f"{ws.extra_headers['Authorization']} :: {message}")
+            print(f"{token} :: {message}")
         except asyncio.TimeoutError:
             pass
 
 
 async def run():
-    ws_list = await asyncio.gather(
-        *[
-            websockets.connect("ws://localhost:8080/players", extra_headers={"Authorization": token})
-            for token in AUTH_TOKENS
-        ]
-    )
-    await asyncio.gather(*[players_feed(ws) for ws in ws_list])
+    await asyncio.gather(*[players_feed(token) for token in AUTH_TOKENS])
 
 
 if __name__ == "__main__":

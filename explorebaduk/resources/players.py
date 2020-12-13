@@ -38,7 +38,7 @@ class PlayersFeed(Feed):
         if self.conn.authorized:
             await self._broadcast_offline()
 
-        if self.conn.authorized(data.get("token")):
+        if self.conn.authorize(data.get("token")):
             await self._send_login_info()
             for conn in self.observers:
                 if conn.user_id == self.conn.user_id and conn is not self.conn:
