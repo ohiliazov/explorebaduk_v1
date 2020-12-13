@@ -66,6 +66,8 @@ class Feed:
             view.observers.add(view.conn)
             try:
                 await view.handle()
+            except Exception as ex:
+                logger.exception(str(ex))
             finally:
                 view.observers.remove(view.conn)
                 await view.disconnect()
