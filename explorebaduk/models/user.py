@@ -7,17 +7,23 @@ from explorebaduk.models.base import BaseModel
 class UserModel(BaseModel):
     __tablename__ = "users"
 
-    user_id = Column(Integer, primary_key=True, name="User_ID")
-    first_name = Column(String(60), name="First_Name")
-    last_name = Column(String(60), name="Last_Name")
-    email = Column(String(255), name="Email")
-    username = Column(String(255), name="Username")
-    rating = Column(Numeric(10), name="Rating")
-    puzzle_rating = Column(Numeric(10), name="Puzzle_rating")
-    avatar = Column(String(255), name="Avatar")
+    user_id = Column(Integer, primary_key=True)
+    first_name = Column(String(60), nullable=False)
+    last_name = Column(String(60), nullable=False)
+    email = Column(String(255), nullable=False)
+    username = Column(String(255), nullable=False)
+    rating = Column(Numeric(10), default=100)
+    puzzle_rating = Column(Numeric(10), default=0)
+    avatar = Column(String(255))
 
     tokens = relationship("TokenModel", back_populates="user")
     friends = relationship("FriendModel", back_populates="user", foreign_keys="FriendModel.user_id", lazy="subquery")
+    blocked_users = relationship(
+        "BlockedUserModel",
+        back_populates="user",
+        foreign_keys="BlockedUserModel.user_id",
+        lazy="subquery",
+    )
 
     @property
     def full_name(self):
@@ -48,12 +54,19 @@ class UserModel(BaseModel):
 class FriendModel(BaseModel):
     __tablename__ = "friends"
 
-    id = Column(Integer, name="ID", primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.User_ID"), name="User_ID", nullable=False)
-    friend_id = Column(Integer, ForeignKey("users.User_ID"), name="Friend_ID", nullable=False)
-
-    is_friend = Column(Boolean, name="Friend", default=False)
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
+    friend_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
     is_muted = Column(Boolean, name="Muted", default=False)
-    is_blocked = Column(Boolean, name="Blocked", default=False)
 
     user = relationship("UserModel", back_populates="friends", foreign_keys="FriendModel.user_id")
+
+
+class BlockedUserModel(BaseModel):
+    __tablename__ = "blocked_users"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
+    blocked_user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
+
+    user = relationship("UserModel", back_populates="blocked_users", foreign_keys="BlockedUserModel.user_id")
