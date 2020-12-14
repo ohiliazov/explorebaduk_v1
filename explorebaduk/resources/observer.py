@@ -38,5 +38,10 @@ class Observer:
         logger.info("> [%s] %s", event, data)
 
     async def receive(self):
-        message = json.loads(await self.ws.recv())
-        return message["event"], message.get("data")
+        message = {}
+        data = await self.ws.recv()
+        try:
+            message = json.loads(data)
+        except json.JSONDecodeError as ex:
+            await self.send("error", {"message": str(ex), "data": data})
+        return message.get("event"), message.get("data")

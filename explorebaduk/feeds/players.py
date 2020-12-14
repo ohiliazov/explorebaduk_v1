@@ -20,7 +20,6 @@ class PlayersFeed(Feed):
 
         while True:
             event, data = await self.conn.receive()
-
             if event == "authorize":
                 await self._authorize(data)
             if event == "refresh":

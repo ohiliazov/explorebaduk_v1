@@ -1,7 +1,8 @@
 import asyncio
+import json
 import select
-import sys
 import string
+import sys
 
 import websockets
 
@@ -21,7 +22,8 @@ def process_message():
 
 async def players_feed(token, ws_path: str):
     uri = f"ws://localhost:8080/{ws_path}"
-    async with websockets.connect(uri, extra_headers={"Authorization": token}) as ws:
+    async with websockets.connect(uri) as ws:
+        await ws.send(json.dumps({"event": "authorize", "data": {"token": token}}))
         while True:
             try:
                 while True:
@@ -38,6 +40,6 @@ async def players_feed(token, ws_path: str):
 
 if __name__ == "__main__":
     user_id = int(sys.argv[1]) if len(sys.argv) > 1 and sys.argv[1].isdigit() else 1
-    ws_path = sys.argv[2] if len(sys.argv) > 2 else "players_feed"
+    ws_path = sys.argv[2] if len(sys.argv) > 2 else "players"
     token = f"{string.ascii_letters}{user_id:012d}"
     asyncio.get_event_loop().run_until_complete(players_feed(token, ws_path))

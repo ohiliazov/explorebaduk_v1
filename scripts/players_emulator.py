@@ -6,8 +6,10 @@ import websockets
 # Add valid tokens here
 # Non-valid tokens will result in connection as guest
 AUTH_TOKENS = [
-    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ000000000001",
-    "4b038200073462e8eae28cdc1515d655ea19ba07",
+    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ000000023027",
+    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ000000023032",
+    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ000000023037",
+    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ000000023042",
 ]
 
 
