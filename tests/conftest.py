@@ -65,7 +65,7 @@ async def users_data(test_app):
             "avatar": f"johndoe{user_id}.png",
         }
         token_data = {
-            "token_id": user_id,
+            "id": user_id,
             "user_id": user_id,
             "token": token,
             "expired_at": datetime.datetime.utcnow() + datetime.timedelta(minutes=10),

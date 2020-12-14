@@ -1,6 +1,5 @@
-from sqlalchemy import Column, String, Integer, DateTime, Text, ForeignKey
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
-
 
 from explorebaduk.models.base import BaseModel
 
@@ -28,7 +27,7 @@ class GamePlayerModel(BaseModel):
 
     timer_id = Column(Integer, primary_key=True)
     game_id = Column(Integer, ForeignKey("games.game_id"))
-    player_id = Column(Integer, ForeignKey("users.User_ID"))
+    player_id = Column(Integer, ForeignKey("users.user_id"))
 
     time_system = Column(Integer, nullable=False)
     main_time = Column(Integer, default=0)
