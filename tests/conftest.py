@@ -66,6 +66,7 @@ async def users_data(test_app):
             "first_name": "John",
             "last_name": f"Doe#{user_id}",
             "email": f"johndoe{user_id}@explorebaduk.com",
+            "password": "$2y$10$N5ohEZckAk/9Exus/Py/5OM7pZgr8Gk6scZpH95FjvOSRWo00tVoC",  # Abcdefg1
             "rating": random.randint(0, 3000),
             "puzzle_rating": random.randint(0, 3000),
             "avatar": f"johndoe{user_id}.png",
@@ -74,7 +75,7 @@ async def users_data(test_app):
             "id": user_id,
             "user_id": user_id,
             "token": token,
-            "expired_at": datetime.datetime.utcnow() + datetime.timedelta(minutes=10),
+            "expire": datetime.datetime.utcnow() + datetime.timedelta(minutes=10),
         }
         user = UserModel(**user_data)
         token = TokenModel(**token_data)

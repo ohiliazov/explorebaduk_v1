@@ -11,11 +11,11 @@ class TokenModel(BaseModel):
 
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.user_id"))
-    token = Column(String(64), name="Token")
-    expired_at = Column(DateTime, name="Expire")
+    token = Column(String(64))
+    expire = Column(DateTime)
 
     user = relationship("UserModel", back_populates="tokens")
 
     @property
     def is_active(self):
-        return datetime.datetime.utcnow() < self.expired_at
+        return datetime.datetime.utcnow() < self.expire
