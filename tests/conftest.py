@@ -9,7 +9,13 @@ from sanic.websocket import WebSocketProtocol
 from sqlalchemy.orm import create_session
 
 from explorebaduk.app import create_app
-from explorebaduk.models import BaseModel, TokenModel, UserModel
+from explorebaduk.models import (
+    BaseModel,
+    BlockedUserModel,
+    FriendModel,
+    TokenModel,
+    UserModel,
+)
 
 
 async def receive_messages(ws, sort_by: callable = None, timeout: float = 0.5):
@@ -74,7 +80,36 @@ async def users_data(test_app):
         token = TokenModel(**token_data)
 
         session.add_all([user, token])
-        users_data.append({"user": user, "token": token})
+        users_data.append({"user": user, "token": token, "friends": set(), "blocked_users": set()})
+
+    for user_id, user_data in enumerate(users_data[:5], start=1):
+        for friend in users_data[user_id:5]:
+            friend_id = friend["user"].user_id
+            friend_user_data = {
+                "user_id": user_id,
+                "friend_id": friend_id,
+                "muted": friend_id % 2 == 0,
+            }
+            user_friend_data = {
+                "user_id": friend_id,
+                "friend_id": user_id,
+                "muted": user_id > 3,
+            }
+            friend_user = FriendModel(**friend_user_data)
+            user_friend = FriendModel(**user_friend_data)
+            session.add_all([friend_user, user_friend])
+            user_data["friends"].add(friend_id)
+            friend["friends"].add(user_id)
+
+        for blocked in users_data[5:11]:
+            blocked_user_id = blocked["user"].user_id
+            blocked_user_data = {
+                "user_id": user_id,
+                "blocked_user_id": blocked_user_id,
+            }
+            blocked_user = BlockedUserModel(**blocked_user_data)
+            session.add(blocked_user)
+            user_data["blocked_users"].add(blocked_user_id)
 
     session.flush()
 

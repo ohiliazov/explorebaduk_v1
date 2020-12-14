@@ -57,7 +57,7 @@ class FriendModel(BaseModel):
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
     friend_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
-    is_muted = Column(Boolean, name="Muted", default=False)
+    muted = Column(Boolean, default=False)
 
     user = relationship("UserModel", back_populates="friends", foreign_keys="FriendModel.user_id")
 

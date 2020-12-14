@@ -5,7 +5,13 @@ import string
 from sqlalchemy import create_engine
 from sqlalchemy.orm import create_session
 
-from explorebaduk.models import BaseModel, FriendModel, TokenModel, UserModel
+from explorebaduk.models import (
+    BaseModel,
+    BlockedUserModel,
+    FriendModel,
+    TokenModel,
+    UserModel,
+)
 
 
 def make_user(num: int):
@@ -21,20 +27,26 @@ def make_user(num: int):
     return UserModel(**user_data)
 
 
-def make_friend(user_id: int, friend_id: int, *, is_friend=False, is_muted=False, is_blocked=False):
+def make_friend(user_id: int, friend_id: int, *, muted=False):
     user_data = {
         "user_id": user_id,
         "friend_id": friend_id,
-        "is_friend": is_friend,
-        "is_muted": is_muted,
-        "is_blocked": is_blocked,
+        "muted": muted,
     }
     return FriendModel(**user_data)
 
 
+def make_blocked_user(user_id: int, blocked_user_id: int):
+    user_data = {
+        "user_id": user_id,
+        "blocked_user_id": blocked_user_id,
+    }
+    return BlockedUserModel(**user_data)
+
+
 def make_token(num: int, user_id: int, minutes: int = 10):
     token_data = {
-        "token_id": num,
+        "id": num,
         "user_id": user_id,
         "token": f"{string.ascii_letters}{user_id:012d}",
         "expired_at": datetime.datetime.utcnow() + datetime.timedelta(minutes=minutes),
@@ -51,8 +63,14 @@ def populate_database_with_data(session, num_users: int, num_friends: int = 0):
 
     for i in range(5):
         for j in range(i + 1, 5):
-            friends = make_friend(i, j, is_friend=True)
-            session.add(friends)
+            friend_i = make_friend(i, j, muted=j > 3)
+            friend_j = make_friend(j, i, muted=i > 3)
+            session.add_all([friend_i, friend_j])
+
+    for i in range(5):
+        for j in range(i + 6, 10):
+            blocked_user = make_blocked_user(i, j)
+            session.add(blocked_user)
 
     session.flush()
 
