@@ -4,7 +4,7 @@ from collections import defaultdict
 from sanic import Sanic
 from sqlalchemy import create_engine
 
-from explorebaduk.feeds import GamesFeed, PlayersFeed
+from explorebaduk.feeds import ChallengesFeed, PlayersFeed
 from explorebaduk.views import ChallengesView, RatingView
 
 DATABASE_URI = os.getenv("DATABASE_URI", "sqlite:///explorebaduk.sqlite3")
@@ -33,15 +33,15 @@ def register_routes(app: Sanic):
     )
 
     app.add_websocket_route(
-        GamesFeed.as_view(),
-        uri="/games",
-        name="Games Feed",
+        ChallengesFeed.as_view(),
+        uri="/challenges",
+        name="Challenges Feed",
     )
 
     app.add_route(
         ChallengesView.as_view(),
-        uri="/games",
-        name="Rating View",
+        uri="/challenges",
+        name="Challenges View",
     )
 
     app.add_route(

@@ -1,3 +1,3 @@
 # flake8: noqa: F401
-from .games import GamesFeed
+from .challenges import ChallengesFeed
 from .players import PlayersFeed
