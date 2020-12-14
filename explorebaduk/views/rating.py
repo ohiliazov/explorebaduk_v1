@@ -1,4 +1,5 @@
 from decimal import Decimal, InvalidOperation
+
 from sanic import response
 from sanic.views import HTTPMethodView
 

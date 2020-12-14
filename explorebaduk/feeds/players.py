@@ -1,6 +1,6 @@
 import asyncio
 
-from .view import Feed, Observer
+from explorebaduk.resources import Feed, Observer
 
 
 class PlayerObserver(Observer):

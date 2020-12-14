@@ -1,7 +1,7 @@
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
 
-from explorebaduk.models.base import BaseModel
+from .base import BaseModel
 
 
 class GameModel(BaseModel):
@@ -11,9 +11,10 @@ class GameModel(BaseModel):
 
     name = Column(String, nullable=False)
 
-    width = Column(Integer, nullable=False)
-    height = Column(Integer, nullable=False)
+    board_width = Column(Integer, nullable=False)
+    board_height = Column(Integer, nullable=False)
 
+    created_at = Column(DateTime)
     started_at = Column(DateTime)
     finished_at = Column(DateTime)
 

@@ -3,7 +3,8 @@ import os
 from sanic import Sanic
 from sqlalchemy import create_engine
 
-from explorebaduk.resources import GamesFeed, GamesView, PlayersFeed, RatingView
+from explorebaduk.feeds import GamesFeed, PlayersFeed
+from explorebaduk.views import GamesView, RatingView
 
 DATABASE_URI = os.getenv("DATABASE_URI", "sqlite:///explorebaduk.sqlite3")
 

@@ -1,6 +1,6 @@
 from sqlalchemy import Column, DateTime, Integer, Numeric, String, Text
 
-from explorebaduk.models.base import BaseModel
+from .base import BaseModel
 
 
 class NotificationTypeModel(BaseModel):
