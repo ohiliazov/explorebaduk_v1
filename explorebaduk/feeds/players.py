@@ -13,7 +13,7 @@ class PlayersFeed(Feed):
 
     @property
     def observers(self):
-        return self.app.players
+        return self.app.feeds["players"]
 
     async def handle(self):
         await self._refresh()
@@ -80,7 +80,7 @@ class PlayersFeed(Feed):
                         **player.user.as_dict(),
                     },
                 )
-                for player in self.app.players
+                for player in self.observers
                 if player.authorized
             ]
         )

@@ -6,7 +6,7 @@ class GamesFeed(Feed):
 
     @property
     def observers(self):
-        return self.app.games
+        return self.app.feeds["games"]
 
     async def handle(self):
         await self.ws.wait_closed()

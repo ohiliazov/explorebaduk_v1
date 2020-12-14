@@ -1,4 +1,5 @@
 import os
+from collections import defaultdict
 
 from sanic import Sanic
 from sqlalchemy import create_engine
@@ -57,5 +58,5 @@ def register_listeners(app: Sanic):
 
     @app.listener("before_server_start")
     async def setup_data(app, loop):
-        app.players = set()
-        app.games = set()
+        app.feeds = defaultdict(set)
+        app.challenges = {}
