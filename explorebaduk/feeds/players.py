@@ -35,9 +35,9 @@ class PlayersFeed(Feed):
 
     async def _authorize(self, data):
         if self.conn.authorized:
-            await self._broadcast_offline()
+            await self.conn.send("error", {"message": "Already authorized"})
 
-        if self.conn.authorize(data.get("token")):
+        elif self.conn.authorize(data.get("token")):
             await self._send_login_info()
             for conn in self.observers:
                 if conn.user_id == self.conn.user_id and conn is not self.conn:

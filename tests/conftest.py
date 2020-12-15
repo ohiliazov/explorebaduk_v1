@@ -121,12 +121,13 @@ async def users_data(test_app):
 async def players_online(test_cli, users_data: list):
     players_online = {}
 
+    tasks = []
     for user_data in random.sample(users_data, 20):
-        player_ws = await test_cli.ws_connect(test_cli.app.url_for("Players Feed"))
-        await player_ws.send_json({"event": "authorize", "data": {"token": user_data["token"].token}})
-        players_online[player_ws] = user_data
+        ws = await test_cli.ws_connect(test_cli.app.url_for("Players Feed"))
+        tasks.append(ws.send_json({"event": "authorize", "data": {"token": user_data["token"].token}}))
+        players_online[ws] = user_data
 
-    # flush messages
+    await asyncio.gather(*tasks)
     await receive_all(players_online.keys(), timeout=0.5)
 
     return players_online
@@ -136,14 +137,13 @@ async def players_online(test_cli, users_data: list):
 async def challenges_online(test_cli, users_data: list):
     challenges_online = {}
 
+    tasks = []
     for user_data in random.sample(users_data, 20):
-        ws = await test_cli.ws_connect(
-            test_cli.app.url_for("Challenges Feed"),
-            headers={"Authorization": user_data["token"].token},
-        )
+        ws = await test_cli.ws_connect(test_cli.app.url_for("Challenges Feed"))
+        tasks.append(ws.send_json({"event": "authorize", "data": {"token": user_data["token"].token}}))
         challenges_online[ws] = user_data
 
-    # flush messages
-    await receive_all(challenges_online.keys(), timeout=1)
+    await asyncio.gather(*tasks)
+    await receive_all(challenges_online.keys(), timeout=0.5)
 
     return challenges_online
