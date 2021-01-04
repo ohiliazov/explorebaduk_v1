@@ -1,4 +1,7 @@
 venv/
-.idea
+.idea/
 *.sqlite3
+*.sqlite3-journal
+.coverage
+htmlcov/
 .pytest_cache/
