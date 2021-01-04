@@ -3,6 +3,7 @@ import datetime
 import os
 import random
 import string
+import uuid
 
 import pytest
 from sanic.websocket import WebSocketProtocol
@@ -39,7 +40,7 @@ async def receive_all(ws_list, sort_by: callable = None, timeout: float = 0.5):
 @pytest.yield_fixture()
 def test_app():
     os.environ["DATABASE_URI"] = "sqlite:///explorebaduk_test.sqlite3"
-    app = create_app()
+    app = create_app(str(uuid.uuid4()))
 
     return app
 

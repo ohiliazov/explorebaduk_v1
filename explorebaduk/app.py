@@ -10,8 +10,8 @@ from explorebaduk.views import ChallengesView, RatingView
 DATABASE_URI = os.getenv("DATABASE_URI", "sqlite:///explorebaduk.sqlite3")
 
 
-def create_app() -> Sanic:
-    app = Sanic("ExploreBaduk Game Server API")
+def create_app(app_name="ExploreBaduk") -> Sanic:
+    app = Sanic(app_name)
 
     register_config(app)
     register_listeners(app)
@@ -59,4 +59,5 @@ def register_listeners(app: Sanic):
     @app.listener("before_server_start")
     async def setup_data(app, loop):
         app.feeds = defaultdict(set)
+        app.notifications = defaultdict(set)
         app.challenges = {}

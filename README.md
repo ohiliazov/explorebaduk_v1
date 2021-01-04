@@ -1,6 +1,8 @@
 # ExploreBaduk GameServer
 The game server designed for the ExploreBaduk website
 
+[![Documentation Status](https://readthedocs.org/projects/explorebaduk/badge/?version=latest)](https://explorebaduk.readthedocs.io/en/latest/?badge=latest)
+
 Use Python >=3.8
 Python virtual environment:
 ```bash
