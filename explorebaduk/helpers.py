@@ -1,3 +1,4 @@
+import datetime
 from contextlib import contextmanager
 from functools import wraps
 
@@ -22,7 +23,14 @@ def scoped_session(request):
 
 def get_user_by_token(request, token) -> UserModel:
     with scoped_session(request) as session:
-        auth_token = session.query(TokenModel).filter_by(token=token).first()
+        auth_token = (
+            session.query(TokenModel)
+            .filter(
+                TokenModel.token == token,
+                TokenModel.expire >= datetime.datetime.utcnow(),
+            )
+            .first()
+        )
 
         if auth_token:
             return auth_token.user

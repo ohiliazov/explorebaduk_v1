@@ -5,7 +5,13 @@ import string
 from sqlalchemy import create_engine
 from sqlalchemy.orm import create_session
 
-from explorebaduk.models import BlockedUserModel, FriendModel, TokenModel, UserModel
+from explorebaduk.models import (
+    BaseModel,
+    BlockedUserModel,
+    FriendModel,
+    TokenModel,
+    UserModel,
+)
 
 
 def make_user(num: int):
@@ -42,7 +48,7 @@ def make_token(user_id: int, minutes: int = 10):
     token_data = {
         "user_id": user_id,
         "token": f"{string.ascii_letters}{user_id:012d}",
-        "expire": (datetime.datetime.utcnow() + datetime.timedelta(minutes=minutes)).timestamp(),
+        "expire": datetime.datetime.utcnow() + datetime.timedelta(minutes=minutes),
     }
     return TokenModel(**token_data)
 
@@ -75,11 +81,11 @@ def populate_database_with_data(session, num_users: int, num_friends: int = 0):
 def create_db(database_uri):
     engine = create_engine(database_uri)
     session = create_session(engine)
-    # BaseModel.metadata.drop_all(engine)
-    # BaseModel.metadata.create_all(engine)
+    BaseModel.metadata.drop_all(engine)
+    BaseModel.metadata.create_all(engine)
     populate_database_with_data(session, 20)
 
 
 if __name__ == "__main__":
-    create_db("mysql+pymysql://root@localhost:3306/explorebaduk_new")
-    # create_db("sqlite:///explorebaduk.sqlite3")
+    # create_db("mysql+pymysql://root@localhost:3306/explorebaduk_new")
+    create_db("sqlite:///explorebaduk.sqlite3")

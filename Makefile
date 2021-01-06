@@ -1,4 +1,4 @@
-PYTHON=python3.7
+PYTHON=python3.8
 VERSION=`python setup.py --version`
 LDFLAGS='-L/usr/local/lib -L/usr/local/opt/openssl/lib -L/usr/local/opt/readline/lib'
 
@@ -6,7 +6,7 @@ install:
 	python -m pip install --upgrade pip
 	python -m pip install --upgrade -r requirements.txt
 
-test: install black
+test: install
 	pytest tests
 
 init_db:

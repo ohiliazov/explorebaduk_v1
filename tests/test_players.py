@@ -17,7 +17,7 @@ async def test_player_login_as_user(test_cli, users_data: list, players_online: 
 
     await ws.send_json({"event": "authorize", "data": {"token": token}})
 
-    expected = {"event": "players.whoami", "data": user.as_dict()}
+    expected = {"event": "auth.whoami", "data": user.as_dict()}
     assert any([actual == json.loads(json.dumps(expected)) for actual in await receive_messages(ws)])
 
     for ws_messages in await receive_all(players_online):
@@ -32,17 +32,45 @@ async def test_player_logout_as_user(test_cli, players_online: dict):
     user = players_online.pop(logout_ws)["user"]
 
     await logout_ws.close()
+    expected = {"event": "players.remove", "data": {"user_id": user.user_id}}
     for ws_messages in await receive_all(players_online):
-        message = ws_messages[0]
-        assert message["event"] == "players.remove"
-        assert message["data"] == {"user_id": user.user_id}
+        assert expected in ws_messages
 
 
 async def test_player_login_as_guest(test_cli, players_online: dict):
-
     player_ws = await test_cli.ws_connect(test_cli.app.url_for("Players Feed"))
 
-    assert all(actual["event"] != "auth.login" for actual in await receive_messages(player_ws))
+    assert any(actual["event"] != "auth.whoami" for actual in await receive_messages(player_ws))
+
+    for ws_messages in await receive_all(players_online):
+        assert not ws_messages
+
+
+async def test_player_login_invalid_token(test_cli, players_online: dict):
+    player_ws = await test_cli.ws_connect(test_cli.app.url_for("Players Feed"))
+
+    await player_ws.send_json({"event": "authorize", "data": {"token": "invalid_token"}})
+
+    expected = {"event": "auth.whoami", "data": None}
+    assert any(actual == expected for actual in await receive_messages(player_ws))
+
+    for ws_messages in await receive_all(players_online):
+        assert not ws_messages
+
+
+async def test_player_login_expired_token(test_cli, users_data: list, players_online: dict):
+    user_data = random.choice(users_data)
+    player_ws = await test_cli.ws_connect(test_cli.app.url_for("Players Feed"))
+
+    expired_token = user_data["expired_token"].token
+
+    await player_ws.send_json({"event": "authorize", "data": {"token": expired_token}})
+
+    expected = {"event": "auth.whoami", "data": None}
+    assert any(actual == expected for actual in await receive_messages(player_ws))
+
+    for ws_messages in await receive_all(players_online):
+        assert not ws_messages
 
 
 async def test_player_logout_as_guest(test_cli, players_online: dict):

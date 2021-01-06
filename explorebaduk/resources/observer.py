@@ -25,8 +25,18 @@ class Observer:
         if self.user:
             return self.user.user_id
 
-    def authorize(self, token):
+    @property
+    def username(self):
+        if self.user:
+            return self.user.username
+        return "guest"
+
+    async def authorize(self, token):
+        if self.authorized:
+            return await self.send("error", {"message": "Already authorized"})
+
         self.user = get_user_by_token(self.request, token)
+        await self.send("auth.whoami", self.user.as_dict() if self.user else None)
 
         return self.authorized
 
@@ -35,7 +45,7 @@ class Observer:
 
     async def send(self, event: str, data: dict):
         await self._send(json.dumps({"event": event, "data": data}))
-        logger.info("> [%s] %s", event, data)
+        logger.info("> [%s:%s] %s", self.username, event, data)
 
     async def receive(self):
         message = {}

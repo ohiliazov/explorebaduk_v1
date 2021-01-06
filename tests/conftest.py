@@ -1,6 +1,5 @@
 import asyncio
 import datetime
-import os
 import random
 import string
 import uuid
@@ -39,7 +38,6 @@ async def receive_all(ws_list, sort_by: callable = None, timeout: float = 0.5):
 
 @pytest.yield_fixture()
 def test_app():
-    os.environ["DATABASE_URI"] = "sqlite:///explorebaduk_test.sqlite3"
     app = create_app(str(uuid.uuid4()))
 
     return app
@@ -59,8 +57,6 @@ async def users_data(test_app):
     users_data = []
 
     for user_id in range(1, 101):
-        token = f"{string.ascii_letters}{user_id:012d}"
-
         user_data = {
             "user_id": user_id,
             "username": f"johndoe{user_id}",
@@ -73,16 +69,29 @@ async def users_data(test_app):
             "avatar": f"johndoe{user_id}.png",
         }
         token_data = {
-            "id": user_id,
             "user_id": user_id,
-            "token": token,
+            "token": f"{string.ascii_letters}{user_id:012d}",
             "expire": datetime.datetime.utcnow() + datetime.timedelta(minutes=10),
+        }
+        expired_token_data = {
+            "user_id": user_id,
+            "token": f"{string.ascii_letters[::-1]}{user_id:012d}",
+            "expire": datetime.datetime.utcnow() - datetime.timedelta(minutes=10),
         }
         user = UserModel(**user_data)
         token = TokenModel(**token_data)
+        expired_token = TokenModel(**expired_token_data)
 
-        session.add_all([user, token])
-        users_data.append({"user": user, "token": token, "friends": set(), "blocked_users": set()})
+        session.add_all([user, token, expired_token])
+        users_data.append(
+            {
+                "user": user,
+                "token": token,
+                "expired_token": expired_token,
+                "friends": set(),
+                "blocked_users": set(),
+            },
+        )
 
     for user_id, user_data in enumerate(users_data[:5], start=1):
         for friend in users_data[user_id:5]:

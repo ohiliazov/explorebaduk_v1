@@ -20,8 +20,8 @@ class PlayersFeed(Feed):
 
         while True:
             event, data = await self.conn.receive()
-            if event == "authorize":
-                await self._authorize(data)
+            if event == "authorize" and await self.conn.authorize(data.get("token")):
+                await self.handle_authorized()
             if event == "refresh":
                 await self._refresh()
 
@@ -33,20 +33,12 @@ class PlayersFeed(Feed):
             else:
                 await self._broadcast_offline()
 
-    async def _authorize(self, data):
-        if self.conn.authorized:
-            await self.conn.send("error", {"message": "Already authorized"})
-
-        elif self.conn.authorize(data.get("token")):
-            await self._send_login_info()
-            for conn in self.observers:
-                if conn.user_id == self.conn.user_id and conn is not self.conn:
-                    break
-            else:
-                await self._broadcast_online()
-
-    async def _send_login_info(self):
-        await self.conn.send("players.whoami", self.conn.user.as_dict())
+    async def handle_authorized(self):
+        for conn in self.observers:
+            if conn.user_id == self.conn.user_id and conn is not self.conn:
+                break
+        else:
+            await self._broadcast_online()
 
     async def _broadcast_online(self):
         friends_list = self.conn.get_friends_list()
