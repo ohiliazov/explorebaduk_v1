@@ -11,6 +11,7 @@ Welcome to ExploreBaduk's documentation!
    :caption: Contents:
 
    explorebaduk/getting_started
+   explorebaduk/authorization
 
 
 Indices and tables
