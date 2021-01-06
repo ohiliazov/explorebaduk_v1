@@ -20,7 +20,7 @@ class ChallengesFeed(Feed):
         while True:
             event, data = await self.conn.receive()
             if event == "authorize":
-                self.conn.authorize(data.get("token"))
+                await self.conn.authorize(data.get("token"))
             if event == "refresh":
                 await self._refresh()
 

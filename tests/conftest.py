@@ -36,7 +36,7 @@ async def receive_all(ws_list, sort_by: callable = None, timeout: float = 0.5):
     return await asyncio.gather(*[receive_messages(ws, sort_by, timeout) for ws in ws_list])
 
 
-@pytest.yield_fixture()
+@pytest.fixture
 def test_app():
     app = create_app(str(uuid.uuid4()))
 
@@ -44,8 +44,8 @@ def test_app():
 
 
 @pytest.fixture
-def test_cli(loop, test_app, test_client):
-    return loop.run_until_complete(test_client(test_app, protocol=WebSocketProtocol))
+def test_cli(loop, test_app, sanic_client):
+    return loop.run_until_complete(sanic_client(test_app, protocol=WebSocketProtocol))
 
 
 @pytest.fixture
