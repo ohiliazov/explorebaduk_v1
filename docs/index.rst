@@ -13,6 +13,8 @@ Welcome to ExploreBaduk's documentation!
    explorebaduk/getting_started
    explorebaduk/authorization
    explorebaduk/messages
+   explorebaduk/players_feed
+   explorebaduk/models
 
 
 Indices and tables
