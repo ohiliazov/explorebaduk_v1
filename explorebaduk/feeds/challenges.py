@@ -14,23 +14,26 @@ class ChallengesFeed(Feed):
     def challenges(self) -> dict:
         return self.app.challenges
 
-    async def handle(self):
-        await self._refresh()
+    @property
+    def handlers(self) -> dict:
+        return {
+            "authorize": self.authorize,
+            "refresh": self.refresh,
+        }
 
-        while True:
-            event, data = await self.conn.receive()
-            if event == "authorize":
-                await self.conn.authorize(data.get("token"))
-            if event == "refresh":
-                await self._refresh()
+    async def initialize(self):
+        await self.refresh()
 
-    async def disconnect(self):
+    async def finalize(self):
         if self.conn.authorized:
             for conn in self.observers:
                 if conn.user_id == self.conn.user_id:
                     break
             else:
                 await self._remove_challenge()
+
+    async def authorize(self, data):
+        await self.conn.authorize(data.get("token"))
 
     async def _remove_challenge(self):
         try:
@@ -40,7 +43,7 @@ class ChallengesFeed(Feed):
         else:
             await self.broadcast("challenge.remove", {"user_id": self.conn.user_id})
 
-    async def _refresh(self):
+    async def refresh(self):
         await asyncio.gather(
             *[
                 self.conn.send("challenges.add", {"user_id": user_id, **challenge})

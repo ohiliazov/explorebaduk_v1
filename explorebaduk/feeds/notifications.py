@@ -26,7 +26,7 @@ class NotificationsFeed(Feed):
             if event == "refresh":
                 await self._refresh()
 
-    async def disconnect(self):
+    async def finalize(self):
         pass
 
     async def _authorize(self, data):

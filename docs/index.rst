@@ -12,6 +12,7 @@ Welcome to ExploreBaduk's documentation!
 
    explorebaduk/getting_started
    explorebaduk/authorization
+   explorebaduk/messages
 
 
 Indices and tables

@@ -44,7 +44,7 @@ def make_blocked_user(user_id: int, blocked_user_id: int):
     return BlockedUserModel(**user_data)
 
 
-def make_token(user_id: int, minutes: int = 10):
+def make_token(user_id: int, minutes: int = 9999):
     token_data = {
         "user_id": user_id,
         "token": f"{string.ascii_letters}{user_id:012d}",

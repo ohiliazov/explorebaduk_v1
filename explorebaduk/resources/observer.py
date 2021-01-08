@@ -32,9 +32,6 @@ class Observer:
         return "guest"
 
     async def authorize(self, token):
-        if self.authorized:
-            return await self.send("error", {"message": "Already authorized"})
-
         self.user = get_user_by_token(self.request, token)
         await self.send("auth.whoami", self.user.as_dict() if self.user else None)
 

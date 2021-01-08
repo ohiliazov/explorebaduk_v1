@@ -15,17 +15,17 @@ class PlayersFeed(Feed):
     def observers(self):
         return self.app.feeds["players"]
 
-    async def handle(self):
-        await self._refresh()
+    @property
+    def handlers(self) -> dict:
+        return {
+            "authorize": self.authorize,
+            "refresh": self.refresh,
+        }
 
-        while True:
-            event, data = await self.conn.receive()
-            if event == "authorize" and await self.conn.authorize(data.get("token")):
-                await self.handle_authorized()
-            if event == "refresh":
-                await self._refresh()
+    async def initialize(self):
+        await self.refresh()
 
-    async def disconnect(self):
+    async def finalize(self):
         if self.conn.authorized:
             for conn in self.observers:
                 if conn.user_id == self.conn.user_id:
@@ -33,12 +33,16 @@ class PlayersFeed(Feed):
             else:
                 await self._broadcast_offline()
 
-    async def handle_authorized(self):
-        for conn in self.observers:
-            if conn.user_id == self.conn.user_id and conn is not self.conn:
-                break
-        else:
-            await self._broadcast_online()
+    async def authorize(self, data):
+        if self.conn.authorized:
+            return await self.conn.send("error", {"message": "Already authorized"})
+
+        if await self.conn.authorize(data.get("token")):
+            for conn in self.observers:
+                if conn.user_id == self.conn.user_id and conn is not self.conn:
+                    break
+            else:
+                await self._broadcast_online()
 
     async def _broadcast_online(self):
         friends_list = self.conn.get_friends_list()
@@ -60,7 +64,7 @@ class PlayersFeed(Feed):
     async def _broadcast_offline(self):
         await self.broadcast("players.remove", {"user_id": self.conn.user_id})
 
-    async def _refresh(self):
+    async def refresh(self, *args):
         friends_list = self.conn.get_friends_list()
         await asyncio.gather(
             *[
