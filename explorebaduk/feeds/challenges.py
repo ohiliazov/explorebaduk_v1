@@ -5,10 +5,7 @@ from explorebaduk.resources import Feed, Observer
 
 class ChallengesFeed(Feed):
     observer_class = Observer
-
-    @property
-    def observers(self):
-        return self.app.feeds["challenges"]
+    feed_name = "challenges"
 
     @property
     def challenges(self) -> dict:
@@ -33,6 +30,9 @@ class ChallengesFeed(Feed):
                 await self._remove_challenge()
 
     async def authorize(self, data):
+        if self.conn.authorized:
+            return await self.conn.send("error", {"message": "Already authorized"})
+
         await self.conn.authorize(data.get("token"))
 
     async def _remove_challenge(self):

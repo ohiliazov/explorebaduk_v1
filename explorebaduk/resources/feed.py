@@ -1,16 +1,18 @@
 import asyncio
 from typing import Set, Type
 
-from sanic import Sanic
 from sanic.log import logger
 from sanic.request import Request
 from websockets import WebSocketCommonProtocol
+
+from explorebaduk.app import ExploreBadukApp
 
 from .observer import Observer
 
 
 class Feed:
     observer_class: Type[Observer] = Observer
+    feed_name: str = NotImplemented
 
     def __init__(self, request: Request, ws: WebSocketCommonProtocol, **kwargs):
         self.request = request
@@ -18,14 +20,14 @@ class Feed:
         self.conn = self.observer_class(request, ws)
 
     @property
-    def app(self) -> Sanic:
+    def app(self) -> ExploreBadukApp:
         """Sanic application"""
         return self.request.app
 
     @property
     def observers(self) -> Set[Observer]:
         """Connections related to feed"""
-        return set()
+        return self.app.feeds[self.feed_name]
 
     @property
     def handlers(self) -> dict:
@@ -64,12 +66,15 @@ class Feed:
         """Finalizes connection"""
         pass
 
-    async def broadcast(self, event: str, data: dict):
+    async def broadcast(self, event: str, data: dict, feed_name: str = None):
         """Sends message in JSON format to all observers
 
         :param event: event name
         :param data: event data
+        :param feed_name: name of the feed
         """
-        if self.observers:
-            await asyncio.gather(*[conn.send(event, data) for conn in self.observers])
+        observers = self.app.feeds[feed_name] if feed_name else self.observers
+
+        if observers:
+            await asyncio.gather(*[conn.send(event, data) for conn in observers])
             logger.info("> [broadcast] [%s] %s", event, data)

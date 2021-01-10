@@ -1,5 +1,6 @@
 import asyncio
 import datetime
+import os
 import random
 import string
 import uuid
@@ -16,6 +17,8 @@ from explorebaduk.models import (
     TokenModel,
     UserModel,
 )
+
+os.putenv("DATABASE_URI", "sqlite:///explorebaduk_test.sqlite3")
 
 
 async def receive_messages(ws, sort_by: callable = None, timeout: float = 0.5):

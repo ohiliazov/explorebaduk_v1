@@ -10,10 +10,7 @@ class PlayerObserver(Observer):
 
 class PlayersFeed(Feed):
     observer_class = PlayerObserver
-
-    @property
-    def observers(self):
-        return self.app.feeds["players"]
+    feed_name = "players"
 
     @property
     def handlers(self) -> dict:

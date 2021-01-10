@@ -4,21 +4,21 @@ from sanic import response
 from sanic.views import HTTPMethodView
 
 from explorebaduk.helpers import authorized
-from explorebaduk.validation import create_game_validator
+from explorebaduk.validation import create_game_schema, validate_payload
 
 
 class ChallengesView(HTTPMethodView):
     @authorized()
     async def post(self, request):
-        if not create_game_validator.validate(request.json):
-            return response.json({"message": "Game setup is not valid", "errors": create_game_validator.errors}, 400)
+        challenge, errors = validate_payload(request.json, create_game_schema)
+        if errors:
+            return response.json({"message": "Game setup is not valid", "errors": errors}, 400)
 
         if request.ctx.user.user_id in request.app.challenges:
             event_name = "challenges.update"
         else:
             event_name = "challenges.add"
 
-        challenge = create_game_validator.normalized(request.json)
         request.app.challenges[request.ctx.user.user_id] = challenge
 
         message = {"user_id": request.ctx.user.user_id, **challenge}

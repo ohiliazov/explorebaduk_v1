@@ -57,5 +57,9 @@ join_game_schema = {
     "komi": {"type": "float", "nullable": True, "check_with": is_valid_komi},
 }
 
-create_game_validator = Validator(create_game_schema, allow_unknown=False)
-join_game_validator = Validator(join_game_schema, allow_unknown=False)
+
+def validate_payload(data, schema):
+    """Validates payload and returns normalized data and errors"""
+    validator = Validator(schema, allow_unknown=False)
+    validator.validate(data)
+    return validator.normalized(data), validator.errors
