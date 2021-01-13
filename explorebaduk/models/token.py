@@ -1,5 +1,3 @@
-import datetime
-
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 
@@ -15,7 +13,3 @@ class TokenModel(BaseModel):
     expire = Column(DateTime)
 
     user = relationship("UserModel", back_populates="tokens")
-
-    @property
-    def is_active(self):
-        return datetime.datetime.utcnow() < self.expire

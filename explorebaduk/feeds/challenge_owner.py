@@ -8,6 +8,10 @@ class ChallengeOwnerFeed(Feed):
         self.challenge_id = challenge_id
 
     @property
+    def feed_name(self) -> str:
+        return f"challenge__{self.challenge_id}"
+
+    @property
     def handlers(self) -> dict:
         return {
             "authorize": self.authorize,
@@ -23,10 +27,6 @@ class ChallengeOwnerFeed(Feed):
     @property
     def challenge(self):
         return self.app.challenges.get(self.conn.user_id)
-
-    @property
-    def observers(self):
-        return self.app.feeds.get(f"challenge_{self.challenge_id}")
 
     async def broadcast_to_challenges(self, event, data):
         await self.broadcast(event, data, feed_name="challenges")
@@ -58,7 +58,7 @@ class ChallengeOwnerFeed(Feed):
 
         self.app.challenges[self.conn.user_id] = challenge
 
-        await self.broadcast_to_challenges("challenge.add", {"user_id": self.conn.user_id, **challenge})
+        await self.broadcast_to_challenges("challenges.add", {"user_id": self.conn.user_id, **challenge})
         await self.broadcast("set.ok", {"message": "Challenge set"})
 
     async def unset_challenge(self, data=None):
@@ -70,7 +70,7 @@ class ChallengeOwnerFeed(Feed):
 
         self.app.challenges.pop(self.conn.user_id)
 
-        await self.broadcast_to_challenges("challenge.remove", {"user_id": self.conn.user_id})
+        await self.broadcast_to_challenges("challenges.remove", {"user_id": self.conn.user_id})
         await self.broadcast("unset.ok", {"message": "Challenge unset"})
 
     async def join_challenge(self, data):

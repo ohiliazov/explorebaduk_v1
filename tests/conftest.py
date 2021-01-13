@@ -1,8 +1,6 @@
 import asyncio
-import datetime
 import os
 import random
-import string
 import uuid
 
 import pytest
@@ -10,15 +8,15 @@ from sanic.websocket import WebSocketProtocol
 from sqlalchemy.orm import create_session
 
 from explorebaduk.app import create_app
-from explorebaduk.models import (
-    BaseModel,
-    BlockedUserModel,
-    FriendModel,
-    TokenModel,
-    UserModel,
+from explorebaduk.models import BaseModel
+from explorebaduk.utils.database import (
+    generate_blocked_users,
+    generate_friends,
+    generate_tokens,
+    generate_users,
 )
 
-os.putenv("DATABASE_URI", "sqlite:///explorebaduk_test.sqlite3")
+TEST_DATABASE_URI = "sqlite:///explorebaduk_test.sqlite3"
 
 
 async def receive_messages(ws, sort_by: callable = None, timeout: float = 0.5):
@@ -41,6 +39,7 @@ async def receive_all(ws_list, sort_by: callable = None, timeout: float = 0.5):
 
 @pytest.fixture
 def test_app():
+    os.putenv("DATABASE_URI", TEST_DATABASE_URI)
     app = create_app(str(uuid.uuid4()))
 
     return app
@@ -57,106 +56,70 @@ async def users_data(test_app):
     BaseModel.metadata.drop_all(test_app.db_engine)
     BaseModel.metadata.create_all(test_app.db_engine)
 
+    users = generate_users(session, 100)
+    tokens = generate_tokens(session, users, minutes=60)
+    expired_tokens = generate_tokens(session, users, minutes=-60)
+    friends = generate_friends(session, users, 5)
+    blocked_users = generate_blocked_users(session, users, 5, friends)
+
     users_data = []
-
-    for user_id in range(1, 101):
-        user_data = {
-            "user_id": user_id,
-            "username": f"johndoe{user_id}",
-            "first_name": "John",
-            "last_name": f"Doe#{user_id}",
-            "email": f"johndoe{user_id}@explorebaduk.com",
-            "password": "$2y$10$N5ohEZckAk/9Exus/Py/5OM7pZgr8Gk6scZpH95FjvOSRWo00tVoC",  # Abcdefg1
-            "rating": random.randint(0, 3000),
-            "puzzle_rating": random.randint(0, 3000),
-            "avatar": f"johndoe{user_id}.png",
-        }
-        token_data = {
-            "user_id": user_id,
-            "token": f"{string.ascii_letters}{user_id:012d}",
-            "expire": datetime.datetime.utcnow() + datetime.timedelta(minutes=10),
-        }
-        expired_token_data = {
-            "user_id": user_id,
-            "token": f"{string.ascii_letters[::-1]}{user_id:012d}",
-            "expire": datetime.datetime.utcnow() - datetime.timedelta(minutes=10),
-        }
-        user = UserModel(**user_data)
-        token = TokenModel(**token_data)
-        expired_token = TokenModel(**expired_token_data)
-
-        session.add_all([user, token, expired_token])
+    for user in users:
         users_data.append(
             {
                 "user": user,
-                "token": token,
-                "expired_token": expired_token,
-                "friends": set(),
-                "blocked_users": set(),
+                "token": [token for token in tokens if token.user_id == user.user_id][0],
+                "expired_token": [
+                    expired_token for expired_token in expired_tokens if expired_token.user_id == user.user_id
+                ][0],
+                "friends": {friend.friend_id for friend in friends},
+                "blocked_users": {blocked_user.blocked_user_id for blocked_user in blocked_users},
             },
         )
-
-    for user_id, user_data in enumerate(users_data[:5], start=1):
-        for friend in users_data[user_id:5]:
-            friend_id = friend["user"].user_id
-            friend_user_data = {
-                "user_id": user_id,
-                "friend_id": friend_id,
-                "muted": friend_id % 2 == 0,
-            }
-            user_friend_data = {
-                "user_id": friend_id,
-                "friend_id": user_id,
-                "muted": user_id > 3,
-            }
-            friend_user = FriendModel(**friend_user_data)
-            user_friend = FriendModel(**user_friend_data)
-            session.add_all([friend_user, user_friend])
-            user_data["friends"].add(friend_id)
-            friend["friends"].add(user_id)
-
-        for blocked in users_data[5:11]:
-            blocked_user_id = blocked["user"].user_id
-            blocked_user_data = {
-                "user_id": user_id,
-                "blocked_user_id": blocked_user_id,
-            }
-            blocked_user = BlockedUserModel(**blocked_user_data)
-            session.add(blocked_user)
-            user_data["blocked_users"].add(blocked_user_id)
-
-    session.flush()
 
     return users_data
 
 
+async def authorized_connections(test_cli, users_data: list, feed_name: str, ws_count: int):
+    ws_list = await asyncio.gather(*[test_cli.ws_connect(test_cli.app.url_for(feed_name)) for _ in range(ws_count)])
+
+    await asyncio.gather(
+        *[
+            ws.send_json({"event": "authorize", "data": {"token": user_data["token"].token}})
+            for ws, user_data in zip(ws_list, users_data)
+        ]
+    )
+    await receive_all(ws_list, timeout=0.5)
+
+    return {ws: user_data for ws, user_data in zip(ws_list, users_data)}
+
+
 @pytest.fixture
 async def players_online(test_cli, users_data: list):
-    players_online = {}
-
-    tasks = []
-    for user_data in random.sample(users_data, 20):
-        ws = await test_cli.ws_connect(test_cli.app.url_for("Players Feed"))
-        tasks.append(ws.send_json({"event": "authorize", "data": {"token": user_data["token"].token}}))
-        players_online[ws] = user_data
-
-    await asyncio.gather(*tasks)
-    await receive_all(players_online.keys(), timeout=0.5)
-
-    return players_online
+    return await authorized_connections(test_cli, random.sample(users_data, 20), "Players Feed", 30)
 
 
 @pytest.fixture
 async def challenges_online(test_cli, users_data: list):
-    challenges_online = {}
+    return await authorized_connections(test_cli, random.sample(users_data, 20), "Challenges Feed", 30)
 
-    tasks = []
-    for user_data in random.sample(users_data, 20):
-        ws = await test_cli.ws_connect(test_cli.app.url_for("Challenges Feed"))
-        tasks.append(ws.send_json({"event": "authorize", "data": {"token": user_data["token"].token}}))
-        challenges_online[ws] = user_data
 
-    await asyncio.gather(*tasks)
-    await receive_all(challenges_online.keys(), timeout=0.5)
+@pytest.fixture
+async def challenge_owners_online(test_cli, users_data: list):
+    users_data = random.sample(users_data, 20)
 
-    return challenges_online
+    ws_list = await asyncio.gather(
+        *[
+            test_cli.ws_connect(test_cli.app.url_for("Challenge Owner Feed", challenge_id=user_data["user"].user_id))
+            for user_data in users_data
+        ]
+    )
+
+    await asyncio.gather(
+        *[
+            ws.send_json({"event": "authorize", "data": {"token": user_data["token"].token}})
+            for ws, user_data in zip(ws_list, users_data)
+        ]
+    )
+    await receive_all(ws_list, timeout=0.5)
+
+    return {ws: user_data for ws, user_data in zip(ws_list, users_data)}

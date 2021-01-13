@@ -4,7 +4,7 @@ from collections import defaultdict
 from sanic import Sanic
 from sqlalchemy import create_engine
 
-DATABASE_URI = os.getenv("DATABASE_URI", "sqlite:///explorebaduk.sqlite3")
+DEFAULT_DATABASE_URI = "sqlite:///explorebaduk.sqlite3"
 
 
 class ExploreBadukApp(Sanic):
@@ -24,7 +24,7 @@ def create_app(app_name="ExploreBaduk") -> Sanic:
 
 
 def register_config(app):
-    app.config["DATABASE_URI"] = DATABASE_URI
+    app.config["DATABASE_URI"] = os.getenv("DATABASE_URI", DEFAULT_DATABASE_URI)
 
 
 def register_routes(app: Sanic):
