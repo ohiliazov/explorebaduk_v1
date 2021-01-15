@@ -41,7 +41,7 @@ class ChallengesFeed(Feed):
         except KeyError:
             await self.conn.send("error", {"message": "Challenge not created"})
         else:
-            await self.broadcast("challenge.remove", {"user_id": self.conn.user_id})
+            await self.notify_all("challenge.remove", {"user_id": self.conn.user_id})
 
     async def refresh(self):
         await asyncio.gather(

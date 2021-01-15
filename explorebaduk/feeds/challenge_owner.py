@@ -2,6 +2,13 @@ from explorebaduk.resources import Feed
 from explorebaduk.validation import create_game_schema, validate_payload
 
 
+class Challenge:
+    def __init__(self, owner_ws, data: dict = None):
+        self.owner_ws = owner_ws
+        self.data = data
+        self.joined = set()
+
+
 class ChallengeOwnerFeed(Feed):
     def __init__(self, request, ws, challenge_id):
         super().__init__(request, ws)
@@ -26,17 +33,18 @@ class ChallengeOwnerFeed(Feed):
 
     @property
     def challenge(self):
-        return self.app.challenges.get(self.conn.user_id)
+        return self.app.challenges.get(self.challenge_id)
+
+    @property
+    def joined(self):
+        if self.challenge:
+            return self.challenge.joined
 
     async def broadcast_to_challenges(self, event, data):
-        await self.broadcast(event, data, feed_name="challenges")
+        await self.notify_all(event, data, feed_name="challenges")
 
     async def send_to_owner(self, event, data):
-        for conn in self.observers:
-            if conn.user_id == self.challenge_id:
-                await conn.send(event, data)
-        else:
-            return await self.conn.send("error", {"message": "Owner not found"})
+        await self.notify_user(event, data, user_id=self.challenge_id)
 
     async def authorize(self, data):
         if self.conn.authorized:
@@ -56,22 +64,21 @@ class ChallengeOwnerFeed(Feed):
         if self.challenge:
             await self.unset_challenge()
 
-        self.app.challenges[self.conn.user_id] = challenge
+        self.app.challenges[self.conn.user_id] = Challenge(self.ws, challenge)
 
         await self.broadcast_to_challenges("challenges.add", {"user_id": self.conn.user_id, **challenge})
-        await self.broadcast("set.ok", {"message": "Challenge set"})
+        await self.notify_all("set.ok", {"message": "Challenge set"})
 
     async def unset_challenge(self, data=None):
         if not self.is_owner():
             return await self.conn.send("unset.error", {"message": "Not challenge owner"})
 
-        if not self.challenge:
+        if self.challenge is None:
             return await self.conn.send("unset.error", {"message": "Challenge not set"})
 
         self.app.challenges.pop(self.conn.user_id)
-
         await self.broadcast_to_challenges("challenges.remove", {"user_id": self.conn.user_id})
-        await self.broadcast("unset.ok", {"message": "Challenge unset"})
+        await self.notify_all("unset.ok", {"message": "Challenge unset"})
 
     async def join_challenge(self, data):
         if not self.conn.authorized:
@@ -80,16 +87,12 @@ class ChallengeOwnerFeed(Feed):
         if self.is_owner():
             return await self.conn.send("join.error", {"message": "You are the owner!"})
 
-        if not self.challenge:
+        if self.challenge is None:
             return await self.conn.send("join.error", {"message": "Challenge not set"})
 
+        self.joined.add(self.conn.user_id)
         await self.send_to_owner("challenge.join", self.conn.user.as_dict())
-
-        if "joined" not in self.challenge:
-            self.challenge["joined"] = set()
-        self.challenge["joined"].add(self.conn.user_id)
-
-        await self.conn.send("join.ok", {"message": "Joined"})
+        await self.notify_user("join.ok", {"message": "Joined"})
 
     async def leave_challenge(self, data):
         if not self.conn.authorized:
@@ -98,23 +101,25 @@ class ChallengeOwnerFeed(Feed):
         if self.is_owner():
             return await self.conn.send("leave.error", {"message": "You are the owner!"})
 
-        if not self.challenge:
+        if self.challenge is None:
             return await self.conn.send("leave.error", {"message": "Challenge not set"})
 
-        if self.conn.user_id not in self.challenge.get("joined"):
+        if self.conn.user_id not in self.joined:
             return await self.conn.send("leave.error", {"message": "Not joined"})
 
+        self.joined.remove(self.conn.user_id)
         await self.send_to_owner("challenge.leave", {"user_id": self.conn.user_id})
-        self.challenge["joined"].remove(self.conn.user_id)
-
-        await self.conn.send("leave.ok", {"message": "Left"})
+        await self.notify_user("leave.ok", {"message": "Left"})
 
     async def finalize(self):
-        if self.is_owner():
-            if self.challenge:
-                self.app.challenges.pop(self.conn.user_id)
-                await self.broadcast_to_challenges("challenge.remove", {"user_id": self.conn.user_id})
+        if self.challenge is None:
+            return
 
-        if self.conn.user_id in self.challenge.get("joined"):
+        if self.is_owner():
+            self.app.challenges.pop(self.challenge_id)
+            await self.broadcast_to_challenges("challenges.remove", {"user_id": self.conn.user_id})
+
+        elif self.conn.user_id in self.joined and not len(self.get_user_connections()):
+            self.joined.remove(self.conn.user_id)
             await self.send_to_owner("challenge.leave", {"user_id": self.conn.user_id})
-            self.challenge["joined"].remove(self.conn.user_id)
+            await self.notify_user("leave.ok", {"message": "Left"})

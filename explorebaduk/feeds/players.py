@@ -59,7 +59,7 @@ class PlayersFeed(Feed):
         )
 
     async def _broadcast_offline(self):
-        await self.broadcast("players.remove", {"user_id": self.conn.user_id})
+        await self.notify_all("players.remove", {"user_id": self.conn.user_id})
 
     async def refresh(self, *args):
         friends_list = self.conn.get_friends_list()
