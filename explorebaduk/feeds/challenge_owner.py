@@ -9,14 +9,14 @@ class Challenge:
         self.joined = set()
 
 
-class ChallengeOwnerFeed(Feed):
+class ChallengeFeed(Feed):
     def __init__(self, request, ws, challenge_id):
         super().__init__(request, ws)
         self.challenge_id = challenge_id
 
     @property
     def feed_name(self) -> str:
-        return f"challenge__{self.challenge_id}"
+        return f"challenges__{self.challenge_id}"
 
     @property
     def handlers(self) -> dict:

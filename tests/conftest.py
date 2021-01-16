@@ -8,6 +8,7 @@ from sanic.websocket import WebSocketProtocol
 from sqlalchemy.orm import create_session
 
 from explorebaduk.app import create_app
+from explorebaduk.constants import RouteName
 from explorebaduk.models import BaseModel
 from explorebaduk.utils.database import (
     generate_blocked_users,
@@ -15,31 +16,12 @@ from explorebaduk.utils.database import (
     generate_tokens,
     generate_users,
 )
-
-TEST_DATABASE_URI = "sqlite:///explorebaduk_test.sqlite3"
-
-
-async def receive_messages(ws, sort_by: callable = None, timeout: float = 0.5):
-    messages = []
-    try:
-        while True:
-            messages.append(await ws.receive_json(timeout=timeout))
-    except asyncio.TimeoutError:
-        pass
-
-    if sort_by:
-        messages = sorted(messages, key=sort_by)
-
-    return messages
-
-
-async def receive_all(ws_list, sort_by: callable = None, timeout: float = 0.5):
-    return await asyncio.gather(*[receive_messages(ws, sort_by, timeout) for ws in ws_list])
+from explorebaduk.utils.test_utils import receive_all
 
 
 @pytest.fixture
 def test_app():
-    os.putenv("DATABASE_URI", TEST_DATABASE_URI)
+    os.putenv("DATABASE_URI", "sqlite:///explorebaduk_test.sqlite3")
     app = create_app(str(uuid.uuid4()))
 
     return app
@@ -95,12 +77,12 @@ async def authorized_connections(test_cli, users_data: list, feed_name: str, ws_
 
 @pytest.fixture
 async def players_online(test_cli, users_data: list):
-    return await authorized_connections(test_cli, random.sample(users_data, 20), "Players Feed", 30)
+    return await authorized_connections(test_cli, random.sample(users_data, 20), RouteName.PLAYERS_FEED, 30)
 
 
 @pytest.fixture
 async def challenges_online(test_cli, users_data: list):
-    return await authorized_connections(test_cli, random.sample(users_data, 20), "Challenges Feed", 30)
+    return await authorized_connections(test_cli, random.sample(users_data, 20), RouteName.CHALLENGES_FEED, 30)
 
 
 @pytest.fixture
@@ -109,7 +91,7 @@ async def challenge_owners_online(test_cli, users_data: list):
 
     ws_list = await asyncio.gather(
         *[
-            test_cli.ws_connect(test_cli.app.url_for("Challenge Owner Feed", challenge_id=user_data["user"].user_id))
+            test_cli.ws_connect(test_cli.app.url_for(RouteName.CHALLENGE_FEED, challenge_id=user_data["user"].user_id))
             for user_data in users_data
         ]
     )

@@ -1,3 +1,4 @@
+import asyncio
 import random
 
 from explorebaduk.constants import (
@@ -5,6 +6,24 @@ from explorebaduk.constants import (
     ALLOWED_RULES,
     ALLOWED_TIME_SYSTEMS,
 )
+
+
+async def receive_messages(ws, sort_by: callable = None, timeout: float = 0.5):
+    messages = []
+    try:
+        while True:
+            messages.append(await ws.receive_json(timeout=timeout))
+    except asyncio.TimeoutError:
+        pass
+
+    if sort_by:
+        messages = sorted(messages, key=sort_by)
+
+    return messages
+
+
+async def receive_all(ws_list, sort_by: callable = None, timeout: float = 0.5):
+    return await asyncio.gather(*[receive_messages(ws, sort_by, timeout) for ws in ws_list])
 
 
 def generate_time_settings(time_system: str, **kwargs):

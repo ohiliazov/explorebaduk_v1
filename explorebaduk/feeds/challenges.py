@@ -3,7 +3,7 @@ import asyncio
 from explorebaduk.resources import Feed, Observer
 
 
-class ChallengesFeed(Feed):
+class ChallengeListFeed(Feed):
     observer_class = Observer
     feed_name = "challenges"
 

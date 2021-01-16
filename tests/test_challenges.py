@@ -1,10 +1,12 @@
 import random
 
+from explorebaduk.constants import RouteName
 from explorebaduk.utils.test_utils import (
     generate_challenge_data,
     generate_expected_challenge_data,
+    receive_all,
+    receive_messages,
 )
-from tests.conftest import receive_all, receive_messages
 
 
 async def test_challenges_create(test_cli, challenges_online: dict):
@@ -12,7 +14,7 @@ async def test_challenges_create(test_cli, challenges_online: dict):
     challenge_data = generate_challenge_data()
 
     resp = await test_cli.post(
-        test_cli.app.url_for("Challenges View"),
+        test_cli.app.url_for(RouteName.CHALLENGES_VIEW),
         json=challenge_data,
         headers={"Authorization": user_data["token"].token},
     )
@@ -32,7 +34,7 @@ async def test_challenges_update(test_cli, challenges_online: dict):
     challenge_data = generate_challenge_data()
 
     await test_cli.post(
-        test_cli.app.url_for("Challenges View"),
+        test_cli.app.url_for(RouteName.CHALLENGES_VIEW),
         json=challenge_data,
         headers={"Authorization": user_data["token"].token},
     )
@@ -40,7 +42,7 @@ async def test_challenges_update(test_cli, challenges_online: dict):
 
     challenge_data = generate_challenge_data()
     resp = await test_cli.post(
-        test_cli.app.url_for("Challenges View"),
+        test_cli.app.url_for(RouteName.CHALLENGES_VIEW),
         json=challenge_data,
         headers={"Authorization": user_data["token"].token},
     )
@@ -171,7 +173,7 @@ async def test_join_challenge(test_cli, users_data: list, challenges_online: dic
     await receive_all(challenges_online)
 
     owner_id = owner_data["user"].user_id
-    ws = await test_cli.ws_connect(test_cli.app.url_for("Challenge Owner Feed", challenge_id=owner_id))
+    ws = await test_cli.ws_connect(test_cli.app.url_for("Challenge Feed", challenge_id=owner_id))
 
     user_data = random.choice([user_data for user_data in users_data if user_data != owner_data])
     await ws.send_json({"event": "authorize", "data": {"token": user_data["token"].token}})

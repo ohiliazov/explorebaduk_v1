@@ -4,7 +4,7 @@ from collections import defaultdict
 from sanic import Sanic
 from sqlalchemy import create_engine
 
-DEFAULT_DATABASE_URI = "sqlite:///explorebaduk.sqlite3"
+from explorebaduk.constants import RouteName
 
 
 class ExploreBadukApp(Sanic):
@@ -24,35 +24,35 @@ def create_app(app_name="ExploreBaduk") -> Sanic:
 
 
 def register_config(app):
-    app.config["DATABASE_URI"] = os.getenv("DATABASE_URI", DEFAULT_DATABASE_URI)
+    app.config["DATABASE_URI"] = os.getenv("DATABASE_URI", "sqlite:///explorebaduk.sqlite3")
 
 
 def register_routes(app: Sanic):
-    from explorebaduk.feeds import ChallengeOwnerFeed, ChallengesFeed, PlayersFeed
+    from explorebaduk.feeds import ChallengeFeed, ChallengeListFeed, PlayersFeed
     from explorebaduk.views import ChallengesView
 
     app.add_websocket_route(
         PlayersFeed.as_view(),
         uri="/players",
-        name="Players Feed",
+        name=RouteName.PLAYERS_FEED,
     )
 
     app.add_websocket_route(
-        ChallengesFeed.as_view(),
+        ChallengeListFeed.as_view(),
         uri="/challenges",
-        name="Challenges Feed",
+        name=RouteName.CHALLENGES_FEED,
     )
 
     app.add_websocket_route(
-        ChallengeOwnerFeed.as_view(),
-        uri="/challenge/<challenge_id:int>",
-        name="Challenge Owner Feed",
+        ChallengeFeed.as_view(),
+        uri="/challenges/<challenge_id:int>",
+        name=RouteName.CHALLENGE_FEED,
     )
 
     app.add_route(
         ChallengesView.as_view(),
         uri="/challenges",
-        name="Challenges View",
+        name=RouteName.CHALLENGES_VIEW,
     )
 
 

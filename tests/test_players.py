@@ -3,7 +3,8 @@ import random
 
 import simplejson as json
 
-from tests.conftest import receive_all, receive_messages
+from explorebaduk.constants import RouteName
+from explorebaduk.utils.test_utils import receive_all, receive_messages
 
 
 async def test_player_login_as_user(test_cli, users_data: list, players_online: dict):
@@ -13,7 +14,7 @@ async def test_player_login_as_user(test_cli, users_data: list, players_online: 
     user = user_data["user"]
     token = user_data["token"].token
 
-    ws = await test_cli.ws_connect(test_cli.app.url_for("Players Feed"))
+    ws = await test_cli.ws_connect(test_cli.app.url_for(RouteName.PLAYERS_FEED))
 
     await ws.send_json({"event": "authorize", "data": {"token": token}})
 
@@ -38,7 +39,7 @@ async def test_player_logout_as_user(test_cli, players_online: dict):
 
 
 async def test_player_login_as_guest(test_cli, players_online: dict):
-    player_ws = await test_cli.ws_connect(test_cli.app.url_for("Players Feed"))
+    player_ws = await test_cli.ws_connect(test_cli.app.url_for(RouteName.PLAYERS_FEED))
 
     assert any(actual["event"] != "auth.whoami" for actual in await receive_messages(player_ws))
 
@@ -47,7 +48,7 @@ async def test_player_login_as_guest(test_cli, players_online: dict):
 
 
 async def test_player_login_invalid_token(test_cli, players_online: dict):
-    player_ws = await test_cli.ws_connect(test_cli.app.url_for("Players Feed"))
+    player_ws = await test_cli.ws_connect(test_cli.app.url_for(RouteName.PLAYERS_FEED))
 
     await player_ws.send_json({"event": "authorize", "data": {"token": "invalid_token"}})
 
@@ -60,7 +61,7 @@ async def test_player_login_invalid_token(test_cli, players_online: dict):
 
 async def test_player_login_expired_token(test_cli, users_data: list, players_online: dict):
     user_data = random.choice(users_data)
-    player_ws = await test_cli.ws_connect(test_cli.app.url_for("Players Feed"))
+    player_ws = await test_cli.ws_connect(test_cli.app.url_for(RouteName.PLAYERS_FEED))
 
     expired_token = user_data["expired_token"].token
 
@@ -74,7 +75,7 @@ async def test_player_login_expired_token(test_cli, users_data: list, players_on
 
 
 async def test_player_logout_as_guest(test_cli, players_online: dict):
-    guest_ws = await test_cli.ws_connect(test_cli.app.url_for("Players Feed"))
+    guest_ws = await test_cli.ws_connect(test_cli.app.url_for(RouteName.PLAYERS_FEED))
     await guest_ws.close()
 
     for ws_messages in await receive_all(players_online):
@@ -103,7 +104,9 @@ async def test_player_multiple_login_as_user(test_cli, players_online: dict):
     user_data = random.choice(list(players_online.values()))
     token = user_data["token"].token
 
-    ws_list = await asyncio.gather(*[test_cli.ws_connect(test_cli.app.url_for("Players Feed")) for _ in range(20)])
+    ws_list = await asyncio.gather(
+        *[test_cli.ws_connect(test_cli.app.url_for(RouteName.PLAYERS_FEED)) for _ in range(20)]
+    )
     await asyncio.gather(*[ws.send_json({"event": "authorize", "data": {"token": token}}) for ws in ws_list])
 
     for ws_messages in await receive_all(players_online):
@@ -115,7 +118,9 @@ async def test_player_multiple_logout_as_user(test_cli, players_online: dict):
     user = user_data["user"]
     token = user_data["token"].token
 
-    ws_list = await asyncio.gather(*[test_cli.ws_connect(test_cli.app.url_for("Players Feed")) for _ in range(20)])
+    ws_list = await asyncio.gather(
+        *[test_cli.ws_connect(test_cli.app.url_for(RouteName.PLAYERS_FEED)) for _ in range(20)]
+    )
     await asyncio.gather(*[ws.send_json({"event": "authorize", "data": {"token": token}}) for ws in ws_list])
     await receive_all(players_online)
 
@@ -134,7 +139,7 @@ async def test_player_multiple_logout_as_user(test_cli, players_online: dict):
 
 async def test_player_multiple_login_as_guests(test_cli, players_online: dict):
 
-    await asyncio.gather(*[test_cli.ws_connect(test_cli.app.url_for("Players Feed")) for _ in range(20)])
+    await asyncio.gather(*[test_cli.ws_connect(test_cli.app.url_for(RouteName.PLAYERS_FEED)) for _ in range(20)])
 
     not_expected = {"event": "players.add", "data": None}
 
@@ -145,7 +150,7 @@ async def test_player_multiple_login_as_guests(test_cli, players_online: dict):
 async def test_player_multiple_logout_as_guest(test_cli, players_online: dict):
 
     guest_ws_list = await asyncio.gather(
-        *[test_cli.ws_connect(test_cli.app.url_for("Players Feed")) for _ in range(20)]
+        *[test_cli.ws_connect(test_cli.app.url_for(RouteName.PLAYERS_FEED)) for _ in range(20)]
     )
     await asyncio.gather(*[ws.close() for ws in guest_ws_list])
 

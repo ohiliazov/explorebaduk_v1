@@ -5,4 +5,4 @@ venv/
 .coverage
 htmlcov/
 .pytest_cache/
-/docs/_*/
+/docs/build/
