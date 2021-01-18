@@ -1,3 +1,4 @@
+from explorebaduk.constants import EventName
 from explorebaduk.resources import Feed
 from explorebaduk.validation import create_game_schema, validate_payload
 
@@ -7,6 +8,15 @@ class Challenge:
         self.owner_ws = owner_ws
         self.data = data
         self.joined = set()
+
+    def __bool__(self):
+        return self.data is not None
+
+    def set(self, data):
+        self.data = data
+
+    def unset(self):
+        self.data = None
 
 
 class ChallengeFeed(Feed):
@@ -21,11 +31,11 @@ class ChallengeFeed(Feed):
     @property
     def handlers(self) -> dict:
         return {
-            "authorize": self.authorize,
-            "challenge.set": self.set_challenge,
-            "challenge.unset": self.unset_challenge,
-            "challenge.join": self.join_challenge,
-            "challenge.leave": self.leave_challenge,
+            EventName.AUTHORIZE: self.authorize,
+            EventName.CHALLENGE_SET: self.set_challenge,
+            EventName.CHALLENGE_UNSET: self.unset_challenge,
+            EventName.CHALLENGE_JOIN: self.join_challenge,
+            EventName.CHALLENGE_LEAVE: self.leave_challenge,
         }
 
     def is_owner(self):
@@ -48,47 +58,57 @@ class ChallengeFeed(Feed):
 
     async def authorize(self, data):
         if self.conn.authorized:
-            return await self.conn.send("error", {"message": "Already authorized"})
+            return await self.conn.send(EventName.ERROR, {"message": "Already authorized"})
 
         await self.conn.authorize(data.get("token"))
 
+        if self.is_owner() and self.challenge is None:
+            self.app.challenges[self.challenge_id] = Challenge(self.ws)
+
     async def set_challenge(self, data):
+        if not self.conn.authorized:
+            return await self.conn.send(EventName.ERROR, {"message": "Not authorized"})
+
         if not self.is_owner():
-            return await self.conn.send("set.error", {"message": "Not challenge owner"})
+            return await self.conn.send(EventName.ERROR, {"message": "Not challenge owner"})
 
         challenge, errors = validate_payload(data, create_game_schema)
 
         if errors:
-            return await self.conn.send("set.error", errors)
+            return await self.conn.send(EventName.ERROR, errors)
 
         if self.challenge:
             await self.unset_challenge()
 
-        self.app.challenges[self.conn.user_id] = Challenge(self.ws, challenge)
+        self.challenge.set(challenge)
 
-        await self.broadcast_to_challenges("challenges.add", {"user_id": self.conn.user_id, **challenge})
+        await self.broadcast_to_challenges("challenges.add", {"user_id": self.conn.user_id, **self.challenge.data})
         await self.notify_all("set.ok", {"message": "Challenge set"})
 
     async def unset_challenge(self, data=None):
+        if not self.conn.authorized:
+            return await self.conn.send(EventName.ERROR, {"message": "Not authorized"})
+
         if not self.is_owner():
-            return await self.conn.send("unset.error", {"message": "Not challenge owner"})
+            return await self.conn.send(EventName.ERROR, {"message": "Not challenge owner"})
 
-        if self.challenge is None:
-            return await self.conn.send("unset.error", {"message": "Challenge not set"})
+        if not self.challenge:
+            return await self.conn.send(EventName.ERROR, {"message": "Challenge not set"})
 
-        self.app.challenges.pop(self.conn.user_id)
+        self.challenge.unset()
+
         await self.broadcast_to_challenges("challenges.remove", {"user_id": self.conn.user_id})
         await self.notify_all("unset.ok", {"message": "Challenge unset"})
 
     async def join_challenge(self, data):
         if not self.conn.authorized:
-            return await self.conn.send("join.error", {"message": "Not authorized"})
+            return await self.conn.send(EventName.ERROR, {"message": "Not authorized"})
 
         if self.is_owner():
-            return await self.conn.send("join.error", {"message": "You are the owner!"})
+            return await self.conn.send(EventName.ERROR, {"message": "You are the owner!"})
 
-        if self.challenge is None:
-            return await self.conn.send("join.error", {"message": "Challenge not set"})
+        if not self.challenge:
+            return await self.conn.send(EventName.ERROR, {"message": "Challenge not set"})
 
         self.joined.add(self.conn.user_id)
         await self.send_to_owner("challenge.join", self.conn.user.as_dict())
@@ -96,16 +116,16 @@ class ChallengeFeed(Feed):
 
     async def leave_challenge(self, data):
         if not self.conn.authorized:
-            return await self.conn.send("leave.error", {"message": "Not authorized"})
+            return await self.conn.send(EventName.ERROR, {"message": "Not authorized"})
 
         if self.is_owner():
-            return await self.conn.send("leave.error", {"message": "You are the owner!"})
+            return await self.conn.send(EventName.ERROR, {"message": "You are the owner!"})
 
-        if self.challenge is None:
-            return await self.conn.send("leave.error", {"message": "Challenge not set"})
+        if not self.challenge:
+            return await self.conn.send(EventName.ERROR, {"message": "Challenge not set"})
 
         if self.conn.user_id not in self.joined:
-            return await self.conn.send("leave.error", {"message": "Not joined"})
+            return await self.conn.send(EventName.ERROR, {"message": "Not joined"})
 
         self.joined.remove(self.conn.user_id)
         await self.send_to_owner("challenge.leave", {"user_id": self.conn.user_id})

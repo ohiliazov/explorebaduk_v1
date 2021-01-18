@@ -29,7 +29,7 @@ class Observer:
     def username(self):
         if self.user:
             return self.user.username
-        return "guest"
+        return "<guest>"
 
     async def authorize(self, token):
         self.user = get_user_by_token(self.request, token)
@@ -42,7 +42,7 @@ class Observer:
 
     async def send(self, event: str, data: dict):
         await self._send(json.dumps({"event": event, "data": data}))
-        logger.info("> [%s:%s] %s", self.username, event, data)
+        logger.info("> [notify] [%s] [%s] %s", self.username, event, data)
 
     async def receive(self):
         message = {}

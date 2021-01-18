@@ -4,17 +4,20 @@ from collections import defaultdict
 from sanic import Sanic
 from sqlalchemy import create_engine
 
-from explorebaduk.constants import RouteName
+from explorebaduk.constants import APP_NAME, RouteName
 
 
 class ExploreBadukApp(Sanic):
-    feeds = defaultdict(set)
-    challenges = {}
-    games = {}
+    def __init__(self, name):
+        super().__init__(name=name)
+
+        self.feeds = defaultdict(set)
+        self.challenges = {}
+        self.games = {}
 
 
-def create_app(app_name="ExploreBaduk") -> Sanic:
-    app = ExploreBadukApp(app_name)
+def create_app(name: str = APP_NAME) -> Sanic:
+    app = ExploreBadukApp(name)
 
     register_config(app)
     register_listeners(app)
@@ -28,7 +31,7 @@ def register_config(app):
 
 
 def register_routes(app: Sanic):
-    from explorebaduk.feeds import ChallengeFeed, ChallengeListFeed, PlayersFeed
+    from explorebaduk.feeds import ChallengeFeed, ChallengesFeed, PlayersFeed
     from explorebaduk.views import ChallengesView
 
     app.add_websocket_route(
@@ -38,7 +41,7 @@ def register_routes(app: Sanic):
     )
 
     app.add_websocket_route(
-        ChallengeListFeed.as_view(),
+        ChallengesFeed.as_view(),
         uri="/challenges",
         name=RouteName.CHALLENGES_FEED,
     )

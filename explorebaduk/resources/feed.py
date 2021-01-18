@@ -29,10 +29,21 @@ class Feed:
         """Connections related to feed"""
         return self.app.feeds[self.feed_name]
 
-    def get_user_connections(self, user_id: int = None):
+    def get_feed_connections(self, feed_name: str = None) -> Set[Observer]:
+        """Returns set of all connections to the given feed
 
+        :param feed_name: defaults to current class feed name
+        """
+        return self.app.feeds[feed_name or self.feed_name]
+
+    def get_user_connections(self, user_id: int = None, feed_name: str = None) -> Set[Observer]:
+        """Returns set of all user connections to the given feed
+
+        :param user_id: defaults to current connection user_id
+        :param feed_name: defaults to current class feed name
+        """
         if user_id := user_id or self.conn.user_id:
-            return {conn for conn in self.observers if conn.user_id == user_id}
+            return {conn for conn in self.get_feed_connections(feed_name) if conn.user_id == user_id}
 
         return {self.conn}
 
@@ -83,8 +94,8 @@ class Feed:
         observers = self.app.feeds[feed_name] if feed_name else self.observers
 
         if observers:
+            logger.info("> [notify_all] [%s] [%s] %s", feed_name or self.feed_name, event, data)
             await asyncio.gather(*[conn.send(event, data) for conn in observers])
-            logger.info("> [broadcast] [%s] %s", event, data)
 
     async def notify_user(self, event: str, data: dict, user_id: int = None):
         """Sends message to all observers with matching user_id
@@ -97,6 +108,3 @@ class Feed:
 
         if ws_list:
             await asyncio.gather(*[conn.send(event, data) for conn in ws_list])
-        else:
-            error_message = {"message": f"User with {user_id=} not connected to the feed {self.feed_name}"}
-            await self.conn.send("error", error_message)
