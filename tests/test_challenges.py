@@ -25,7 +25,7 @@ async def test_challenges_create(test_cli, challenges_online: dict, challenge_ow
     assert resp.status == 201
     assert await resp.json() == expected_challenge
 
-    expected = {"event": "set.ok", "data": {"message": "Challenge set"}}
+    expected = {"event": EventName.CHALLENGE_SET, "data": {"message": "Challenge set"}}
     assert expected in await receive_messages(owner_ws)
 
     expected = {
@@ -54,7 +54,7 @@ async def test_delete_challenge(test_cli, users_data: list, challenges_online: d
     assert await response.json() == {"message": "Challenge unset"}
 
     expected = {
-        "event": "unset.ok",
+        "event": EventName.CHALLENGE_UNSET,
         "data": {"message": "Challenge unset"},
     }
     assert expected in await receive_messages(owner_ws)
@@ -74,7 +74,7 @@ async def test_set_challenge(test_cli, challenges_online: dict, challenge_owners
     await ws.send_json({"event": EventName.CHALLENGE_SET, "data": challenge_data})
 
     event_message = {
-        "event": "set.ok",
+        "event": EventName.CHALLENGE_SET,
         "data": {"message": "Challenge set"},
     }
     assert event_message in await receive_messages(ws)
@@ -97,7 +97,7 @@ async def test_unset_challenge(test_cli, challenges_online: dict, challenge_owne
     await ws.send_json({"event": EventName.CHALLENGE_UNSET})
 
     expected = {
-        "event": "unset.ok",
+        "event": EventName.CHALLENGE_UNSET,
         "data": {"message": "Challenge unset"},
     }
     assert expected in await receive_messages(ws)
@@ -123,11 +123,11 @@ async def test_set_challenge_update(test_cli, challenges_online: dict, challenge
 
     ws_messages = await receive_messages(ws)
     expected_unset_ok = {
-        "event": "unset.ok",
+        "event": EventName.CHALLENGE_UNSET,
         "data": {"message": "Challenge unset"},
     }
     expected_set_ok = {
-        "event": "set.ok",
+        "event": EventName.CHALLENGE_SET,
         "data": {"message": "Challenge set"},
     }
     assert expected_unset_ok in ws_messages
@@ -197,7 +197,7 @@ async def test_join_challenge(test_cli, users_data: list, challenges_online: dic
     assert expected in await receive_messages(owner_ws)
 
     expected = {
-        "event": "join.ok",
+        "event": EventName.CHALLENGE_JOIN,
         "data": {"message": "Joined"},
     }
     assert expected in await receive_messages(ws)
@@ -228,7 +228,7 @@ async def test_leave_challenge(test_cli, users_data: list, challenges_online: di
     assert expected in await receive_messages(owner_ws)
 
     expected = {
-        "event": "leave.ok",
+        "event": EventName.CHALLENGE_LEAVE,
         "data": {"message": "Left"},
     }
     assert expected in await receive_messages(ws)

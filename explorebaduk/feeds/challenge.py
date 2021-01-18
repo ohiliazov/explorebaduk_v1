@@ -82,8 +82,11 @@ class ChallengeFeed(Feed):
 
         self.challenge.set(challenge)
 
-        await self.broadcast_to_challenges("challenges.add", {"user_id": self.conn.user_id, **self.challenge.data})
-        await self.notify_all("set.ok", {"message": "Challenge set"})
+        await self.broadcast_to_challenges(
+            EventName.CHALLENGES_ADD,
+            {"user_id": self.conn.user_id, **self.challenge.data},
+        )
+        await self.notify_all(EventName.CHALLENGE_SET, {"message": "Challenge set"})
 
     async def unset_challenge(self, data=None):
         if not self.conn.authorized:
@@ -97,8 +100,8 @@ class ChallengeFeed(Feed):
 
         self.challenge.unset()
 
-        await self.broadcast_to_challenges("challenges.remove", {"user_id": self.conn.user_id})
-        await self.notify_all("unset.ok", {"message": "Challenge unset"})
+        await self.broadcast_to_challenges(EventName.CHALLENGES_REMOVE, {"user_id": self.conn.user_id})
+        await self.notify_all(EventName.CHALLENGE_UNSET, {"message": "Challenge unset"})
 
     async def join_challenge(self, data):
         if not self.conn.authorized:
@@ -111,8 +114,8 @@ class ChallengeFeed(Feed):
             return await self.conn.send(EventName.ERROR, {"message": "Challenge not set"})
 
         self.joined.add(self.conn.user_id)
-        await self.send_to_owner("challenge.join", self.conn.user.as_dict())
-        await self.notify_user("join.ok", {"message": "Joined"})
+        await self.send_to_owner(EventName.CHALLENGE_JOIN, self.conn.user.as_dict())
+        await self.notify_user(EventName.CHALLENGE_JOIN, {"message": "Joined"})
 
     async def leave_challenge(self, data):
         if not self.conn.authorized:
@@ -128,8 +131,8 @@ class ChallengeFeed(Feed):
             return await self.conn.send(EventName.ERROR, {"message": "Not joined"})
 
         self.joined.remove(self.conn.user_id)
-        await self.send_to_owner("challenge.leave", {"user_id": self.conn.user_id})
-        await self.notify_user("leave.ok", {"message": "Left"})
+        await self.send_to_owner(EventName.CHALLENGE_LEAVE, {"user_id": self.conn.user_id})
+        await self.notify_user(EventName.CHALLENGE_LEAVE, {"message": "Left"})
 
     async def finalize(self):
         if self.challenge is None:
@@ -137,9 +140,9 @@ class ChallengeFeed(Feed):
 
         if self.is_owner():
             self.app.challenges.pop(self.challenge_id)
-            await self.broadcast_to_challenges("challenges.remove", {"user_id": self.conn.user_id})
+            await self.broadcast_to_challenges(EventName.CHALLENGES_REMOVE, {"user_id": self.conn.user_id})
 
         elif self.conn.user_id in self.joined and not len(self.get_user_connections()):
             self.joined.remove(self.conn.user_id)
-            await self.send_to_owner("challenge.leave", {"user_id": self.conn.user_id})
-            await self.notify_user("leave.ok", {"message": "Left"})
+            await self.send_to_owner(EventName.CHALLENGE_LEAVE, {"user_id": self.conn.user_id})
+            await self.notify_user(EventName.CHALLENGE_LEAVE, {"message": "Left"})

@@ -27,7 +27,10 @@ class ChallengesView(HTTPMethodView):
         message_to_challenge_feed = {"message": "Challenge set"}
         message_to_challenges_feed = {"user_id": user_id, **data}
         await asyncio.gather(
-            *[conn.send("set.ok", message_to_challenge_feed) for conn in request.app.feeds[f"challenges__{user_id}"]],
+            *[
+                conn.send(EventName.CHALLENGE_SET, message_to_challenge_feed)
+                for conn in request.app.feeds[f"challenges__{user_id}"]
+            ],
             *[
                 conn.send(EventName.CHALLENGES_ADD, message_to_challenges_feed)
                 for conn in request.app.feeds["challenges"]
@@ -50,7 +53,10 @@ class ChallengesView(HTTPMethodView):
         message_to_challenge_feed = {"message": "Challenge unset"}
         message_to_challenges_feed = {"user_id": user_id}
         await asyncio.gather(
-            *[conn.send("unset.ok", message_to_challenge_feed) for conn in request.app.feeds[f"challenges__{user_id}"]],
+            *[
+                conn.send(EventName.CHALLENGE_UNSET, message_to_challenge_feed)
+                for conn in request.app.feeds[f"challenges__{user_id}"]
+            ],
             *[
                 conn.send(EventName.CHALLENGES_REMOVE, message_to_challenges_feed)
                 for conn in request.app.feeds["challenges"]
