@@ -1,7 +1,17 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, Numeric, String
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql.functions import func
+from sqlalchemy.sql.schema import Column, ForeignKey
+from sqlalchemy.sql.sqltypes import (
+    JSON,
+    Boolean,
+    DateTime,
+    Integer,
+    Numeric,
+    String,
+    Text,
+)
 
-from .base import BaseModel
+from .database import BaseModel
 
 
 class UserModel(BaseModel):
@@ -71,3 +81,49 @@ class BlockedUserModel(BaseModel):
     blocked_user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
 
     user = relationship("UserModel", back_populates="blocked_users", foreign_keys="BlockedUserModel.user_id")
+
+
+class TokenModel(BaseModel):
+    __tablename__ = "signin_tokens"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.user_id"))
+    token = Column(String(64))
+    expire = Column(DateTime)
+
+    user = relationship("UserModel", back_populates="tokens")
+
+
+class GameModel(BaseModel):
+    __tablename__ = "games"
+
+    id = Column(Integer, primary_key=True)
+    started_at = Column(DateTime, server_default=func.now())
+    finished_at = Column(DateTime)
+    status = Column(String(255), default="Open")
+    settings = Column(JSON)
+    sgf = Column(Text)
+
+    players = relationship("GamePlayerModel", back_populates="game")
+
+    def as_dict(self):
+        return {
+            "id": self.id,
+            "started_at": self.started_at.timestamp(),
+            "finished_at": self.finished_at.timestamp() if self.finished_at else None,
+            "status": self.status,
+            "settings": self.settings,
+            "sgf": self.sgf,
+        }
+
+
+class GamePlayerModel(BaseModel):
+    __tablename__ = "game_players"
+
+    id = Column(Integer, primary_key=True)
+    game_id = Column(Integer, ForeignKey("games.id"))
+    user_id = Column(Integer, ForeignKey("users.user_id"))
+    color = Column(String(255))
+    time_left = Column(Numeric)
+
+    game = relationship("GameModel", back_populates="players")
