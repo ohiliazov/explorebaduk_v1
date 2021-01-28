@@ -1,10 +1,11 @@
 import asyncio
 
-from explorebaduk.resources import Feed, Observer
+from explorebaduk.messages import ChallengesAddMessage
+from explorebaduk.resources import Connection, Feed
 
 
 class ChallengesFeed(Feed):
-    observer_class = Observer
+    observer_class = Connection
     feed_name = "challenges"
 
     @property
@@ -22,15 +23,13 @@ class ChallengesFeed(Feed):
         await self.refresh()
 
     async def authorize(self, data):
-        if self.conn.authorized:
-            return await self.conn.send("error", {"message": "Already authorized"})
-
-        await self.conn.authorize(data.get("token"))
+        await self.conn.authorize(data.get("token"), self.get_online_user_ids())
 
     async def refresh(self):
+
         await asyncio.gather(
             *[
-                self.conn.send("challenges.add", {"user_id": user_id, **challenge.data})
+                self.conn.send_message(ChallengesAddMessage(user_id, challenge.data))
                 for user_id, challenge in self.challenges.items()
                 if challenge
             ]

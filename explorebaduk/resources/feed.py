@@ -6,12 +6,13 @@ from sanic.request import Request
 from websockets import WebSocketCommonProtocol
 
 from explorebaduk.app import ExploreBadukApp
+from explorebaduk.messages import Message
 
-from .observer import Observer
+from .connection import Connection
 
 
 class Feed:
-    observer_class: Type[Observer] = Observer
+    observer_class: Type[Connection] = Connection
     feed_name: str = NotImplemented
 
     def __init__(self, request: Request, ws: WebSocketCommonProtocol, **kwargs):
@@ -25,18 +26,21 @@ class Feed:
         return self.request.app
 
     @property
-    def observers(self) -> Set[Observer]:
+    def observers(self) -> Set[Connection]:
         """Connections related to feed"""
         return self.app.feeds[self.feed_name]
 
-    def get_feed_connections(self, feed_name: str = None) -> Set[Observer]:
+    def get_online_user_ids(self) -> Set[int]:
+        return {conn.user_id for conn in self.observers}
+
+    def get_feed_connections(self, feed_name: str = None) -> Set[Connection]:
         """Returns set of all connections to the given feed
 
         :param feed_name: defaults to current class feed name
         """
         return self.app.feeds[feed_name or self.feed_name]
 
-    def get_user_connections(self, user_id: int = None, feed_name: str = None) -> Set[Observer]:
+    def get_user_connections(self, user_id: int = None, feed_name: str = None) -> Set[Connection]:
         """Returns set of all user connections to the given feed
 
         :param user_id: defaults to current connection user_id
@@ -108,3 +112,15 @@ class Feed:
 
         if ws_list:
             await asyncio.gather(*[conn.send(event, data) for conn in ws_list])
+
+    async def broadcast(self, message: Message, feed_name: str = None):
+        """Broadcasts JSON message
+
+        :param message: message to send
+        :param feed_name: name of the feed
+        """
+        observers = self.app.feeds[feed_name or self.feed_name]
+
+        if observers:
+            logger.info("> [broadcast] [%s] %s", self.conn.user_id, str(message))
+            await asyncio.gather(*[conn.send_message(message) for conn in observers])

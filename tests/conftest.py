@@ -1,14 +1,14 @@
 import asyncio
-import os
 import random
 import uuid
 
 import pytest
 from sanic.websocket import WebSocketProtocol
-from sqlalchemy.orm import create_session
+from sqlalchemy import create_engine
 
 from explorebaduk.app import create_app
 from explorebaduk.constants import RouteName
+from explorebaduk.database import SessionLocal
 from explorebaduk.models import BaseModel
 from explorebaduk.utils.database import (
     generate_blocked_users,
@@ -18,12 +18,25 @@ from explorebaduk.utils.database import (
 )
 from explorebaduk.utils.test_utils import receive_all
 
+engine = create_engine(
+    "sqlite:///explorebaduk_test.sqlite3",
+    connect_args={"check_same_thread": False},
+)
+SessionLocal.configure(bind=engine)
+
+
+@pytest.fixture
+def db_session():
+    session = SessionLocal()
+    try:
+        yield session
+    finally:
+        session.close()
+
 
 @pytest.fixture
 def test_app():
-    os.putenv("DATABASE_URI", "sqlite:///explorebaduk_test.sqlite3")
     app = create_app(str(uuid.uuid4()))
-
     return app
 
 
@@ -33,16 +46,15 @@ def test_cli(loop, test_app, sanic_client):
 
 
 @pytest.fixture
-async def users_data(test_app):
-    session = create_session(test_app.db_engine)
-    BaseModel.metadata.drop_all(test_app.db_engine)
-    BaseModel.metadata.create_all(test_app.db_engine)
+async def users_data(db_session):
+    BaseModel.metadata.drop_all(db_session.bind)
+    BaseModel.metadata.create_all(db_session.bind)
 
-    users = generate_users(session, 100)
-    tokens = generate_tokens(session, users, minutes=60)
-    expired_tokens = generate_tokens(session, users, minutes=-60)
-    friends = generate_friends(session, users, 5)
-    blocked_users = generate_blocked_users(session, users, 5, friends)
+    users = generate_users(db_session, 100)
+    tokens = generate_tokens(db_session, users, minutes=60)
+    expired_tokens = generate_tokens(db_session, users, minutes=-60)
+    friends = generate_friends(db_session, users, 5)
+    blocked_users = generate_blocked_users(db_session, users, 5, friends)
 
     users_data = []
     for user in users:

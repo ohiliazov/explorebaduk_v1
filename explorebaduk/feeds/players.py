@@ -1,9 +1,10 @@
 import asyncio
 
-from explorebaduk.resources import Feed, Observer
+from explorebaduk.messages import ErrorMessage, PlayersAddMessage, PlayersRemoveMessage
+from explorebaduk.resources import Connection, Feed
 
 
-class PlayerObserver(Observer):
+class PlayerObserver(Connection):
     def get_friends_list(self) -> set:
         return self.user.get_friends_list() if self.authorized else set()
 
@@ -24,56 +25,44 @@ class PlayersFeed(Feed):
 
     async def finalize(self):
         if self.conn.authorized:
-            for conn in self.observers:
-                if conn.user_id == self.conn.user_id:
-                    break
-            else:
-                await self._broadcast_offline()
+            await self._broadcast_offline()
 
     async def authorize(self, data):
         if self.conn.authorized:
-            return await self.conn.send("error", {"message": "Already authorized"})
+            return await self.conn.send_message(ErrorMessage("Already authorized"))
 
-        if await self.conn.authorize(data.get("token")):
-            for conn in self.observers:
-                if conn.user_id == self.conn.user_id and conn is not self.conn:
-                    break
-            else:
-                await self._broadcast_online()
+        if await self.conn.authorize(data.get("token"), self.get_online_user_ids()):
+            await self._broadcast_online()
 
     async def _broadcast_online(self):
         friends_list = self.conn.get_friends_list()
 
         await asyncio.gather(
             *[
-                conn.send(
-                    "players.add",
-                    {
-                        "status": "online",
-                        "friend": conn.user_id in friends_list,
-                        **self.conn.user.as_dict(),
-                    },
+                conn.send_message(
+                    PlayersAddMessage(
+                        self.conn.user,
+                        conn.user_id in friends_list,
+                    ),
                 )
                 for conn in self.observers
             ]
         )
 
     async def _broadcast_offline(self):
-        await self.notify_all("players.remove", {"user_id": self.conn.user_id})
+        await self.broadcast(PlayersRemoveMessage(self.conn.user))
 
     async def refresh(self, *args):
         friends_list = self.conn.get_friends_list()
         await asyncio.gather(
             *[
-                self.conn.send(
-                    "players.add",
-                    {
-                        "status": "online",
-                        "friend": player.user_id in friends_list,
-                        **player.user.as_dict(),
-                    },
+                self.conn.send_message(
+                    PlayersAddMessage(
+                        conn.user,
+                        conn.user_id in friends_list,
+                    ),
                 )
-                for player in self.observers
-                if player.authorized
+                for conn in self.observers
+                if conn.authorized
             ]
         )

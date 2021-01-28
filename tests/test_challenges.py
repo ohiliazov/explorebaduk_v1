@@ -1,70 +1,12 @@
 import random
 
-from explorebaduk.constants import EventName, RouteName
+from explorebaduk.constants import EventName
 from explorebaduk.utils.test_utils import (
     generate_challenge_data,
     generate_expected_challenge_data,
     receive_all,
     receive_messages,
 )
-
-
-async def test_challenges_create(test_cli, challenges_online: dict, challenge_owners_online: dict):
-    owner_ws, owner_data = random.choice(list(challenge_owners_online.items()))
-
-    challenge_data = generate_challenge_data()
-
-    resp = await test_cli.post(
-        test_cli.app.url_for(RouteName.CHALLENGES_VIEW),
-        json=challenge_data,
-        headers={"Authorization": owner_data["token"].token},
-    )
-
-    expected_challenge = generate_expected_challenge_data(owner_data["user"].user_id, challenge_data)
-
-    assert resp.status == 201
-    assert await resp.json() == expected_challenge
-
-    expected = {"event": EventName.CHALLENGE_SET, "data": {"message": "Challenge set"}}
-    assert expected in await receive_messages(owner_ws)
-
-    expected = {
-        "event": EventName.CHALLENGES_ADD,
-        "data": expected_challenge,
-    }
-    for ws_messages in await receive_all(challenges_online):
-        assert expected in ws_messages
-
-
-async def test_delete_challenge(test_cli, users_data: list, challenges_online: dict, challenge_owners_online: dict):
-    owner_ws, owner_data = random.choice(list(challenge_owners_online.items()))
-    challenge_data = generate_challenge_data()
-
-    await owner_ws.send_json({"event": EventName.CHALLENGE_SET, "data": challenge_data})
-    await receive_messages(owner_ws)
-    await receive_all(challenges_online)
-
-    owner_id = owner_data["user"].user_id
-    response = await test_cli.delete(
-        test_cli.app.url_for(RouteName.CHALLENGES_VIEW, challenge_id=owner_id),
-        headers={"Authorization": owner_data["token"].token},
-    )
-
-    assert response.status == 200
-    assert await response.json() == {"message": "Challenge unset"}
-
-    expected = {
-        "event": EventName.CHALLENGE_UNSET,
-        "data": {"message": "Challenge unset"},
-    }
-    assert expected in await receive_messages(owner_ws)
-
-    expected = {
-        "event": EventName.CHALLENGES_REMOVE,
-        "data": {"user_id": owner_id},
-    }
-    for ws_messages in await receive_all(challenges_online):
-        assert expected in ws_messages
 
 
 async def test_set_challenge(test_cli, challenges_online: dict, challenge_owners_online: dict):
@@ -169,7 +111,7 @@ async def test_unset_challenge_not_set(test_cli, challenges_online: dict, challe
 
     await ws.send_json({"event": EventName.CHALLENGE_UNSET})
     expected = {
-        "event": "error",
+        "event": EventName.ERROR,
         "data": {"message": "Challenge not set"},
     }
     assert expected in await receive_messages(ws)

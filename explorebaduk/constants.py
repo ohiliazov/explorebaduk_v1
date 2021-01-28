@@ -12,6 +12,9 @@ class EventName:
     AUTHORIZE = "authorize"
     ERROR = "error"
 
+    PLAYERS_ADD = "players.add"
+    PLAYERS_REMOVE = "players.remove"
+
     CHALLENGES_ADD = "challenges.add"
     CHALLENGES_REMOVE = "challenges.remove"
 

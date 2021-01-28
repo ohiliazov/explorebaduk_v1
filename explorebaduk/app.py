@@ -1,9 +1,8 @@
-import os
 from collections import defaultdict
 
 from sanic import Sanic
-from sqlalchemy import create_engine
 
+from explorebaduk.broadcaster import broadcaster
 from explorebaduk.constants import APP_NAME, RouteName
 
 
@@ -19,20 +18,13 @@ class ExploreBadukApp(Sanic):
 def create_app(name: str = APP_NAME) -> Sanic:
     app = ExploreBadukApp(name)
 
-    register_config(app)
-    register_listeners(app)
     register_routes(app)
 
     return app
 
 
-def register_config(app):
-    app.config["DATABASE_URI"] = os.getenv("DATABASE_URI", "sqlite:///explorebaduk.sqlite3")
-
-
 def register_routes(app: Sanic):
     from explorebaduk.feeds import ChallengeFeed, ChallengesFeed, PlayersFeed
-    from explorebaduk.views import ChallengesView
 
     app.add_websocket_route(
         PlayersFeed.as_view(),
@@ -52,14 +44,12 @@ def register_routes(app: Sanic):
         name=RouteName.CHALLENGE_FEED,
     )
 
-    app.add_route(
-        ChallengesView.as_view(),
-        uri="/challenges",
-        name=RouteName.CHALLENGES_VIEW,
-    )
-
 
 def register_listeners(app: Sanic):
     @app.listener("before_server_start")
-    async def setup_db(app, loop):
-        app.db_engine = create_engine(app.config["DATABASE_URI"])
+    async def broadcast_connect(app, loop):
+        broadcaster.connect()
+
+    @app.listener("after_server_stop")
+    async def broadcast_disconnect(app, loop):
+        broadcaster.disconnect()
