@@ -1,5 +1,5 @@
-Players Feed
-============
+Player List
+===========
 
 Messages from server
 --------------------
