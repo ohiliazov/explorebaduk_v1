@@ -16,6 +16,7 @@ def get_players_list(q: str):
                     or_(
                         UserModel.first_name.contains(q),
                         UserModel.last_name.contains(q),
+                        UserModel.username.contains(q),
                     ),
                 )
             else:
