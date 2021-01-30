@@ -62,6 +62,7 @@ class Feed:
             view = cls(request, ws, **kwargs)
             view.observers.add(view.conn)
             try:
+                await view.authorize()
                 await view.initialize()
                 await view.run()
             except Exception as ex:
@@ -79,6 +80,11 @@ class Feed:
 
             if handler := self.handlers.get(event):
                 await handler(data)
+
+    async def authorize(self):
+        event, data = await self.conn.receive()
+        if event == "authorize":
+            await self.conn.authorize(data.get("token"), self.get_online_user_ids())
 
     async def initialize(self):
         """Initializes connection"""

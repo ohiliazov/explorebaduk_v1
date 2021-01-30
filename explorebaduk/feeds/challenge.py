@@ -62,10 +62,22 @@ class ChallengeFeed(Feed):
     async def send_to_owner(self, event, data):
         await self.notify_user(event, data, user_id=self.challenge_id)
 
-    async def authorize(self, data):
-        if await self.conn.authorize(data.get("token"), self.get_online_user_ids()):
-            if self.is_owner() and self.challenge is None:
-                self.app.challenges[self.challenge_id] = Challenge(self.ws)
+    async def initialize(self):
+        if self.conn.authorized and self.is_owner():
+            self.app.challenges[self.challenge_id] = Challenge(self.ws)
+
+    async def finalize(self):
+        if self.challenge is None:
+            return
+
+        if self.is_owner():
+            self.app.challenges.pop(self.challenge_id)
+            await self.broadcast_to_challenges(ChallengesRemoveMessage(self.challenge_id))
+
+        elif self.conn.user_id in self.joined and not len(self.get_user_connections()):
+            self.joined.remove(self.conn.user_id)
+            await self.send_to_owner(EventName.CHALLENGE_LEAVE, {"user_id": self.conn.user_id})
+            await self.notify_user(EventName.CHALLENGE_LEAVE, {"message": "Left"})
 
     async def set_challenge(self, data):
         if not self.conn.authorized:
@@ -132,16 +144,3 @@ class ChallengeFeed(Feed):
         self.joined.remove(self.conn.user_id)
         await self.send_to_owner(EventName.CHALLENGE_LEAVE, {"user_id": self.conn.user_id})
         await self.notify_user(EventName.CHALLENGE_LEAVE, {"message": "Left"})
-
-    async def finalize(self):
-        if self.challenge is None:
-            return
-
-        if self.is_owner():
-            self.app.challenges.pop(self.challenge_id)
-            await self.broadcast_to_challenges(ChallengesRemoveMessage(self.challenge_id))
-
-        elif self.conn.user_id in self.joined and not len(self.get_user_connections()):
-            self.joined.remove(self.conn.user_id)
-            await self.send_to_owner(EventName.CHALLENGE_LEAVE, {"user_id": self.conn.user_id})
-            await self.notify_user(EventName.CHALLENGE_LEAVE, {"message": "Left"})

@@ -55,12 +55,6 @@ class UserModel(BaseModel):
     def get_friends_list(self):
         return {friend.user_id for friend in self.friends}
 
-    def is_friend(self, user_id: int):
-        for friend in self.friends:
-            if friend.friend_id == user_id and friend.is_friend:
-                return True
-        return False
-
 
 class FriendModel(BaseModel):
     __tablename__ = "friends"

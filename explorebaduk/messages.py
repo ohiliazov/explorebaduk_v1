@@ -26,8 +26,8 @@ class ErrorMessage(Message):
 class AuthorizeMessage(Message):
     event = "authorize"
 
-    def __init__(self, token: str):
-        self.data = {"token": token}
+    def __init__(self, token: str = None):
+        self.data = {"token": token} if token else None
 
 
 class WhoAmIMessage(Message):

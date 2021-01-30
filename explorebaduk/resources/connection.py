@@ -64,4 +64,4 @@ class Connection:
             message = json.loads(data)
         except json.JSONDecodeError as ex:
             await self.send("error", {"message": str(ex), "data": data})
-        return message.get("event"), message.get("data")
+        return message.get("event"), message.get("data") or {}

@@ -22,9 +22,6 @@ class ChallengesFeed(Feed):
     async def initialize(self):
         await self.refresh()
 
-    async def authorize(self, data):
-        await self.conn.authorize(data.get("token"), self.get_online_user_ids())
-
     async def refresh(self):
 
         await asyncio.gather(

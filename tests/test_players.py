@@ -44,10 +44,12 @@ async def test_player_logout_as_user(test_cli, players_online: dict):
 
 
 async def test_player_login_as_guest(test_cli, players_online: dict):
-    player_ws = await test_cli.ws_connect(test_cli.app.url_for(RouteName.PLAYERS_FEED))
+    ws = await test_cli.ws_connect(test_cli.app.url_for(RouteName.PLAYERS_FEED))
+
+    await ws.send_json(AuthorizeMessage().json())
 
     not_expected = WhoAmIMessage(None).json()
-    assert not_expected not in await receive_messages(player_ws)
+    assert not_expected not in await receive_messages(ws)
 
     for ws_messages in await receive_all(players_online):
         assert not ws_messages
@@ -82,6 +84,8 @@ async def test_player_login_expired_token(test_cli, users_data: list, players_on
 
 async def test_player_logout_as_guest(test_cli, players_online: dict):
     guest_ws = await test_cli.ws_connect(test_cli.app.url_for(RouteName.PLAYERS_FEED))
+    await guest_ws.send_json(AuthorizeMessage().json())
+    await receive_messages(guest_ws)
     await guest_ws.close()
 
     expected = PlayersRemoveMessage(None).json()
@@ -123,7 +127,10 @@ async def test_player_multiple_login_as_user(test_cli, players_online: dict):
 
 async def test_player_multiple_login_as_guests(test_cli, players_online: dict):
 
-    await asyncio.gather(*[test_cli.ws_connect(test_cli.app.url_for(RouteName.PLAYERS_FEED)) for _ in range(20)])
+    ws_list = await asyncio.gather(
+        *[test_cli.ws_connect(test_cli.app.url_for(RouteName.PLAYERS_FEED)) for _ in range(20)]
+    )
+    await asyncio.gather(*[ws.send_json(AuthorizeMessage().json()) for ws in ws_list])
 
     for ws_messages in await receive_all(players_online):
         assert not ws_messages
