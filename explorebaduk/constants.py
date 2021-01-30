@@ -2,7 +2,7 @@ APP_NAME = "ExploreBaduk"
 
 
 class RouteName:
-    CHALLENGES_VIEW = "Challenges View"
+    PLAYERS_VIEW = "PLayers View"
     PLAYERS_FEED = "PLayers Feed"
     CHALLENGES_FEED = "Challenges List Feed"
     CHALLENGE_FEED = "Challenge Feed"

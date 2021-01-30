@@ -40,12 +40,10 @@ class Connection:
             if user.user_id not in online_user_ids:
                 self.user = user
                 await self.send_message(WhoAmIMessage(self.user))
-                return True
             else:
                 await self.send_message(ErrorMessage("Already authorized from another device"))
         else:
             await self.send_message(ErrorMessage("Invalid or expired token provided"))
-        return False
 
     async def _send(self, message: str):
         await self.ws.send(message)

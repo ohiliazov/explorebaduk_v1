@@ -21,10 +21,9 @@ class PlayersFeed(Feed):
         }
 
     async def initialize(self):
+        await self.refresh()
         if self.conn.authorized:
             await self._broadcast_online()
-
-        await self.refresh()
 
     async def finalize(self):
         if self.conn.authorized:
@@ -42,6 +41,7 @@ class PlayersFeed(Feed):
                     ),
                 )
                 for conn in self.observers
+                if conn is not self.conn
             ]
         )
 
@@ -59,6 +59,6 @@ class PlayersFeed(Feed):
                     ),
                 )
                 for conn in self.observers
-                if conn.authorized
+                if conn.authorized and conn is not self.conn
             ]
         )

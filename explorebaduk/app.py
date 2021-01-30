@@ -25,22 +25,29 @@ def create_app(name: str = APP_NAME) -> Sanic:
 
 def register_routes(app: Sanic):
     from explorebaduk.feeds import ChallengeFeed, ChallengesFeed, PlayersFeed
+    from explorebaduk.views import PlayerListView
+
+    app.add_route(
+        PlayerListView.as_view(),
+        uri="/players",
+        name=RouteName.PLAYERS_VIEW,
+    )
 
     app.add_websocket_route(
         PlayersFeed.as_view(),
-        uri="/players",
+        uri="/ws/players",
         name=RouteName.PLAYERS_FEED,
     )
 
     app.add_websocket_route(
         ChallengesFeed.as_view(),
-        uri="/challenges",
+        uri="/ws/challenges",
         name=RouteName.CHALLENGES_FEED,
     )
 
     app.add_websocket_route(
         ChallengeFeed.as_view(),
-        uri="/challenges/<challenge_id:int>",
+        uri="/ws/challenges/<challenge_id:int>",
         name=RouteName.CHALLENGE_FEED,
     )
 
