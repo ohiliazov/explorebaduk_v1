@@ -3,7 +3,7 @@ from explorebaduk.messages import (
     ChallengesAddMessage,
     ChallengesRemoveMessage,
     ErrorMessage,
-    Message,
+    MessageBase,
 )
 from explorebaduk.resources import Feed
 from explorebaduk.validation import create_game_schema, validate_payload
@@ -56,7 +56,7 @@ class ChallengeFeed(Feed):
         if self.challenge:
             return self.challenge.joined
 
-    async def broadcast_to_challenges(self, message: Message):
+    async def broadcast_to_challenges(self, message: MessageBase):
         await self.broadcast(message, feed_name="challenges")
 
     async def send_to_owner(self, event, data):

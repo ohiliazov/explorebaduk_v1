@@ -2,7 +2,6 @@ from collections import defaultdict
 
 from sanic import Sanic
 
-from explorebaduk.broadcaster import broadcaster
 from explorebaduk.constants import APP_NAME, RouteName
 
 
@@ -53,10 +52,12 @@ def register_routes(app: Sanic):
 
 
 def register_listeners(app: Sanic):
+    from explorebaduk.broadcaster import broadcast
+
     @app.listener("before_server_start")
     async def broadcast_connect(app, loop):
-        broadcaster.connect()
+        broadcast.connect()
 
     @app.listener("after_server_stop")
     async def broadcast_disconnect(app, loop):
-        broadcaster.disconnect()
+        broadcast.disconnect()

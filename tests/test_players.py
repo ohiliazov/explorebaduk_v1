@@ -103,7 +103,9 @@ async def test_refresh_player_list(test_cli, players_online: dict):
         await receive_messages(player_ws),
         key=lambda item: item["data"]["user_id"],
     )
-    expected_ids = sorted([user_data["user"].user_id for ws, user_data in players_online.items()])
+    expected_ids = sorted(
+        [user_data["user"].user_id for ws, user_data in players_online.items() if ws is not player_ws],
+    )
 
     assert len(actual_messages) == len(expected_ids)
     for actual, expected_id in zip(actual_messages, expected_ids):

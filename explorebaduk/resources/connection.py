@@ -1,12 +1,12 @@
-from typing import Optional
+from typing import AsyncIterator, Optional
 
 import simplejson as json
 from sanic.log import logger
 from sanic.request import Request
-from websockets import WebSocketCommonProtocol
+from websockets import ConnectionClosedOK, WebSocketCommonProtocol
 
 from explorebaduk.crud import get_user_by_token
-from explorebaduk.messages import ErrorMessage, Message, WhoAmIMessage
+from explorebaduk.messages import ErrorMessage, Message, MessageBase, WhoAmIMessage
 from explorebaduk.models import UserModel
 
 
@@ -52,7 +52,7 @@ class Connection:
         await self._send(json.dumps({"event": event, "data": data}))
         logger.info("> [notify] [%s] [%s] %s", self.username, event, data)
 
-    async def send_message(self, message: Message):
+    async def send_message(self, message: MessageBase):
         await self.ws.send(str(message))
 
     async def receive(self):
@@ -63,3 +63,10 @@ class Connection:
         except json.JSONDecodeError as ex:
             await self.send("error", {"message": str(ex), "data": data})
         return message.get("event"), message.get("data") or {}
+
+    async def __aiter__(self) -> AsyncIterator[dict]:
+        try:
+            while True:
+                yield Message.from_string(await self.ws.recv())
+        except ConnectionClosedOK:
+            return

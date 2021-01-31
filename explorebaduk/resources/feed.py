@@ -6,7 +6,7 @@ from sanic.request import Request
 from websockets import WebSocketCommonProtocol
 
 from explorebaduk.app import ExploreBadukApp
-from explorebaduk.messages import Message
+from explorebaduk.messages import MessageBase
 
 from .connection import Connection
 
@@ -119,7 +119,7 @@ class Feed:
         if ws_list:
             await asyncio.gather(*[conn.send(event, data) for conn in ws_list])
 
-    async def broadcast(self, message: Message, feed_name: str = None):
+    async def broadcast(self, message: MessageBase, feed_name: str = None):
         """Broadcasts JSON message
 
         :param message: message to send

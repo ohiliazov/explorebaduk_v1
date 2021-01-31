@@ -14,7 +14,7 @@ AUTH_TOKENS = [
 
 
 async def players_feed(token):
-    ws = await websockets.connect("ws://localhost:8080/players")
+    ws = await websockets.connect("ws://localhost:8080/ws/players")
     if token:
         await ws.send(json.dumps({"event": "authorize", "data": {"token": token}}))
 

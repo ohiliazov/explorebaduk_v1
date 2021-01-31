@@ -1,4 +1,5 @@
 import datetime
+from typing import List
 
 from sqlalchemy import and_, or_
 
@@ -6,7 +7,7 @@ from .database import scoped_session
 from .models import TokenModel, UserModel
 
 
-def get_players_list(q: str):
+def get_players_list(q: str) -> List[UserModel]:
     with scoped_session() as session:
         query = session.query(UserModel)
 
