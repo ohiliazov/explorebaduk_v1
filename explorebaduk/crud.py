@@ -1,5 +1,5 @@
 import datetime
-from typing import List
+from typing import List, Set
 
 from sqlalchemy import and_, or_
 
@@ -36,6 +36,11 @@ def get_players_list(q: str) -> List[UserModel]:
                 )
 
         return query.all()
+
+
+def get_players_by_ids(id_list: Set[int]) -> List[UserModel]:
+    with scoped_session() as session:
+        return session.query(UserModel).filter(UserModel.user_id.in_(id_list)).all()
 
 
 def get_user_by_token(token) -> UserModel:
