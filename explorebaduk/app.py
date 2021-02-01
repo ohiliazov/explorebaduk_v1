@@ -49,15 +49,3 @@ def register_routes(app: Sanic):
         uri="/ws/challenges/<challenge_id:int>",
         name=RouteName.CHALLENGE_FEED,
     )
-
-
-def register_listeners(app: Sanic):
-    from explorebaduk.broadcaster import broadcast
-
-    @app.listener("before_server_start")
-    async def broadcast_connect(app, loop):
-        broadcast.connect()
-
-    @app.listener("after_server_stop")
-    async def broadcast_disconnect(app, loop):
-        broadcast.disconnect()
