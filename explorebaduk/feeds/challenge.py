@@ -37,7 +37,6 @@ class ChallengeFeed(Feed):
     @property
     def handlers(self) -> dict:
         return {
-            EventName.AUTHORIZE: self.authorize,
             EventName.CHALLENGE_SET: self.set_challenge,
             EventName.CHALLENGE_UNSET: self.unset_challenge,
             EventName.CHALLENGE_JOIN: self.join_challenge,
