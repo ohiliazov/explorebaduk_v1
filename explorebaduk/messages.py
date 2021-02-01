@@ -19,7 +19,7 @@ class MessageBase:
 class Message(MessageBase):
     def __init__(self, data: dict):
         self.event = data.get("event")
-        self.data = data.get("data")
+        self.data = data.get("data") or {}
 
     @classmethod
     def from_string(cls, message: str):
@@ -51,7 +51,7 @@ class WhoAmIMessage(MessageBase):
         self.data = user.as_dict() if user else None
 
 
-class PlayersAddMessage(MessageBase):
+class PlayersFriendAddMessage(MessageBase):
     event = "players.add"
 
     def __init__(self, user: UserModel, is_friend: bool):
@@ -60,6 +60,13 @@ class PlayersAddMessage(MessageBase):
             "friend": is_friend,
             **user.as_dict(),
         }
+
+
+class PlayersAddMessage(MessageBase):
+    event = "players.add"
+
+    def __init__(self, user: UserModel):
+        self.data = user.as_dict()
 
 
 class PlayersRemoveMessage(MessageBase):

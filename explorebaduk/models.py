@@ -52,6 +52,10 @@ class UserModel(BaseModel):
             "avatar": self.avatar,
         }
 
+    def is_friend(self, user_id: int):
+        print(user_id, self.get_friends_list())
+        return user_id in self.get_friends_list()
+
     def get_friends_list(self):
         return {friend.user_id for friend in self.friends}
 

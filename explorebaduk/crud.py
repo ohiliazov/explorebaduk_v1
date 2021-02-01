@@ -4,7 +4,7 @@ from typing import List
 from sqlalchemy import and_, or_
 
 from .database import scoped_session
-from .models import TokenModel, UserModel
+from .models import FriendModel, TokenModel, UserModel
 
 
 def get_players_list(q: str) -> List[UserModel]:
@@ -51,3 +51,10 @@ def get_user_by_token(token) -> UserModel:
 
         if auth_token:
             return auth_token.user
+
+
+def is_friend(user: UserModel, user_id):
+    with scoped_session() as session:
+        query = session.query(FriendModel).filter(FriendModel.user_id == user.user_id, FriendModel.friend_id == user_id)
+
+        return query.count() > 0

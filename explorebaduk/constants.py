@@ -1,6 +1,3 @@
-APP_NAME = "ExploreBaduk"
-
-
 class RouteName:
     PLAYERS_VIEW = "PLayers View"
     PLAYERS_FEED = "PLayers Feed"

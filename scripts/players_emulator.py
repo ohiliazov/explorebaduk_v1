@@ -3,10 +3,13 @@ import json
 
 import websockets
 
+lock = asyncio.Lock()
+
 # Add valid tokens here
 # Non-valid tokens will result in connection as guest
 AUTH_TOKENS = [
     "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ000000023027",
+    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ000000023029",
     "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ000000023032",
     "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ000000023037",
     "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ000000023042",
@@ -14,9 +17,10 @@ AUTH_TOKENS = [
 
 
 async def players_feed(token):
-    ws = await websockets.connect("ws://localhost:8080/ws/players")
-    if token:
-        await ws.send(json.dumps({"event": "authorize", "data": {"token": token}}))
+    async with lock:
+        ws = await websockets.connect("ws://localhost:8080/ws")
+        if token:
+            await ws.send(json.dumps({"event": "authorize", "data": {"token": token}}))
 
     while True:
         try:
