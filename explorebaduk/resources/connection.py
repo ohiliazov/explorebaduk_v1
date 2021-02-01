@@ -32,6 +32,11 @@ class Connection:
             return self.user.username
         return "<guest>"
 
+    async def initialize_connection(self):
+        event, data = await self.receive()
+        if event == "authorize":
+            await self.authorize(data.get("token"), set())
+
     async def authorize(self, token, online_user_ids: set):
         if self.authorized:
             await self.send_message(ErrorMessage("Already authorized"))

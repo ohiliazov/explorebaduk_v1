@@ -15,7 +15,6 @@ class ChallengesFeed(Feed):
     @property
     def handlers(self) -> dict:
         return {
-            "authorize": self.authorize,
             "refresh": self.refresh,
         }
 
