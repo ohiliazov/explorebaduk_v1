@@ -18,12 +18,14 @@ repos:
     - id: requirements-txt-fixer
     - id: trailing-whitespace
 
-- repo: https://gitlab.com/pycqa/flake8
-  rev: master
-  hooks:
-    - id: flake8
-
 - repo: https://github.com/psf/black
   rev: 20.8b1
   hooks:
     - id: black
+      args: [ "--line-length", "88" ]
+
+- repo: https://gitlab.com/pycqa/flake8
+  rev: master
+  hooks:
+    - id: flake8
+      args: [ "--max-line-length", "88" ]

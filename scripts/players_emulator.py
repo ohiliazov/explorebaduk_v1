@@ -20,7 +20,7 @@ async def players_feed(token):
     async with lock:
         ws = await websockets.connect("ws://localhost:8080/ws")
         if token:
-            await ws.send(json.dumps({"event": "authorize", "data": {"token": token}}))
+            await ws.send(json.dumps({"event": "authorize", "data": token}))
 
     while True:
         try:

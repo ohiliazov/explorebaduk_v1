@@ -12,10 +12,8 @@ Welcome to ExploreBaduk's documentation!
 
    explorebaduk/getting_started
    explorebaduk/authorization
-   explorebaduk/messages
-   explorebaduk/player_list
-   explorebaduk/challenge_list
-   explorebaduk/challenge
+   explorebaduk/messages_from_backend
+   explorebaduk/messages_from_frontend
    explorebaduk/models
 
 

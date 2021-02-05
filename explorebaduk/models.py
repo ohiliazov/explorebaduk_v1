@@ -28,7 +28,12 @@ class UserModel(BaseModel):
     avatar = Column(String(255))
 
     tokens = relationship("TokenModel", back_populates="user")
-    friends = relationship("FriendModel", back_populates="user", foreign_keys="FriendModel.user_id", lazy="subquery")
+    friends = relationship(
+        "FriendModel",
+        back_populates="user",
+        foreign_keys="FriendModel.user_id",
+        lazy="subquery",
+    )
     blocked_users = relationship(
         "BlockedUserModel",
         back_populates="user",
@@ -53,7 +58,6 @@ class UserModel(BaseModel):
         }
 
     def is_friend(self, user_id: int):
-        print(user_id, self.get_friends_list())
         return user_id in self.get_friends_list()
 
     def get_friends_list(self):
@@ -68,7 +72,11 @@ class FriendModel(BaseModel):
     friend_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
     muted = Column(Boolean, default=False)
 
-    user = relationship("UserModel", back_populates="friends", foreign_keys="FriendModel.user_id")
+    user = relationship(
+        "UserModel",
+        back_populates="friends",
+        foreign_keys="FriendModel.user_id",
+    )
 
 
 class BlockedUserModel(BaseModel):
@@ -78,7 +86,11 @@ class BlockedUserModel(BaseModel):
     user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
     blocked_user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
 
-    user = relationship("UserModel", back_populates="blocked_users", foreign_keys="BlockedUserModel.user_id")
+    user = relationship(
+        "UserModel",
+        back_populates="blocked_users",
+        foreign_keys="BlockedUserModel.user_id",
+    )
 
 
 class TokenModel(BaseModel):

@@ -1,3 +1,4 @@
+import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -19,3 +20,7 @@ app.add_middleware(
 app.include_router(websocket.router)
 app.include_router(players.router)
 app.include_router(challenges.router)
+
+
+if __name__ == "__main__":
+    uvicorn.run("explorebaduk.main:app", host="localhost", port=8080, reload=True)

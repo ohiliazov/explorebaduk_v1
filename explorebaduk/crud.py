@@ -1,27 +1,30 @@
 import datetime
-from typing import List, Set
+from typing import Iterable, List
 
 from sqlalchemy import and_, or_
 
 from .database import scoped_session
-from .models import FriendModel, TokenModel, UserModel
+from .models import TokenModel, UserModel
 
 
-def get_players_list(q: str) -> List[UserModel]:
+def get_players_list(
+    id_list: Iterable[int],
+    search_string: str = None,
+) -> List[UserModel]:
     with scoped_session() as session:
-        query = session.query(UserModel)
+        query = session.query(UserModel).filter(UserModel.user_id.in_(id_list))
 
-        if q:
-            if " " not in q:
+        if search_string:
+            if " " not in search_string:
                 query = query.filter(
                     or_(
-                        UserModel.first_name.contains(q),
-                        UserModel.last_name.contains(q),
-                        UserModel.username.contains(q),
+                        UserModel.first_name.contains(search_string),
+                        UserModel.last_name.contains(search_string),
+                        UserModel.username.contains(search_string),
                     ),
                 )
             else:
-                s1, s2 = q.split(" ")[:2]
+                s1, s2 = search_string.split(" ")[:2]
                 query = query.filter(
                     or_(
                         and_(
@@ -38,11 +41,6 @@ def get_players_list(q: str) -> List[UserModel]:
         return query.all()
 
 
-def get_players_by_ids(id_list: Set[int]) -> List[UserModel]:
-    with scoped_session() as session:
-        return session.query(UserModel).filter(UserModel.user_id.in_(id_list)).all()
-
-
 def get_user_by_token(token) -> UserModel:
     with scoped_session() as session:
         auth_token = (
@@ -56,10 +54,3 @@ def get_user_by_token(token) -> UserModel:
 
         if auth_token:
             return auth_token.user
-
-
-def is_friend(user: UserModel, user_id):
-    with scoped_session() as session:
-        query = session.query(FriendModel).filter(FriendModel.user_id == user.user_id, FriendModel.friend_id == user_id)
-
-        return query.count() > 0
