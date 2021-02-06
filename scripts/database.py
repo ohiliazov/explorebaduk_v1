@@ -1,3 +1,5 @@
+import argparse
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import create_session
 
@@ -23,14 +25,26 @@ def populate_database_with_data(
     generate_blocked_users(session, users, num_blocked, friends)
 
 
-def create_db(database_uri):
+def create_db(database_uri, clean: bool = False):
     engine = create_engine(database_uri)
     session = create_session(engine)
-    BaseModel.metadata.drop_all(engine)
-    BaseModel.metadata.create_all(engine)
+
+    if clean:
+        BaseModel.metadata.drop_all(engine)
+        BaseModel.metadata.create_all(engine)
+
     populate_database_with_data(session)
 
 
 if __name__ == "__main__":
-    # create_db("mysql+pymysql://root@localhost:3306/explorebaduk_new")
-    create_db("sqlite:///explorebaduk.sqlite3")
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--database-uri",
+        type=str,
+        help="Database URI",
+        default="sqlite:///explorebaduk.sqlite3",
+        nargs=1,
+    )
+    parser.add_argument("--clean", action="store_true")
+    args = parser.parse_args()
+    create_db(args.database_uri, args.clean)

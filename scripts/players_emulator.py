@@ -10,8 +10,8 @@ lock = asyncio.Lock()
 
 # These users will not be emulated
 USER_IDS = [1, 2, 3]
-RANDOM_USERS = 5
-GUEST_NUMBER = 5
+RANDOM_USERS = 2
+GUEST_NUMBER = 1
 
 
 async def players_feed(token):
@@ -32,11 +32,12 @@ async def players_feed(token):
 async def run():
     all_players = get_players_list()
     players = []
+
     if USER_IDS:
-        players = [player for player in players if player.user_id in USER_IDS]
         for player in all_players:
-            players.append(player)
-            all_players.remove(player)
+            if player in USER_IDS:
+                players.append(player)
+                all_players.remove(player)
 
     if RANDOM_USERS:
         players.extend(random.sample(all_players, min(RANDOM_USERS, len(all_players))))
@@ -46,6 +47,7 @@ async def run():
         for token in player.tokens:
             if token.is_active():
                 tokens.append(token)
+                break
 
     if GUEST_NUMBER:
         tokens.extend([None for _ in range(GUEST_NUMBER)])
