@@ -1,4 +1,5 @@
 import datetime
+from typing import List
 
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.functions import func
@@ -29,14 +30,18 @@ class UserModel(BaseModel):
     puzzle_rating = Column(Numeric(10), default=0)
     avatar = Column(String(255))
 
-    tokens = relationship("TokenModel", back_populates="user", lazy="subquery")
-    friends = relationship(
+    tokens: List["TokenModel"] = relationship(
+        "TokenModel",
+        back_populates="user",
+        lazy="subquery",
+    )
+    friends: List["FriendModel"] = relationship(
         "FriendModel",
         back_populates="user",
         foreign_keys="FriendModel.user_id",
         lazy="subquery",
     )
-    blocked_users = relationship(
+    blocked_users: List["BlockedUserModel"] = relationship(
         "BlockedUserModel",
         back_populates="user",
         foreign_keys="BlockedUserModel.user_id",
@@ -75,7 +80,7 @@ class FriendModel(BaseModel):
     friend_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
     muted = Column(Boolean, default=False)
 
-    user = relationship(
+    user: UserModel = relationship(
         "UserModel",
         back_populates="friends",
         foreign_keys="FriendModel.user_id",
@@ -89,7 +94,7 @@ class BlockedUserModel(BaseModel):
     user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
     blocked_user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
 
-    user = relationship(
+    user: UserModel = relationship(
         "UserModel",
         back_populates="blocked_users",
         foreign_keys="BlockedUserModel.user_id",
@@ -104,7 +109,11 @@ class TokenModel(BaseModel):
     token = Column(String(64))
     expire = Column(DateTime)
 
-    user = relationship("UserModel", back_populates="tokens")
+    user: UserModel = relationship(
+        "UserModel",
+        back_populates="tokens",
+        lazy="subquery",
+    )
 
     def is_active(self):
         return self.expire >= datetime.datetime.utcnow()
@@ -142,4 +151,4 @@ class GamePlayerModel(BaseModel):
     color = Column(String(255))
     time_left = Column(Numeric)
 
-    game = relationship("GameModel", back_populates="players")
+    game: GameModel = relationship("GameModel", back_populates="players")
