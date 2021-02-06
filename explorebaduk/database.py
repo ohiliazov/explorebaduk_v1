@@ -5,10 +5,12 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-engine = create_engine(os.getenv("DATABASE_URI"))
-SessionLocal = sessionmaker(autocommit=True, autoflush=True, bind=engine)
-
 BaseModel = declarative_base()
+SessionLocal = sessionmaker(autocommit=True, autoflush=True)
+
+if database_uri := os.getenv("DATABASE_URI"):
+    engine = create_engine(database_uri)
+    SessionLocal.configure(bind=engine)
 
 
 @contextmanager

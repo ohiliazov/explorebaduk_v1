@@ -1,3 +1,5 @@
+import datetime
+
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.functions import func
 from sqlalchemy.sql.schema import Column, ForeignKey
@@ -27,7 +29,7 @@ class UserModel(BaseModel):
     puzzle_rating = Column(Numeric(10), default=0)
     avatar = Column(String(255))
 
-    tokens = relationship("TokenModel", back_populates="user")
+    tokens = relationship("TokenModel", back_populates="user", lazy="subquery")
     friends = relationship(
         "FriendModel",
         back_populates="user",
@@ -58,10 +60,11 @@ class UserModel(BaseModel):
         }
 
     def is_friend(self, user_id: int):
-        return user_id in self.get_friends_list()
+        for friend in self.friends:
+            if friend.friend_id == user_id:
+                return True
 
-    def get_friends_list(self):
-        return {friend.user_id for friend in self.friends}
+        return False
 
 
 class FriendModel(BaseModel):
@@ -102,6 +105,9 @@ class TokenModel(BaseModel):
     expire = Column(DateTime)
 
     user = relationship("UserModel", back_populates="tokens")
+
+    def is_active(self):
+        return self.expire >= datetime.datetime.utcnow()
 
 
 class GameModel(BaseModel):

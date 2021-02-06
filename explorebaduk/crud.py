@@ -8,11 +8,14 @@ from .models import TokenModel, UserModel
 
 
 def get_players_list(
-    id_list: Iterable[int],
+    id_list: Iterable[int] = None,
     search_string: str = None,
 ) -> List[UserModel]:
     with scoped_session() as session:
-        query = session.query(UserModel).filter(UserModel.user_id.in_(id_list))
+        query = session.query(UserModel)
+
+        if id_list is not None:
+            query = query.filter(UserModel.user_id.in_(id_list))
 
         if search_string:
             if " " not in search_string:

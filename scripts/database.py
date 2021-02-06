@@ -10,7 +10,12 @@ from explorebaduk.utils.database import (
 )
 
 
-def populate_database_with_data(session, num_users: int = 100, num_friends: int = 20, num_blocked: int = 5):
+def populate_database_with_data(
+    session,
+    num_users: int = 100,
+    num_friends: int = 20,
+    num_blocked: int = 5,
+):
     users = generate_users(session, num_users)
     generate_tokens(session, users)
 

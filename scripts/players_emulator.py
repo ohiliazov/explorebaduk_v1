@@ -3,16 +3,15 @@ import json
 
 import websockets
 
+from explorebaduk.crud import get_players_list
+
 lock = asyncio.Lock()
 
-# Add valid tokens here
-# Non-valid tokens will result in connection as guest
-AUTH_TOKENS = [
-    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ000000023027",
-    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ000000023029",
-    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ000000023032",
-    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ000000023037",
-    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ000000023042",
+# These users will not be emulated
+EXCLUDE_USER_IDS = [
+    1,
+    2,
+    3,
 ]
 
 
@@ -31,7 +30,20 @@ async def players_feed(token):
 
 
 async def run():
-    await asyncio.gather(*[players_feed(token) for token in AUTH_TOKENS])
+    players = [
+        player
+        for player in get_players_list()
+        if player.user_id not in EXCLUDE_USER_IDS
+    ]
+    print(players)
+    tokens = []
+    for player in players:
+        for token in player.tokens:
+            if token.is_active():
+                tokens.append(token.token)
+
+    tokens.extend(["", "", "", "", ""])
+    await asyncio.gather(*[players_feed(token) for token in tokens])
 
 
 if __name__ == "__main__":
