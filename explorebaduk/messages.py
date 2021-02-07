@@ -30,18 +30,11 @@ class ReceivedMessage(Message):
         return cls(data)
 
 
-class ErrorMessage(Message):
-    event = "error"
-
-    def __init__(self, message: str):
-        self.data = {"message": message}
-
-
 class AuthorizeMessage(Message):
     event = "authorize"
 
     def __init__(self, token: str = None):
-        self.data = {"token": token} if token else None
+        self.data = token
 
 
 class WhoAmIMessage(Message):
