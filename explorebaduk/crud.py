@@ -7,6 +7,11 @@ from .database import scoped_session
 from .models import FriendModel, TokenModel, UserModel
 
 
+def get_player_by_id(user_id: int) -> UserModel:
+    with scoped_session() as session:
+        return session.query(UserModel).get(user_id)
+
+
 def get_players_list(
     id_list: Iterable[int] = None,
     search_string: str = None,

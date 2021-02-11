@@ -8,19 +8,26 @@ from explorebaduk.models import BlockedUserModel, FriendModel, TokenModel, UserM
 
 
 def generate_token(user_id: int, minutes: int) -> TokenModel:
+    expire_time = datetime.datetime.utcnow() + datetime.timedelta(minutes=minutes)
     return TokenModel(
         user_id=user_id,
-        token="".join(random.choices(string.ascii_letters + string.digits + string.punctuation, k=64)),
-        expire=datetime.datetime.utcnow() + datetime.timedelta(minutes=minutes),
+        token="".join(
+            random.choices(
+                string.ascii_letters + string.digits + string.punctuation,
+                k=64,
+            ),
+        ),
+        expire=int(expire_time.timestamp()),
     )
 
 
 def generate_user(num: int) -> UserModel:
+    # Abcdefg1
     return UserModel(
         username=f"johndoe{num}",
         first_name=f"John#{num}",
         last_name=f"Doe#{num}",
-        password="$2y$10$N5ohEZckAk/9Exus/Py/5OM7pZgr8Gk6scZpH95FjvOSRWo00tVoC",  # Abcdefg1
+        password="$2y$10$N5ohEZckAk/9Exus/Py/5OM7pZgr8Gk6scZpH95FjvOSRWo00tVoC",
         email=f"johndoe{num}@explorebaduk.com",
         rating=random.randint(100, 3000),
         puzzle_rating=random.randint(100, 3000),
@@ -71,7 +78,12 @@ def generate_friends(
     pairs += [(friend, user) for user, friend in pairs]
 
     friends = [
-        generate_friend(user.user_id, friend.user_id, muted=random.choice([True, False])) for user, friend in pairs
+        generate_friend(
+            user.user_id,
+            friend.user_id,
+            muted=random.choice([True, False]),
+        )
+        for user, friend in pairs
     ]
 
     session.add_all(friends)
@@ -93,7 +105,10 @@ def generate_blocked_users(
 
     pairs = random.sample(all_pairs, number_of_blocked_users)
 
-    blocked_users = [generate_blocked_user(user.user_id, blocked_user.user_id) for user, blocked_user in pairs]
+    blocked_users = [
+        generate_blocked_user(user.user_id, blocked_user.user_id)
+        for user, blocked_user in pairs
+    ]
 
     session.add_all(blocked_users)
     session.flush()

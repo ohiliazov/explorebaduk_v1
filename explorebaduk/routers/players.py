@@ -7,11 +7,11 @@ from explorebaduk.dependencies import get_user_from_header
 from explorebaduk.models import UserModel
 
 router = APIRouter(
-    prefix="/api",
+    prefix="/players",
 )
 
 
-@router.get("/players")
+@router.get("/")
 def get_players(q: str = None):
     return [player.as_dict() for player in get_players_list(q)]
 

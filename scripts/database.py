@@ -1,4 +1,5 @@
 import argparse
+import os
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import create_session
@@ -42,7 +43,7 @@ if __name__ == "__main__":
         "--database-uri",
         type=str,
         help="Database URI",
-        default="sqlite:///explorebaduk.sqlite3",
+        default=os.getenv("DATABASE_URI"),
         nargs=1,
     )
     parser.add_argument("--clean", action="store_true")
