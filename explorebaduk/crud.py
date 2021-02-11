@@ -1,10 +1,10 @@
 import datetime
-from typing import Iterable, List
+from typing import Iterable, List, Tuple
 
 from sqlalchemy import and_, or_
 
 from .database import scoped_session
-from .models import TokenModel, UserModel
+from .models import FriendModel, TokenModel, UserModel
 
 
 def get_players_list(
@@ -57,3 +57,22 @@ def get_user_by_token(token) -> UserModel:
 
         if auth_token:
             return auth_token.user
+
+
+def get_friendships(user: UserModel) -> List[Tuple[int, int]]:
+    if user:
+        with scoped_session() as session:
+            return (
+                session.query(
+                    FriendModel.user_id,
+                    FriendModel.friend_id,
+                )
+                .filter(
+                    or_(
+                        FriendModel.user_id == user.user_id,
+                        FriendModel.friend_id == user.user_id,
+                    ),
+                )
+                .all()
+            )
+    return []
