@@ -9,8 +9,6 @@ from starlette.testclient import TestClient, WebSocketTestSession
 from explorebaduk.database import BaseModel, SessionLocal
 from explorebaduk.main import app
 
-from .helpers import receive_messages
-
 BASE_DIR = os.path.dirname(__file__)
 TEST_DATABASE_PATH = os.path.join(BASE_DIR, os.path.pardir, "explorebaduk_test.sqlite3")
 TEST_DATABASE_URI = f"sqlite:///{os.path.abspath(TEST_DATABASE_PATH)}"
@@ -55,6 +53,5 @@ async def guest_websockets(test_cli) -> List[WebSocketTestSession]:
             websockets.append(websocket)
 
             websocket.send_json({"event": "authorize", "data": None})
-            print(receive_messages(websocket))
 
         yield websockets

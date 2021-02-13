@@ -7,6 +7,8 @@ from fastapi.routing import APIRouter
 from explorebaduk.broadcast import broadcast
 from explorebaduk.crud import get_players_list, get_user_by_token
 from explorebaduk.messages import (
+    ChallengeListMessage,
+    ChallengesRemoveMessage,
     Message,
     PlayerListMessage,
     PlayersAddMessage,
@@ -14,6 +16,7 @@ from explorebaduk.messages import (
     ReceivedMessage,
     WhoAmIMessage,
 )
+from explorebaduk.shared import CHALLENGES
 
 logger = logging.getLogger("uvicorn")
 router = APIRouter()
@@ -67,11 +70,20 @@ class Connection:
 
         await self._send(WhoAmIMessage(self.user))
         await self.send_player_list()
+        await self.send_challenge_list()
 
     async def finalize(self):
         if self.user:
             self.users_online.remove(self.user.user_id)
             await broadcast.publish("main", PlayersRemoveMessage(self.user).json())
+
+            if self.user.user_id in CHALLENGES:
+                CHALLENGES.pop(self.user.user_id)
+                await broadcast.publish(
+                    "main",
+                    ChallengesRemoveMessage(self.user).json(),
+                )
+
         logger.info(
             '%s - "WebSocket %s" [closed]',
             self.websocket.scope["client"],
@@ -84,15 +96,10 @@ class Connection:
             user_ids.remove(self.user.user_id)
 
         player_list = get_players_list(user_ids, search_string)
-        await self._send(PlayerListMessage(player_list, self.user))
+        await self._send(PlayerListMessage(player_list))
 
-    async def send_player_add(self, message: ReceivedMessage):
-        if self.user:
-            message.data["friend"] = self.user.is_friend(message.data["user_id"])
-        else:
-            message.data["friend"] = False
-
-        await self._send(message)
+    async def send_challenge_list(self):
+        await self._send(ChallengeListMessage(CHALLENGES))
 
 
 @router.websocket_route("/ws")
@@ -114,13 +121,15 @@ async def ws_receiver(connection: Connection):
     async for message in connection:
         if message.event == "players.list":
             await connection.send_player_list(message.data)
+        elif message.event == "challenges.list":
+            await connection.send_challenge_list()
+        elif message.event == "refresh":
+            await connection.send_player_list()
+            await connection.send_challenge_list()
 
 
 async def ws_sender(connection: Connection):
     async with broadcast.subscribe(channel="main") as subscriber:
         async for event in subscriber:
             message = ReceivedMessage(event.message)
-            if message.event == "players.add":
-                await connection.send_player_add(message)
-            else:
-                await connection.websocket.send_json(message.json())
+            await connection.websocket.send_json(message.json())

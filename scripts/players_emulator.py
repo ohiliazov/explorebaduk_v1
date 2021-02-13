@@ -30,7 +30,12 @@ async def players_feed(token):
 
 
 async def run():
-    all_players = get_players_list()
+    all_players = [
+        player
+        for player in get_players_list()
+        if any(token.is_active() for token in player.tokens)
+    ]
+
     players = []
 
     if USER_IDS:

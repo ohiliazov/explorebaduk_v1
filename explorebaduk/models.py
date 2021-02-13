@@ -116,7 +116,6 @@ class TokenModel(BaseModel):
     )
 
     def is_active(self):
-        print(self.expire, datetime.fromtimestamp(self.expire))
         return datetime.fromtimestamp(self.expire) >= datetime.utcnow()
 
 

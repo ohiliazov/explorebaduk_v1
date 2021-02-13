@@ -1,3 +1,3 @@
 from broadcaster import Broadcast
 
-broadcast = Broadcast("memory:///")
+broadcast = Broadcast("memory://")

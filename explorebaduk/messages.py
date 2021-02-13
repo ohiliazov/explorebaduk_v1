@@ -46,10 +46,9 @@ class WhoAmIMessage(Message):
 
 class PlayerInfoMixin:
     @staticmethod
-    def make_players_data(user: UserModel, current_user: Optional[UserModel] = None):
+    def make_players_data(user: UserModel):
         return {
             "status": "online",
-            "friend": current_user.is_friend(user.user_id) if current_user else False,
             **user.as_dict(),
         }
 
@@ -57,23 +56,46 @@ class PlayerInfoMixin:
 class PlayerListMessage(Message, PlayerInfoMixin):
     event = "players.list"
 
-    def __init__(
-        self,
-        users: Iterable[UserModel],
-        current_user: Optional[UserModel] = None,
-    ):
-        self.data = [self.make_players_data(user, current_user) for user in users]
+    def __init__(self, users: Iterable[UserModel]):
+        self.data = [self.make_players_data(user) for user in users]
+
+
+class ChallengeListMessage(Message, PlayerInfoMixin):
+    event = "challenges.list"
+
+    def __init__(self, challenges: dict):
+        self.data = [
+            {"user_id": user_id, **challenge.dict()}
+            for user_id, challenge in challenges.items()
+        ]
 
 
 class PlayersAddMessage(Message, PlayerInfoMixin):
     event = "players.add"
 
-    def __init__(self, user: UserModel, current_user: Optional[UserModel] = None):
-        self.data = self.make_players_data(user, current_user)
+    def __init__(self, user: UserModel):
+        self.data = self.make_players_data(user)
 
 
 class PlayersRemoveMessage(Message):
     event = "players.remove"
+
+    def __init__(self, user: UserModel = None):
+        self.data = {"user_id": user.user_id if user else None}
+
+
+class ChallengesAddMessage(Message):
+    event = "challenges.remove"
+
+    def __init__(self, user: UserModel, challenge: dict):
+        self.data = {
+            "user_id": user.user_id,
+            **challenge,
+        }
+
+
+class ChallengesRemoveMessage(Message):
+    event = "challenges.remove"
 
     def __init__(self, user: UserModel = None):
         self.data = {"user_id": user.user_id if user else None}
