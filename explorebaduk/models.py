@@ -107,7 +107,7 @@ class TokenModel(BaseModel):
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.user_id"))
     token = Column(String(64))
-    expire = Column(Integer)
+    expire = Column(DateTime)
 
     user: UserModel = relationship(
         "UserModel",
@@ -116,7 +116,7 @@ class TokenModel(BaseModel):
     )
 
     def is_active(self):
-        return datetime.fromtimestamp(self.expire) >= datetime.utcnow()
+        return self.expire >= datetime.utcnow()
 
 
 class GameModel(BaseModel):

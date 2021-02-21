@@ -1,4 +1,3 @@
-import datetime
 from typing import Iterable, List, Tuple
 
 from sqlalchemy import and_, or_
@@ -51,16 +50,16 @@ def get_players_list(
 
 def get_user_by_token(token) -> UserModel:
     with scoped_session() as session:
+
         auth_token = (
             session.query(TokenModel)
             .filter(
                 TokenModel.token == token,
-                TokenModel.expire >= datetime.datetime.utcnow(),
             )
             .first()
         )
 
-        if auth_token:
+        if auth_token and auth_token.is_active():
             return auth_token.user
 
 

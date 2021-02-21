@@ -17,7 +17,7 @@ def generate_token(user_id: int, minutes: int) -> TokenModel:
                 k=64,
             ),
         ),
-        expire=int(expire_time.timestamp()),
+        expire=expire_time,
     )
 
 

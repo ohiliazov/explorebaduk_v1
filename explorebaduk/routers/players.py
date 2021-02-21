@@ -1,9 +1,9 @@
-from typing import List, Optional
+from typing import List
 
 from fastapi import APIRouter, Depends
 
 from explorebaduk.crud import get_friendships, get_players_list
-from explorebaduk.dependencies import get_user_from_header
+from explorebaduk.dependencies import get_current_user
 from explorebaduk.models import UserModel
 from explorebaduk.schemas import MyFriendsOut, PlayerOut
 
@@ -18,7 +18,7 @@ def get_players(q: str = None):
 
 
 @router.get("/my-friends", response_model=MyFriendsOut)
-def get_friends(user: Optional[UserModel] = Depends(get_user_from_header)):
+def get_friends(user: UserModel = Depends(get_current_user)):
     friendships = get_friendships(user)
     mutual, sent, received = set(), set(), set()
     for user_id, friend_id in friendships:
