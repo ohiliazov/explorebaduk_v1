@@ -57,6 +57,7 @@ class GameSetup(BaseModel):
     @validator("type")
     def validate_game_type(cls, value: str):
         assert value in ALLOWED_GAME_TYPES, f"Invalid game_type: {value}"
+        return value
 
     class Config:
         schema_extra = {
@@ -75,10 +76,12 @@ class RuleSet(BaseModel):
     @validator("rules")
     def validate_rules(cls, value: str):
         assert value in ALLOWED_RULES, f"Invalid rules: {value}"
+        return value
 
     @validator("board_size")
     def validate_board_size(cls, value: int):
         assert 5 <= value <= 52, f"Invalid board_size: {value}"
+        return value
 
     class Config:
         schema_extra = {
@@ -100,6 +103,7 @@ class TimeSettings(BaseModel):
     @validator("time_system")
     def validate_time_system(cls, value: str):
         assert value in ALLOWED_TIME_SYSTEMS, f"Invalid time_system: {value}"
+        return value
 
     class Config:
         schema_extra = {
@@ -112,7 +116,8 @@ class TimeSettings(BaseModel):
         }
 
 
-class Challenge(BaseModel):
+class OpenGame(BaseModel):
+    opponent_id: Optional[int]
     game_setup: GameSetup
     rule_set: RuleSet
     time_settings: TimeSettings

@@ -9,7 +9,8 @@ from explorebaduk.crud import get_players_list
 lock = asyncio.Lock()
 
 # These users will not be emulated
-USER_IDS = [1, 2, 3]
+INCLUDE_USER_IDS = [1, 2, 3]
+EXCLUDE_USER_IDS = [4, 5, 6]
 RANDOM_USERS = 2
 GUEST_NUMBER = 1
 
@@ -20,7 +21,8 @@ async def players_feed(token):
         await ws.send(
             json.dumps({"event": "authorize", "data": token.token if token else ""}),
         )
-
+    if token:
+        print("Authorization token:", token.token)
     while True:
         try:
             message = await asyncio.wait_for(ws.recv(), timeout=0.5)
@@ -38,11 +40,12 @@ async def run():
 
     players = []
 
-    if USER_IDS:
-        for player in all_players:
-            if player in USER_IDS:
-                players.append(player)
-                all_players.remove(player)
+    for player in all_players:
+        if player.user_id in EXCLUDE_USER_IDS:
+            all_players.remove(player)
+        if player.user_id in INCLUDE_USER_IDS:
+            players.append(player)
+            all_players.remove(player)
 
     if RANDOM_USERS:
         players.extend(random.sample(all_players, min(RANDOM_USERS, len(all_players))))

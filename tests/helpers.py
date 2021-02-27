@@ -1,16 +1,64 @@
-import queue
+import asyncio
 from typing import List
 
-from starlette.testclient import WebSocketTestSession
+from async_asgi_testclient.websocket import WebSocketSession
+
+from explorebaduk.messages import AuthorizeMessage, RefreshMessage
+from explorebaduk.models import UserModel
 
 
-def receive_messages(websocket: WebSocketTestSession) -> List[dict]:
-    messages = []
+class WebSocketTester:
+    def __init__(self, websocket: WebSocketSession):
+        self.websocket = websocket
+        self.user = None
 
-    while True:
-        try:
-            messages.append(websocket.receive_json(timeout=0.5))
-        except queue.Empty:
-            break
+    async def send(self, data: dict):
+        await self.websocket.send_json(data)
+        print(">", str(data))
 
-    return messages
+    async def receive(self) -> List[dict]:
+        messages = []
+
+        while True:
+            try:
+                message = await asyncio.wait_for(self.websocket.receive_json(), 1)
+                print("<", str(message))
+                messages.append(message)
+            except asyncio.TimeoutError:
+                return messages
+
+    async def authorize_with_token(self, token: str):
+        await self.send(AuthorizeMessage(token).json())
+
+    async def authorize_as_user(self, user: UserModel):
+        for token in user.tokens:
+            if token.is_active():
+                self.user = user
+                return await self.authorize_with_token(token.token)
+
+    async def authorize_as_guest(self):
+        await self.send({})
+
+    async def refresh(self):
+        await self.send(RefreshMessage().json())
+
+
+def get_online_users(
+    websockets: List[WebSocketTester],
+    exclude: List[UserModel] = None,
+) -> List[UserModel]:
+    exclude = exclude or []
+    return [
+        websocket.user
+        for websocket in websockets
+        if websocket.user and websocket.user not in exclude
+    ]
+
+
+def get_offline_users(
+    users: List[UserModel],
+    websockets: List[WebSocketTester],
+    exclude: List[UserModel] = None,
+) -> List[UserModel]:
+    websocket_users = get_online_users(websockets, exclude)
+    return [user for user in users if user not in websocket_users]

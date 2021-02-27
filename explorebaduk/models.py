@@ -48,6 +48,9 @@ class UserModel(BaseModel):
         lazy="subquery",
     )
 
+    def __str__(self):
+        return f"User(user_id={self.user_id}, name={self.full_name})"
+
     @property
     def full_name(self):
         return f"{self.first_name} {self.last_name}"
@@ -107,7 +110,7 @@ class TokenModel(BaseModel):
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.user_id"))
     token = Column(String(64))
-    expire = Column(DateTime)
+    expire = Column(DateTime, nullable=True)
 
     user: UserModel = relationship(
         "UserModel",
@@ -115,8 +118,11 @@ class TokenModel(BaseModel):
         lazy="subquery",
     )
 
+    def __str__(self):
+        return f"Token(user_id={self.user_id}, token={self.token})"
+
     def is_active(self):
-        return self.expire >= datetime.utcnow()
+        return self.expire is None or self.expire >= datetime.utcnow()
 
 
 class GameModel(BaseModel):

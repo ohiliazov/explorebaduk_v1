@@ -20,19 +20,18 @@ def populate_database_with_data(
     num_blocked: int = 5,
 ):
     users = generate_users(session, num_users)
-    generate_tokens(session, users)
+    generate_tokens(session, users, expires=False)
 
     friends = generate_friends(session, users, num_friends)
     generate_blocked_users(session, users, num_blocked, friends)
 
 
-def create_db(database_uri, clean: bool = False):
+def create_db(database_uri):
     engine = create_engine(database_uri)
     session = create_session(engine)
 
-    if clean:
-        BaseModel.metadata.drop_all(engine)
-        BaseModel.metadata.create_all(engine)
+    BaseModel.metadata.drop_all(engine)
+    BaseModel.metadata.create_all(engine)
 
     populate_database_with_data(session)
 
@@ -46,6 +45,5 @@ if __name__ == "__main__":
         default=os.getenv("DATABASE_URI"),
         nargs=1,
     )
-    parser.add_argument("--clean", action="store_true")
     args = parser.parse_args()
     create_db(args.database_uri, args.clean)

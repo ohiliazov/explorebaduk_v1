@@ -15,6 +15,9 @@ class Message:
     def json(self) -> dict:
         return json.loads(json.dumps({"event": self.event, "data": self.data}))
 
+    def __eq__(self, other: "Message"):
+        return self.event == other.event and self.data == other.data
+
 
 class ReceivedMessage(Message):
     def __init__(self, data: Any):
@@ -37,6 +40,13 @@ class AuthorizeMessage(Message):
         self.data = token
 
 
+class RefreshMessage(Message):
+    event = "refresh"
+
+    def __init__(self):
+        self.data = None
+
+
 class WhoAmIMessage(Message):
     event = "whoami"
 
@@ -57,11 +67,12 @@ class PlayerListMessage(Message, PlayerInfoMixin):
     event = "players.list"
 
     def __init__(self, users: Iterable[UserModel]):
+        users = sorted(users, key=lambda user: (-user.rating, user.username))
         self.data = [self.make_players_data(user) for user in users]
 
 
-class ChallengeListMessage(Message, PlayerInfoMixin):
-    event = "challenges.list"
+class OpenGamesMessage(Message, PlayerInfoMixin):
+    event = "games.open.list"
 
     def __init__(self, challenges: dict):
         self.data = [
@@ -70,22 +81,22 @@ class ChallengeListMessage(Message, PlayerInfoMixin):
         ]
 
 
-class PlayersAddMessage(Message, PlayerInfoMixin):
+class PlayerOnlineMessage(Message, PlayerInfoMixin):
     event = "players.add"
 
     def __init__(self, user: UserModel):
         self.data = self.make_players_data(user)
 
 
-class PlayersRemoveMessage(Message):
+class PlayerOfflineMessage(Message):
     event = "players.remove"
 
     def __init__(self, user: UserModel = None):
         self.data = {"user_id": user.user_id if user else None}
 
 
-class ChallengesAddMessage(Message):
-    event = "challenges.remove"
+class OpenGameCreatedMessage(Message):
+    event = "games.open.add"
 
     def __init__(self, user: UserModel, challenge: dict):
         self.data = {
@@ -94,8 +105,20 @@ class ChallengesAddMessage(Message):
         }
 
 
-class ChallengesRemoveMessage(Message):
-    event = "challenges.remove"
+class OpenGameCancelledMessage(Message):
+    event = "games.open.remove"
 
     def __init__(self, user: UserModel = None):
         self.data = {"user_id": user.user_id if user else None}
+
+
+class DirectInvitesMessage(OpenGamesMessage):
+    event = "games.direct.list"
+
+
+class DirectInviteCreatedMessage(OpenGameCreatedMessage):
+    event = "games.direct.add"
+
+
+class DirectInviteCancelledMessage(OpenGameCancelledMessage):
+    event = "games.direct.remove"

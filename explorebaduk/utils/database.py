@@ -7,8 +7,7 @@ from typing import List
 from explorebaduk.models import BlockedUserModel, FriendModel, TokenModel, UserModel
 
 
-def generate_token(user_id: int, minutes: int) -> TokenModel:
-    expire_time = datetime.datetime.utcnow() + datetime.timedelta(minutes=minutes)
+def generate_token(user_id: int, expire_time: datetime.datetime) -> TokenModel:
     return TokenModel(
         user_id=user_id,
         token="".join(
@@ -49,15 +48,22 @@ def generate_blocked_user(user_id: int, blocked_user_id: int) -> BlockedUserMode
     )
 
 
-def generate_users(session, number_of_users: int = 20) -> List[UserModel]:
+def generate_users(session, number_of_users: int) -> List[UserModel]:
     users = [generate_user(i) for i in range(number_of_users)]
     session.add_all(users)
     session.flush()
     return users
 
 
-def generate_tokens(session, users: list, minutes: int = 60) -> List[TokenModel]:
-    tokens = [generate_token(user.user_id, minutes) for user in users]
+def generate_tokens(
+    session, users: list, *, expires: bool = True, **expire_kwargs
+) -> List[TokenModel]:
+    if expires:
+        expire_time = datetime.datetime.utcnow() + datetime.timedelta(**expire_kwargs)
+    else:
+        expire_time = None
+
+    tokens = [generate_token(user.user_id, expire_time) for user in users]
     session.add_all(tokens)
     session.flush()
 
