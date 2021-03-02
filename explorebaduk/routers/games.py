@@ -9,13 +9,14 @@ from explorebaduk.messages import (
     OpenGameCreatedMessage,
 )
 from explorebaduk.models import UserModel
-from explorebaduk.schemas import OpenGame
+from explorebaduk.schemas import DirectGame, OpenGame
 from explorebaduk.shared import DIRECT_INVITES, OPEN_GAMES
 
 router = APIRouter(prefix="/games")
 
 
-async def create_open_game(game: OpenGame, user: UserModel):
+@router.post("", response_model=OpenGame)
+async def create_open_game(game: OpenGame, user: UserModel = Depends(get_current_user)):
     if user.user_id in OPEN_GAMES:
         OPEN_GAMES.pop(user.user_id)
         await broadcast.publish("main", OpenGameCancelledMessage(user).json())
@@ -26,38 +27,7 @@ async def create_open_game(game: OpenGame, user: UserModel):
     return game
 
 
-async def send_direct_game_invite(game: OpenGame, user: UserModel):
-    opponent_id = game.opponent_id
-    opponent_game_invites = DIRECT_INVITES[opponent_id]
-
-    if user.user_id in opponent_game_invites:
-        opponent_game_invites.pop(user.user_id)
-        await broadcast.publish(
-            f"user__{opponent_id}",
-            DirectInviteCancelledMessage(user).json(),
-        )
-
-    opponent_game_invites[user.user_id] = game.dict()
-    await broadcast.publish(
-        f"user__{opponent_id}",
-        DirectInviteCreatedMessage(user, game.dict()).json(),
-    )
-
-    return game
-
-
-@router.post("", response_model=OpenGame)
-async def create_game(game: OpenGame, user: UserModel = Depends(get_current_user)):
-    if not user:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-
-    if not game.opponent_id:
-        return await create_open_game(game, user)
-    else:
-        return await send_direct_game_invite(game, user)
-
-
-@router.post("/{user_id}", response_model=OpenGame)
+@router.get("/{user_id}", response_model=OpenGame)
 async def get_game_info(user_id: int):
     if user_id not in OPEN_GAMES:
         raise HTTPException(404, {"message": "Game creation not found"})
@@ -74,3 +44,25 @@ async def cancel_game_creation(user: UserModel = Depends(get_current_user)):
     await broadcast.publish("main", OpenGameCancelledMessage(user).json())
 
     return {"message": "Game creation cancelled"}
+
+
+@router.post("/direct/{user_id}", response_model=DirectGame)
+async def create_direct_game(
+    user_id: int, game: DirectGame, user: UserModel = Depends(get_current_user)
+):
+    opponent_game_invites = DIRECT_INVITES[user_id]
+
+    if user.user_id in opponent_game_invites:
+        opponent_game_invites.pop(user.user_id)
+        await broadcast.publish(
+            f"user__{user_id}",
+            DirectInviteCancelledMessage(user).json(),
+        )
+
+    opponent_game_invites[user.user_id] = game.dict()
+    await broadcast.publish(
+        f"user__{user_id}",
+        DirectInviteCreatedMessage(user, game.dict()).json(),
+    )
+
+    return game

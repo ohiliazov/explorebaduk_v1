@@ -1,8 +1,8 @@
 from typing import Optional, Set
 
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, root_validator, validator
 
-from explorebaduk.constants import GameCategory, RuleSet, TimeSystem
+from explorebaduk.constants import GameCategory, Rank, RuleSet, TimeSystem
 
 
 class PlayerOut(BaseModel):
@@ -109,7 +109,7 @@ class TimeSettings(BaseModel):
         }
 
 
-class OpenGame(BaseModel):
+class Game(BaseModel):
     name: str
     board_size: int = 19
     is_ranked: bool = False
@@ -117,7 +117,6 @@ class OpenGame(BaseModel):
     category: GameCategory
     rules: RuleSet
     time_settings: TimeSettings
-    opponent_id: Optional[int]
 
     @validator("board_size")
     def validate_board_size(cls, v: int):
@@ -134,5 +133,102 @@ class OpenGame(BaseModel):
                 "category": GameCategory.REAL_TIME,
                 "rules": RuleSet.JAPANESE,
                 "time_settings": TimeSettings.Config.schema_extra["example"],
+            },
+        }
+
+
+class GameRestrictions(BaseModel):
+    min_rank: Optional[Rank] = Rank.KYU_30
+    max_rank: Optional[Rank] = Rank.PRO_9
+    min_handicap: int = 0
+    max_handicap: int = 9
+
+    @validator("min_handicap")
+    def validate_min_handicap(cls, v: int, values: dict):
+        assert 0 <= v <= values["max_handicap"], "Min handicap should be 0-max stones"
+        return v
+
+    @validator("max_handicap")
+    def validate_max_handicap(cls, v: int, values: dict):
+        assert values["min_handicap"] <= v <= 9, "Max handicap should be min-9 stones"
+        return v
+
+    @root_validator
+    def validate_rank_restrictions(cls, values: dict):
+        if values["min_rank"] and values["max_rank"]:
+            assert values["min_rank"] <= values["max_rank"], "Invalid rank restrictions"
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "min_rating": 1900,
+                "max_rating": 2400,
+                "min_handicap": 0,
+                "max_handicap": 3,
+            },
+        }
+
+
+class OpenGame(Game):
+    restrictions: GameRestrictions
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "name": "My first game",
+                "board_size": 19,
+                "is_ranked": False,
+                "is_private": False,
+                "category": GameCategory.REAL_TIME,
+                "rules": RuleSet.JAPANESE,
+                "time_settings": TimeSettings.Config.schema_extra["example"],
+                "restrictions": GameRestrictions.Config.schema_extra["example"],
+            },
+        }
+
+
+class GameSettings(BaseModel):
+    handicap: Optional[int]
+    komi: Optional[float]
+
+    @validator("handicap")
+    def validate_handicap(cls, v: int):
+        assert 0 <= v <= 9, "Handicap should be between 0 and 9 stones"
+        return v
+
+    @validator("komi")
+    def validate_komi(cls, v: Optional[float]):
+        if v is not None:
+            if v.is_integer():
+                return v
+            return int(v) + 0.5
+
+    class Config:
+        schema_extra = {"example": {"handicap": 3, "komi": 0.5}}
+
+
+class DirectGame(Game):
+    game_settings: GameSettings
+
+    @root_validator
+    def set_default_komi(cls, values: dict):
+        if values["settings"]["komi"] is None:
+            if values["rules"] == RuleSet.JAPANESE:
+                values["settings"]["komi"] = 6.5
+            elif values["rules"] == RuleSet.CHINESE:
+                values["settings"]["komi"] = 7.5
+        return values
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "name": "My first game",
+                "board_size": 19,
+                "is_ranked": False,
+                "is_private": False,
+                "category": GameCategory.REAL_TIME,
+                "rules": RuleSet.JAPANESE,
+                "time_settings": TimeSettings.Config.schema_extra["example"],
+                "game_settings": GameSettings.Config.schema_extra["example"],
             },
         }
