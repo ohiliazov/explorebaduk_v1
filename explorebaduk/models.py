@@ -35,16 +35,16 @@ class UserModel(BaseModel):
         back_populates="user",
         lazy="subquery",
     )
-    friends: List["FriendModel"] = relationship(
-        "FriendModel",
+    friends: List["FriendshipModel"] = relationship(
+        "FriendshipModel",
         back_populates="user",
-        foreign_keys="FriendModel.user_id",
+        foreign_keys="FriendshipModel.user_id",
         lazy="subquery",
     )
-    blocked_users: List["BlockedUserModel"] = relationship(
-        "BlockedUserModel",
+    blocked_users: List["BlacklistModel"] = relationship(
+        "BlacklistModel",
         back_populates="user",
-        foreign_keys="BlockedUserModel.user_id",
+        foreign_keys="BlacklistModel.user_id",
         lazy="subquery",
     )
 
@@ -55,7 +55,7 @@ class UserModel(BaseModel):
     def full_name(self):
         return f"{self.first_name} {self.last_name}"
 
-    def as_dict(self):
+    def asdict(self):
         return {
             "user_id": self.user_id,
             "username": self.username,
@@ -75,7 +75,7 @@ class UserModel(BaseModel):
         return False
 
 
-class FriendModel(BaseModel):
+class FriendshipModel(BaseModel):
     __tablename__ = "friends"
 
     id = Column(Integer, primary_key=True)
@@ -86,11 +86,17 @@ class FriendModel(BaseModel):
     user: UserModel = relationship(
         "UserModel",
         back_populates="friends",
-        foreign_keys="FriendModel.user_id",
+        foreign_keys="FriendshipModel.user_id",
+    )
+
+    friend: UserModel = relationship(
+        "UserModel",
+        back_populates="friends",
+        foreign_keys="FriendshipModel.friend_id",
     )
 
 
-class BlockedUserModel(BaseModel):
+class BlacklistModel(BaseModel):
     __tablename__ = "blocked_users"
 
     id = Column(Integer, primary_key=True)
@@ -100,7 +106,7 @@ class BlockedUserModel(BaseModel):
     user: UserModel = relationship(
         "UserModel",
         back_populates="blocked_users",
-        foreign_keys="BlockedUserModel.user_id",
+        foreign_keys="BlacklistModel.user_id",
     )
 
 

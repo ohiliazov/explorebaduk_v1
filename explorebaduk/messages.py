@@ -51,7 +51,7 @@ class WhoAmIMessage(Message):
     event = "whoami"
 
     def __init__(self, user: Optional[UserModel]):
-        self.data = user.as_dict() if user else None
+        self.data = user.asdict() if user else None
 
 
 class PlayerInfoMixin:
@@ -59,7 +59,7 @@ class PlayerInfoMixin:
     def make_players_data(user: UserModel):
         return {
             "status": "online",
-            **user.as_dict(),
+            **user.asdict(),
         }
 
 
@@ -76,7 +76,7 @@ class OpenGamesMessage(Message, PlayerInfoMixin):
 
     def __init__(self, challenges: dict):
         self.data = [
-            {"user_id": user_id, **challenge.dict()}
+            {"user_id": user_id, **challenge}
             for user_id, challenge in challenges.items()
         ]
 
@@ -98,11 +98,8 @@ class PlayerOfflineMessage(Message):
 class OpenGameCreatedMessage(Message):
     event = "games.open.add"
 
-    def __init__(self, user: UserModel, challenge: dict):
-        self.data = {
-            "user_id": user.user_id,
-            **challenge,
-        }
+    def __init__(self, user: UserModel, game: dict):
+        self.data = {"user_id": user.user_id, **game}
 
 
 class OpenGameCancelledMessage(Message):

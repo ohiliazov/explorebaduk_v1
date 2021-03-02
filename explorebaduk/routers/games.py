@@ -12,7 +12,7 @@ from explorebaduk.models import UserModel
 from explorebaduk.schemas import OpenGame
 from explorebaduk.shared import DIRECT_INVITES, OPEN_GAMES
 
-router = APIRouter(prefix="/api")
+router = APIRouter(prefix="/games")
 
 
 async def create_open_game(game: OpenGame, user: UserModel):
@@ -46,7 +46,7 @@ async def send_direct_game_invite(game: OpenGame, user: UserModel):
     return game
 
 
-@router.post("/games", response_model=OpenGame)
+@router.post("", response_model=OpenGame)
 async def create_game(game: OpenGame, user: UserModel = Depends(get_current_user)):
     if not user:
         raise HTTPException(status_code=401, detail="Unauthorized")
@@ -57,7 +57,7 @@ async def create_game(game: OpenGame, user: UserModel = Depends(get_current_user
         return await send_direct_game_invite(game, user)
 
 
-@router.post("/games/{user_id}", response_model=OpenGame)
+@router.post("/{user_id}", response_model=OpenGame)
 async def get_game_info(user_id: int):
     if user_id not in OPEN_GAMES:
         raise HTTPException(404, {"message": "Game creation not found"})
@@ -65,7 +65,7 @@ async def get_game_info(user_id: int):
     return OPEN_GAMES[user_id]
 
 
-@router.delete("/games")
+@router.delete("")
 async def cancel_game_creation(user: UserModel = Depends(get_current_user)):
     if user.user_id not in OPEN_GAMES:
         raise HTTPException(404, {"message": "Game creation not found"})

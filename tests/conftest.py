@@ -5,12 +5,12 @@ from contextlib import AsyncExitStack
 from typing import List
 
 import pytest
-from async_asgi_testclient import TestClient
 from sqlalchemy import create_engine
 
 from explorebaduk.database import BaseModel, SessionLocal
 from explorebaduk.main import app
-from explorebaduk.models import BlockedUserModel, FriendModel, TokenModel, UserModel
+from explorebaduk.models import BlacklistModel, FriendshipModel, TokenModel, UserModel
+from explorebaduk.shared import OPEN_GAMES
 from explorebaduk.utils.database import (
     generate_blocked_users,
     generate_friends,
@@ -18,7 +18,7 @@ from explorebaduk.utils.database import (
     generate_users,
 )
 
-from .helpers import WebSocketTester
+from .helpers import ApiTester, WebSocketTester
 
 BASE_DIR = os.path.dirname(__file__)
 TEST_DATABASE_PATH = os.path.join(BASE_DIR, os.path.pardir, "explorebaduk_test.sqlite3")
@@ -39,12 +39,6 @@ def db_session():
 
 
 @pytest.fixture(autouse=True)
-async def test_cli() -> TestClient:
-    async with TestClient(app) as client:
-        yield client
-
-
-@pytest.fixture(autouse=True)
 def db_users(db_session) -> List[UserModel]:
     return generate_users(db_session, 20)
 
@@ -55,13 +49,20 @@ def db_tokens(db_session, db_users) -> List[TokenModel]:
 
 
 @pytest.fixture(autouse=True)
-def db_friends(db_session, db_users) -> List[FriendModel]:
+def db_friends(db_session, db_users) -> List[FriendshipModel]:
     return generate_friends(db_session, db_users, 5)
 
 
 @pytest.fixture(autouse=True)
-def db_blocked_users(db_session, db_users, db_friends) -> List[BlockedUserModel]:
+def db_blocked_users(db_session, db_users, db_friends) -> List[BlacklistModel]:
     return generate_blocked_users(db_session, db_users, 3, db_friends)
+
+
+@pytest.fixture
+async def test_cli() -> ApiTester:
+    OPEN_GAMES.clear()
+    async with ApiTester(app) as client:
+        yield client
 
 
 @pytest.fixture

@@ -3,7 +3,7 @@ from typing import Iterable, List, Tuple
 from sqlalchemy import and_, or_
 
 from .database import scoped_session
-from .models import FriendModel, TokenModel, UserModel
+from .models import FriendshipModel, TokenModel, UserModel
 
 
 def get_player_by_id(user_id: int) -> UserModel:
@@ -63,20 +63,18 @@ def get_user_by_token(token) -> UserModel:
             return auth_token.user
 
 
-def get_friendships(user: UserModel) -> List[Tuple[int, int]]:
-    if user:
-        with scoped_session() as session:
-            return (
-                session.query(
-                    FriendModel.user_id,
-                    FriendModel.friend_id,
-                )
-                .filter(
-                    or_(
-                        FriendModel.user_id == user.user_id,
-                        FriendModel.friend_id == user.user_id,
-                    ),
-                )
-                .all()
+def get_friendships(user_id: int) -> List[Tuple[int, int]]:
+    with scoped_session() as session:
+        return (
+            session.query(
+                FriendshipModel.user_id,
+                FriendshipModel.friend_id,
             )
-    return []
+            .filter(
+                or_(
+                    FriendshipModel.user_id == user_id,
+                    FriendshipModel.friend_id == user_id,
+                ),
+            )
+            .all()
+        )

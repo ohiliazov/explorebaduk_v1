@@ -1,10 +1,29 @@
 import asyncio
 from typing import List
 
+from async_asgi_testclient import TestClient
 from async_asgi_testclient.websocket import WebSocketSession
 
 from explorebaduk.messages import AuthorizeMessage, RefreshMessage
 from explorebaduk.models import UserModel
+
+
+class ApiTester(TestClient):
+    def authorize(self, user: UserModel):
+        for token in user.tokens:
+            if token.is_active():
+                self.headers["Authorization"] = f"Bearer {token.token}"
+
+    async def get_players(self, q: str = None):
+        if q:
+            return await self.get("/api/players", query_string={"q": q})
+        return await self.get("/api/players")
+
+    async def get_friends(self):
+        return await self.get("/api/friends")
+
+    async def create_game(self, post_body: dict):
+        return await self.post("/api/games", json=post_body)
 
 
 class WebSocketTester:

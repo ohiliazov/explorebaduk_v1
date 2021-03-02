@@ -4,7 +4,7 @@ import random
 import string
 from typing import List
 
-from explorebaduk.models import BlockedUserModel, FriendModel, TokenModel, UserModel
+from explorebaduk.models import BlacklistModel, FriendshipModel, TokenModel, UserModel
 
 
 def generate_token(user_id: int, expire_time: datetime.datetime) -> TokenModel:
@@ -33,16 +33,16 @@ def generate_user(num: int) -> UserModel:
     )
 
 
-def generate_friend(user_id: int, friend_id: int, *, muted=False) -> FriendModel:
-    return FriendModel(
+def generate_friend(user_id: int, friend_id: int, *, muted=False) -> FriendshipModel:
+    return FriendshipModel(
         user_id=user_id,
         friend_id=friend_id,
         muted=muted,
     )
 
 
-def generate_blocked_user(user_id: int, blocked_user_id: int) -> BlockedUserModel:
-    return BlockedUserModel(
+def generate_blocked_user(user_id: int, blocked_user_id: int) -> BlacklistModel:
+    return BlacklistModel(
         user_id=user_id,
         blocked_user_id=blocked_user_id,
     )
@@ -75,7 +75,7 @@ def generate_friends(
     users: list,
     number_of_friends: int = 20,
     exclude_pairs: list = None,
-) -> List[FriendModel]:
+) -> List[FriendshipModel]:
     all_pairs = list(itertools.combinations(users, 2))
     if exclude_pairs:
         all_pairs = [pair for pair in all_pairs if pair not in exclude_pairs]
@@ -102,8 +102,8 @@ def generate_blocked_users(
     session,
     users: list,
     number_of_blocked_users: int = 20,
-    friends: List[FriendModel] = None,
-) -> List[BlockedUserModel]:
+    friends: List[FriendshipModel] = None,
+) -> List[BlacklistModel]:
     all_pairs = list(itertools.combinations(users, 2))
     if friends:
         all_friend_pairs = [(friend.user_id, friend.friend_id) for friend in friends]
