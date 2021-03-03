@@ -1,8 +1,26 @@
-from typing import Optional, Set
+from typing import Literal, Optional, Set, Union
 
-from pydantic import BaseModel, root_validator, validator
+from pydantic import BaseModel
+from pydantic.types import ConstrainedFloat, ConstrainedInt, PositiveInt
 
-from explorebaduk.constants import GameCategory, Rank, RuleSet, TimeSystem
+from explorebaduk.constants import Color, GameCategory, RuleSet, TimeSystem
+
+
+class NonNegativeInt(ConstrainedInt):
+    ge = 0
+
+
+class NonNegativeFloat(ConstrainedFloat):
+    ge = 0
+
+
+class BoardSize(ConstrainedInt):
+    ge = 5
+    le = 52
+
+
+class Komi(ConstrainedFloat):
+    multiple_of = 0.5
 
 
 class PlayerOut(BaseModel):
@@ -11,8 +29,8 @@ class PlayerOut(BaseModel):
     last_name: str
     email: str
     username: str
-    rating: float = 10
-    puzzle_rating: float = 0
+    rating: NonNegativeFloat = 10
+    puzzle_rating: NonNegativeFloat = 0
     avatar: Optional[str]
 
     class Config:
@@ -45,54 +63,31 @@ class FriendListOut(BaseModel):
         }
 
 
-class TimeSettings(BaseModel):
-    time_system: TimeSystem
-    main_time: int = 0
-    overtime: int = 0
-    periods: int = 1
-    stones: int = 1
-    bonus: int = 0
-    max_time: Optional[int]
+class Unlimited(BaseModel):
+    time_system: Literal[TimeSystem.UNLIMITED]
 
-    @validator("main_time", "overtime", "bonus")
-    def validate_non_negative(cls, v: int):
-        assert v >= 0
-        return v
+    class Config:
+        schema_extra = {"example": {"time_system": TimeSystem.UNLIMITED}}
 
-    @validator("periods", "stones")
-    def validate_positive(cls, v: int):
-        assert v > 0
-        return v
 
-    @validator("main_time")
-    def validate_main_time(cls, v: int, values, **kwargs):
-        if values["time_system"] == TimeSystem.ABSOLUTE:
-            assert v >= 60, "main_time should be >= 60 seconds in Absolute time system"
-        return v
+class Absolute(BaseModel):
+    time_system: Literal[TimeSystem.ABSOLUTE]
+    main_time: PositiveInt
 
-    @validator("periods")
-    def validate_periods(cls, v: int, values, **kwargs):
-        if values["time_system"] != TimeSystem.BYOYOMI:
-            assert v == 1, "periods can be > 1 only in Byo-Yomi time system"
-        return v
+    class Config:
+        schema_extra = {
+            "example": {
+                "time_system": TimeSystem.ABSOLUTE,
+                "main_time": 3600,
+            },
+        }
 
-    @validator("stones")
-    def validate_stones(cls, v: int, values, **kwargs):
-        if values["time_system"] != TimeSystem.CANADIAN:
-            assert v == 1, "stones can be > 1 only in Canadian time system"
-        return v
 
-    @validator("bonus")
-    def validate_bonus(cls, v: int, values, **kwargs):
-        if values["time_system"] != TimeSystem.FISCHER:
-            assert v == 0, "bonus can be > 0 only in Fischer time system"
-        return v
-
-    @validator("max_time")
-    def validate_max_time(cls, v: int, values, **kwargs):
-        if values["time_system"] != TimeSystem.FISCHER:
-            assert v is None, "max_time can be set only in Fischer time system"
-        return v
+class Byoyomi(BaseModel):
+    time_system: Literal[TimeSystem.BYOYOMI]
+    main_time: NonNegativeInt
+    overtime: PositiveInt
+    periods: PositiveInt
 
     class Config:
         schema_extra = {
@@ -105,19 +100,48 @@ class TimeSettings(BaseModel):
         }
 
 
+class Canadian(BaseModel):
+    time_system: Literal[TimeSystem.CANADIAN]
+    main_time: NonNegativeInt
+    overtime: PositiveInt
+    stones: PositiveInt
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "time_system": TimeSystem.CANADIAN,
+                "main_time": 3600,
+                "overtime": 300,
+                "stones": 20,
+            },
+        }
+
+
+class Fischer(BaseModel):
+    time_system: Literal[TimeSystem.FISCHER]
+    main_time: PositiveInt
+    bonus: PositiveInt
+    max_time: PositiveInt
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "time_system": TimeSystem.FISCHER,
+                "main_time": 600,
+                "bonus": 10,
+                "max_time": 1200,
+            },
+        }
+
+
 class Game(BaseModel):
     name: str
-    board_size: int = 19
+    board_size: BoardSize = 19
     is_ranked: bool = False
     is_private: bool = False
     category: GameCategory
     rules: RuleSet
-    time_settings: TimeSettings
-
-    @validator("board_size")
-    def validate_board_size(cls, v: int):
-        assert 5 <= v <= 52, "Board size should be between 5 and 52"
-        return v
+    time_settings: Union[Unlimited, Absolute, Byoyomi, Canadian, Fischer]
 
     class Config:
         schema_extra = {
@@ -128,27 +152,22 @@ class Game(BaseModel):
                 "is_private": False,
                 "category": GameCategory.REAL_TIME,
                 "rules": RuleSet.JAPANESE,
-                "time_settings": TimeSettings.Config.schema_extra["example"],
+                "time_settings": Byoyomi.Config.schema_extra["example"],
             },
         }
 
 
 class GameRestrictions(BaseModel):
-    min_rank: Optional[Rank]
-    max_rank: Optional[Rank]
-    min_handicap: int = 0
-    max_handicap: int = 9
-
-    @validator("min_handicap", "max_handicap")
-    def validate_handicap(cls, v: int):
-        assert 0 <= v <= 9, "Handicap should be 0-9 stones"
-        return v
+    min_rating: NonNegativeInt = 0
+    max_rating: NonNegativeInt = 3000
+    min_handicap: Literal[0, 2, 3, 4, 5, 6, 7, 8, 9] = 0
+    max_handicap: Literal[0, 2, 3, 4, 5, 6, 7, 8, 9] = 9
 
     class Config:
         schema_extra = {
             "example": {
-                "min_rank": "2k",
-                "max_rank": "4d",
+                "min_rating": 1900,
+                "max_rating": 2400,
                 "min_handicap": 0,
                 "max_handicap": 3,
             },
@@ -167,43 +186,32 @@ class OpenGame(Game):
                 "is_private": False,
                 "category": GameCategory.REAL_TIME,
                 "rules": RuleSet.JAPANESE,
-                "time_settings": TimeSettings.Config.schema_extra["example"],
+                "time_settings": Canadian.Config.schema_extra["example"],
                 "restrictions": GameRestrictions.Config.schema_extra["example"],
             },
         }
 
 
-class GameSettings(BaseModel):
-    handicap: Optional[int]
-    komi: Optional[float]
-
-    @validator("handicap")
-    def validate_handicap(cls, v: int):
-        assert 0 <= v <= 9, "Handicap should be between 0 and 9 stones"
-        return v
-
-    @validator("komi")
-    def validate_komi(cls, v: Optional[float]):
-        if v is not None:
-            if v.is_integer():
-                return v
-            return int(v) + 0.5
+class Nigiri(BaseModel):
+    color: Literal[Color.NIGIRI]
+    handicap: Literal[0]
+    komi: Komi
 
     class Config:
-        schema_extra = {"example": {"handicap": 3, "komi": 0.5}}
+        schema_extra = {"example": {"color": "nigiri", "handicap": 0, "komi": 6.5}}
+
+
+class DefinedColor(BaseModel):
+    color: Literal[Color.BLACK, Color.WHITE]
+    handicap: Literal[0, 2, 3, 4, 5, 6, 7, 8, 9]
+    komi: Komi
+
+    class Config:
+        schema_extra = {"example": {"color": "black", "handicap": 3, "komi": 0.5}}
 
 
 class DirectGame(Game):
-    game_settings: GameSettings
-
-    @root_validator
-    def set_default_komi(cls, values: dict):
-        if values["settings"]["komi"] is None:
-            if values["rules"] == RuleSet.JAPANESE:
-                values["settings"]["komi"] = 6.5
-            elif values["rules"] == RuleSet.CHINESE:
-                values["settings"]["komi"] = 7.5
-        return values
+    game_settings: Union[Nigiri, DefinedColor]
 
     class Config:
         schema_extra = {
@@ -214,7 +222,7 @@ class DirectGame(Game):
                 "is_private": False,
                 "category": GameCategory.REAL_TIME,
                 "rules": RuleSet.JAPANESE,
-                "time_settings": TimeSettings.Config.schema_extra["example"],
-                "game_settings": GameSettings.Config.schema_extra["example"],
+                "time_settings": Canadian.Config.schema_extra["example"],
+                "game_settings": DefinedColor.Config.schema_extra["example"],
             },
         }
