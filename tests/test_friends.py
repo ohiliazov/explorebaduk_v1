@@ -23,5 +23,5 @@ async def test_get_friends(test_cli, db_friends):
             friends_out.add(friend_id)
 
     assert set(resp_json["friends"]) == friends_out & friends_in
-    assert set(resp_json["friends_out"]) == friends_out - friends_in
-    assert set(resp_json["friends_in"]) == friends_in - friends_out
+    assert set(resp_json["pending"]) == friends_out - friends_in
+    assert set(resp_json["waiting"]) == friends_in - friends_out

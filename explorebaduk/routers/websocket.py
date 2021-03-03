@@ -8,6 +8,7 @@ from fastapi.routing import APIRouter
 from explorebaduk.broadcast import broadcast
 from explorebaduk.crud import get_players_list, get_user_by_token
 from explorebaduk.messages import (
+    DirectInviteCancelledMessage,
     DirectInvitesMessage,
     Message,
     OpenGameCancelledMessage,
@@ -22,11 +23,6 @@ from explorebaduk.shared import DIRECT_INVITES, OPEN_GAMES
 
 logger = logging.getLogger("uvicorn")
 router = APIRouter()
-
-
-class ConnectionStatus:
-    ONLINE = "online"
-    PLAYING = "playing"
 
 
 class Connection:
@@ -72,8 +68,8 @@ class Connection:
         await self._send(WhoAmIMessage(self.user))
         await asyncio.gather(
             self.send_player_list(),
-            self.send_games_list(),
-            self.send_game_invites(),
+            self.send_open_games(),
+            self.send_direct_invites(),
         )
 
     async def finalize(self):
@@ -81,12 +77,21 @@ class Connection:
             self.users_online.remove(self.user.user_id)
             await broadcast.publish("main", PlayerOfflineMessage(self.user).json())
 
-            if self.user.user_id in OPEN_GAMES:
-                OPEN_GAMES.pop(self.user.user_id)
+            if OPEN_GAMES.pop(self.user.user_id, None):
                 await broadcast.publish(
                     "main",
                     OpenGameCancelledMessage(self.user).json(),
                 )
+
+            await asyncio.wait(
+                [
+                    broadcast.publish(
+                        f"user__{user_id}",
+                        DirectInviteCancelledMessage(self.user).json(),
+                    )
+                    for user_id in DIRECT_INVITES.pop(self.user.user_id, {})
+                ],
+            )
 
         self.log_message("closed")
 
@@ -98,10 +103,10 @@ class Connection:
         player_list = get_players_list(user_ids, search_string)
         await self._send(PlayerListMessage(player_list))
 
-    async def send_games_list(self):
+    async def send_open_games(self):
         await self._send(OpenGamesMessage(OPEN_GAMES))
 
-    async def send_game_invites(self):
+    async def send_direct_invites(self):
         if self.user:
             await self._send(DirectInvitesMessage(DIRECT_INVITES[self.user.user_id]))
 
@@ -130,13 +135,13 @@ async def ws_receiver(connection: Connection):
         if message.event == "players.list":
             await connection.send_player_list(message.data)
         elif message.event == "games.open.list":
-            await connection.send_games_list()
+            await connection.send_open_games()
         elif message.event == "games.direct.list":
-            await connection.send_game_invites()
+            await connection.send_direct_invites()
         elif message.event == "refresh":
             await connection.send_player_list()
-            await connection.send_games_list()
-            await connection.send_game_invites()
+            await connection.send_open_games()
+            await connection.send_direct_invites()
 
 
 async def ws_sender(connection: Connection):
