@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 
 from explorebaduk.crud import get_friendships
-from explorebaduk.dependencies import get_current_user
+from explorebaduk.dependencies import current_user
 from explorebaduk.models import UserModel
 from explorebaduk.schemas import FriendListOut
 
@@ -9,7 +9,7 @@ router = APIRouter(prefix="/friends")
 
 
 @router.get("", response_model=FriendListOut)
-def get_friends(user: UserModel = Depends(get_current_user)):
+def get_friends(user: UserModel = Depends(current_user)):
     pending, waiting = set(), set()
 
     for user_id, friend_id in get_friendships(user.user_id):
@@ -29,7 +29,7 @@ def get_friends(user: UserModel = Depends(get_current_user)):
     "/{user_id}",
     response_model=FriendListOut,
     response_model_exclude_none=True,
-    dependencies=[Depends(get_current_user)],
+    dependencies=[Depends(current_user)],
 )
 def get_user_friends(user_id: int):
     friends = set()
