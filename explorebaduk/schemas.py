@@ -31,17 +31,16 @@ class PlayerOut(BaseModel):
 
 
 class FriendListOut(BaseModel):
-    user_id: Optional[int]
     friends: Set[int]
-    friends_out: Set[int]
-    friends_in: Set[int]
+    pending: Optional[Set[int]]
+    waiting: Optional[Set[int]]
 
     class Config:
         schema_extra = {
             "example": {
-                "friends": {132, 242, 312},
-                "friends_out": {412, 523},
-                "friends_in": {676},
+                "friends": [132, 242, 312],
+                "pending": [412, 523],
+                "waiting": [676],
             },
         }
 
@@ -102,9 +101,6 @@ class TimeSettings(BaseModel):
                 "main_time": 3600,
                 "overtime": 30,
                 "periods": 5,
-                "stones": 1,
-                "bonus": 0,
-                "max_time": 0,
             },
         }
 
@@ -138,31 +134,21 @@ class Game(BaseModel):
 
 
 class GameRestrictions(BaseModel):
-    min_rank: Optional[Rank] = Rank.KYU_30
-    max_rank: Optional[Rank] = Rank.PRO_9
+    min_rank: Optional[Rank]
+    max_rank: Optional[Rank]
     min_handicap: int = 0
     max_handicap: int = 9
 
-    @validator("min_handicap")
-    def validate_min_handicap(cls, v: int, values: dict):
-        assert 0 <= v <= values["max_handicap"], "Min handicap should be 0-max stones"
+    @validator("min_handicap", "max_handicap")
+    def validate_handicap(cls, v: int):
+        assert 0 <= v <= 9, "Handicap should be 0-9 stones"
         return v
-
-    @validator("max_handicap")
-    def validate_max_handicap(cls, v: int, values: dict):
-        assert values["min_handicap"] <= v <= 9, "Max handicap should be min-9 stones"
-        return v
-
-    @root_validator
-    def validate_rank_restrictions(cls, values: dict):
-        if values["min_rank"] and values["max_rank"]:
-            assert values["min_rank"] <= values["max_rank"], "Invalid rank restrictions"
 
     class Config:
         schema_extra = {
             "example": {
-                "min_rating": 1900,
-                "max_rating": 2400,
+                "min_rank": "2k",
+                "max_rank": "4d",
                 "min_handicap": 0,
                 "max_handicap": 3,
             },
