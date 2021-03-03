@@ -19,15 +19,13 @@ from explorebaduk.messages import (
     ReceivedMessage,
     WhoAmIMessage,
 )
-from explorebaduk.shared import DIRECT_INVITES, OPEN_GAMES
+from explorebaduk.shared import DIRECT_INVITES, OPEN_GAMES, USERS_ONLINE
 
 logger = logging.getLogger("uvicorn")
 router = APIRouter()
 
 
 class Connection:
-    users_online = set()
-
     def __init__(self, websocket: WebSocket):
         self.websocket = websocket
         self.user = None
@@ -60,9 +58,9 @@ class Connection:
 
         if message.event == "authorize":
             if user := get_user_by_token(message.data):
-                if user.user_id not in self.users_online:
+                if user.user_id not in USERS_ONLINE:
                     self.user = user
-                    self.users_online.add(user.user_id)
+                    USERS_ONLINE.add(user.user_id)
                     await broadcast.publish("main", PlayerOnlineMessage(user).json())
 
         await self._send(WhoAmIMessage(self.user))
@@ -74,7 +72,7 @@ class Connection:
 
     async def finalize(self):
         if self.user:
-            self.users_online.remove(self.user.user_id)
+            USERS_ONLINE.remove(self.user.user_id)
             await broadcast.publish("main", PlayerOfflineMessage(self.user).json())
 
             if OPEN_GAMES.pop(self.user.user_id, None):
@@ -96,7 +94,7 @@ class Connection:
         self.log_message("closed")
 
     async def send_player_list(self, search_string: str = None):
-        user_ids = self.users_online.copy()
+        user_ids = USERS_ONLINE.copy()
         if self.user:
             user_ids.remove(self.user.user_id)
 

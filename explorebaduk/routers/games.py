@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 
 from explorebaduk.broadcast import broadcast
-from explorebaduk.dependencies import get_current_user
+from explorebaduk.dependencies import current_user_online
 from explorebaduk.messages import (
     DirectInviteCancelledMessage,
     DirectInviteCreatedMessage,
@@ -16,7 +16,9 @@ router = APIRouter()
 
 
 @router.post("/games", response_model=OpenGame)
-async def create_open_game(game: OpenGame, user: UserModel = Depends(get_current_user)):
+async def create_open_game(
+    game: OpenGame, user: UserModel = Depends(current_user_online)
+):
     if user.user_id in OPEN_GAMES:
         raise HTTPException(400, "Open game invite already exists")
 
@@ -27,7 +29,7 @@ async def create_open_game(game: OpenGame, user: UserModel = Depends(get_current
 
 
 @router.delete("/games")
-async def cancel_game_creation(user: UserModel = Depends(get_current_user)):
+async def cancel_game_creation(user: UserModel = Depends(current_user_online)):
     if user.user_id not in OPEN_GAMES:
         raise HTTPException(404, "Game not found")
 
@@ -47,7 +49,7 @@ async def get_game_info(user_id: int):
 
 @router.post("/games/direct/{user_id}", response_model=DirectGame)
 async def create_direct_game(
-    user_id: int, game: DirectGame, user: UserModel = Depends(get_current_user)
+    user_id: int, game: DirectGame, user: UserModel = Depends(current_user_online)
 ):
     opponent_game_invites = DIRECT_INVITES[user.user_id]
 
@@ -65,7 +67,7 @@ async def create_direct_game(
 
 @router.delete("/games/direct/{user_id}")
 async def cancel_direct_invite(
-    user_id: int, user: UserModel = Depends(get_current_user)
+    user_id: int, user: UserModel = Depends(current_user_online)
 ):
     direct_invites = DIRECT_INVITES[user.user_id]
 
