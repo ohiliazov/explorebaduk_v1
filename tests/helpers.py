@@ -22,8 +22,11 @@ class ApiTester(TestClient):
     async def get_friends(self):
         return await self.get("/api/friends")
 
-    async def create_game(self, post_body: dict):
-        return await self.post("/api/games", json=post_body)
+    async def create_open_game(self, post_body: dict):
+        return await self.post("/api/open-games", json=post_body)
+
+    async def create_direct_game(self, user_id: int, post_body: dict):
+        return await self.post(f"/api/game-invites/{user_id}", json=post_body)
 
 
 class WebSocketTester:

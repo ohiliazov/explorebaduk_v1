@@ -5,8 +5,8 @@ import pytest
 from starlette.status import HTTP_200_OK
 
 from explorebaduk.constants import GameCategory, RuleSet, TimeSystem
-from explorebaduk.messages import OpenGameCreatedMessage
-from explorebaduk.schemas import OpenGame
+from explorebaduk.messages import GameInviteAddMessage, OpenGameCreatedMessage
+from explorebaduk.schemas import DirectGame, OpenGame
 
 
 @pytest.mark.asyncio
@@ -31,7 +31,7 @@ async def test_create_open_game(test_cli, db_users, websockets):
             "max_handicap": 9,
         },
     }
-    resp = await test_cli.create_game(post_body)
+    resp = await test_cli.create_open_game(post_body)
     assert resp.status_code == HTTP_200_OK, resp.text
 
     game = OpenGame.parse_obj(post_body).dict()
@@ -47,6 +47,10 @@ async def test_create_open_game(test_cli, db_users, websockets):
 @pytest.mark.asyncio
 async def test_create_direct_invite(test_cli, db_users, websockets):
     user = random.choice(list(filter(lambda ws: ws.user, websockets))).user
+    opponent_ws = random.choice(
+        list(filter(lambda ws: ws.user and ws.user != user, websockets)),
+    )
+
     test_cli.authorize(user)
 
     post_body = {
@@ -59,19 +63,22 @@ async def test_create_direct_invite(test_cli, db_users, websockets):
             "overtime": 60,
             "periods": 5,
         },
-        "game_setings": {
+        "game_settings": {
+            "color": "black",
             "handicap": 3,
             "komi": 0,
         },
     }
-    resp = await test_cli.create_game(post_body)
+
+    resp = await test_cli.create_direct_game(opponent_ws.user.user_id, post_body)
     assert resp.status_code == HTTP_200_OK, resp.text
 
-    game = OpenGame.parse_obj(post_body).dict()
+    game = DirectGame.parse_obj(post_body).dict()
 
     assert resp.json() == game
 
-    expected = OpenGameCreatedMessage(user, game).json()
+    expected = GameInviteAddMessage(user, game).json()
+    assert expected in await opponent_ws.receive()
+
     for websocket in websockets:
-        messages = await websocket.receive()
-        assert messages == [expected]
+        assert not await websocket.receive()

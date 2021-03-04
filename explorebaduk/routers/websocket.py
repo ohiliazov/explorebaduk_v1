@@ -7,19 +7,16 @@ from fastapi.routing import APIRouter
 
 from explorebaduk.broadcast import broadcast
 from explorebaduk.crud import get_players_list, get_user_by_token
+from explorebaduk.helpers import Notifier
 from explorebaduk.messages import (
-    DirectInviteCancelledMessage,
-    DirectInvitesMessage,
+    GameInvitesMessage,
     Message,
-    OpenGameCancelledMessage,
     OpenGamesMessage,
     PlayerListMessage,
-    PlayerOfflineMessage,
-    PlayerOnlineMessage,
     ReceivedMessage,
     WhoAmIMessage,
 )
-from explorebaduk.shared import DIRECT_INVITES, OPEN_GAMES, USERS_ONLINE
+from explorebaduk.shared import GAME_INVITES, OPEN_GAMES, USERS_ONLINE
 
 logger = logging.getLogger("uvicorn")
 router = APIRouter()
@@ -34,23 +31,18 @@ class Connection:
         async for message in self.websocket.iter_text():
             yield ReceivedMessage.from_string(message)
 
-    def log_message(self, event: str, message: Message = ""):
-        logger.info(
-            '%s - "WebSocket %s" [%s] %s',
-            self.websocket.scope.get("client"),
-            event,
-            self.websocket.scope["root_path"] + self.websocket.scope["path"],
-            str(message),
-        )
+    @property
+    def username(self):
+        return self.user.username if self.user else "guest"
 
     async def _recv(self) -> ReceivedMessage:
         message = ReceivedMessage.from_string(await self.websocket.receive_text())
-        self.log_message("recv", message)
+        logger.info("[%s] < %s", self.username, str(message))
         return message
 
     async def _send(self, message: Message):
         await self.websocket.send_json(message.json())
-        self.log_message("send", message)
+        logger.info("[%s] > %s", self.username, str(message))
 
     async def initialize(self):
         await self.websocket.accept()
@@ -61,9 +53,9 @@ class Connection:
                 if user.user_id not in USERS_ONLINE:
                     self.user = user
                     USERS_ONLINE.add(user.user_id)
-                    await broadcast.publish("main", PlayerOnlineMessage(user).json())
+                    await Notifier.player_online(user)
 
-        await self._send(WhoAmIMessage(self.user))
+        await self.send_whoami()
         await asyncio.gather(
             self.send_player_list(),
             self.send_open_games(),
@@ -73,25 +65,20 @@ class Connection:
     async def finalize(self):
         if self.user:
             USERS_ONLINE.remove(self.user.user_id)
-            await broadcast.publish("main", PlayerOfflineMessage(self.user).json())
+            await Notifier.player_offline(self.user)
 
             if OPEN_GAMES.pop(self.user.user_id, None):
-                await broadcast.publish(
-                    "main",
-                    OpenGameCancelledMessage(self.user).json(),
-                )
+                await Notifier.open_game_cancelled(self.user)
 
             await asyncio.wait(
                 [
-                    broadcast.publish(
-                        f"user__{user_id}",
-                        DirectInviteCancelledMessage(self.user).json(),
-                    )
-                    for user_id in DIRECT_INVITES.pop(self.user.user_id, {})
+                    Notifier.direct_invite_cancelled(user_id, self.user)
+                    for user_id in GAME_INVITES.pop(self.user.user_id, {})
                 ],
             )
 
-        self.log_message("closed")
+    async def send_whoami(self):
+        await self._send(WhoAmIMessage(self.user))
 
     async def send_player_list(self, search_string: str = None):
         user_ids = USERS_ONLINE.copy()
@@ -106,7 +93,7 @@ class Connection:
 
     async def send_direct_invites(self):
         if self.user:
-            await self._send(DirectInvitesMessage(DIRECT_INVITES[self.user.user_id]))
+            await self._send(GameInvitesMessage(GAME_INVITES[self.user.user_id]))
 
 
 @router.websocket_route("/ws")

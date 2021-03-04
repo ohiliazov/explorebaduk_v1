@@ -2,8 +2,8 @@ from typing import List
 
 from fastapi import APIRouter
 
-from explorebaduk.crud import get_players_list
-from explorebaduk.schemas import PlayerOut
+from ..crud import get_players_list
+from ..schemas import PlayerOut
 
 router = APIRouter(prefix="/players")
 

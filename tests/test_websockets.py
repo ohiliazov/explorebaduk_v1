@@ -3,7 +3,7 @@ import random
 import pytest
 
 from explorebaduk.messages import (
-    DirectInvitesMessage,
+    GameInvitesMessage,
     OpenGamesMessage,
     PlayerListMessage,
     WhoAmIMessage,
@@ -41,7 +41,7 @@ async def test_authorize_as_user(test_cli, db_users, websockets, ws):
     assert players_list in messages
 
     assert OpenGamesMessage({}).json() in messages
-    assert DirectInvitesMessage({}).json() in messages
+    assert GameInvitesMessage({}).json() in messages
 
 
 @pytest.mark.asyncio
@@ -60,7 +60,7 @@ async def test_refresh_as_user(test_cli, db_users, websockets, ws):
     assert players_list in messages
 
     assert OpenGamesMessage({}).json() in messages
-    assert DirectInvitesMessage({}).json() in messages
+    assert GameInvitesMessage({}).json() in messages
 
 
 @pytest.mark.asyncio

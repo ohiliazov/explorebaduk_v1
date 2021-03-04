@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends
 
-from explorebaduk.crud import get_friendships
-from explorebaduk.dependencies import current_user
-from explorebaduk.models import UserModel
-from explorebaduk.schemas import FriendListOut
+from ..crud import get_friendships
+from ..dependencies import current_user
+from ..models import UserModel
+from ..schemas import FriendListOut
 
 router = APIRouter(prefix="/friends")
 

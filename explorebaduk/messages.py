@@ -54,6 +54,11 @@ class WhoAmIMessage(Message):
         self.data = user.asdict() if user else None
 
 
+class UserIdMessage(Message):
+    def __init__(self, user: UserModel):
+        self.data = {"user_id": user.user_id}
+
+
 class PlayerInfoMixin:
     @staticmethod
     def make_players_data(user: UserModel):
@@ -88,11 +93,8 @@ class PlayerOnlineMessage(Message, PlayerInfoMixin):
         self.data = self.make_players_data(user)
 
 
-class PlayerOfflineMessage(Message):
+class PlayerOfflineMessage(UserIdMessage):
     event = "players.remove"
-
-    def __init__(self, user: UserModel = None):
-        self.data = {"user_id": user.user_id if user else None}
 
 
 class OpenGameCreatedMessage(Message):
@@ -102,20 +104,25 @@ class OpenGameCreatedMessage(Message):
         self.data = {"user_id": user.user_id, **game}
 
 
-class OpenGameCancelledMessage(Message):
+class OpenGameRemoveMessage(UserIdMessage):
     event = "games.open.remove"
 
-    def __init__(self, user: UserModel = None):
-        self.data = {"user_id": user.user_id if user else None}
+
+class OpenGameAcceptMessage(UserIdMessage):
+    event = "games.open.accept"
 
 
-class DirectInvitesMessage(OpenGamesMessage):
+class GameInvitesMessage(OpenGamesMessage):
     event = "games.direct.list"
 
 
-class DirectInviteCreatedMessage(OpenGameCreatedMessage):
+class GameInviteAddMessage(OpenGameCreatedMessage):
     event = "games.direct.add"
 
 
-class DirectInviteCancelledMessage(OpenGameCancelledMessage):
+class GameInviteRemoveMessage(UserIdMessage):
     event = "games.direct.remove"
+
+
+class GameInviteAcceptMessage(UserIdMessage):
+    event = "games.direct.accept"
