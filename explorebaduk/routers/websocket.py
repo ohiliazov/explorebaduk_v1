@@ -72,7 +72,7 @@ class Connection:
 
             await asyncio.wait(
                 [
-                    Notifier.direct_invite_cancelled(user_id, self.user)
+                    Notifier.game_invite_cancelled(user_id, self.user)
                     for user_id in GAME_INVITES.pop(self.user.user_id, {})
                 ],
             )

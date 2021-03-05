@@ -1,5 +1,6 @@
 import asyncio
-from typing import List
+import random
+from typing import List, Optional
 
 from async_asgi_testclient import TestClient
 from async_asgi_testclient.websocket import WebSocketSession
@@ -25,14 +26,20 @@ class ApiTester(TestClient):
     async def create_open_game(self, post_body: dict):
         return await self.post("/api/open-games", json=post_body)
 
-    async def create_direct_game(self, user_id: int, post_body: dict):
+    async def request_open_game(self, user_id: int, post_body: dict):
+        return await self.post(f"/api/open-games/request/{user_id}", json=post_body)
+
+    async def accept_open_game(self, user_id: int):
+        return await self.post(f"/api/open-games/accept/{user_id}")
+
+    async def create_game_invite(self, user_id: int, post_body: dict):
         return await self.post(f"/api/game-invites/{user_id}", json=post_body)
 
 
 class WebSocketTester:
     def __init__(self, websocket: WebSocketSession):
         self.websocket = websocket
-        self.user = None
+        self.user: Optional[UserModel] = None
 
     async def send(self, data: dict):
         await self.websocket.send_json(data)
@@ -84,3 +91,22 @@ def get_offline_users(
 ) -> List[UserModel]:
     websocket_users = get_online_users(websockets, exclude)
     return [user for user in users if user not in websocket_users]
+
+
+def random_websocket(
+    websockets: List[WebSocketTester],
+    *,
+    exclude_users: List[UserModel] = None,
+    exclude_guests: bool = False,
+) -> WebSocketTester:
+    if exclude_guests:
+        websockets = filter(lambda ws: ws.user, websockets)
+    if exclude_users:
+        websockets = filter(lambda ws: ws not in exclude_users, websockets)
+
+    return random.choice(list(websockets))
+
+
+async def receive_websockets(websockets: List[WebSocketTester]) -> List[List[dict]]:
+    messages, _ = await asyncio.wait([websocket.receive() for websocket in websockets])
+    return [t.result() for t in messages]

@@ -108,8 +108,19 @@ class OpenGameRemoveMessage(UserIdMessage):
     event = "games.open.remove"
 
 
+class OpenGameRequestMessage(Message):
+    event = "games.open.request"
+
+    def __init__(self, user: UserModel, game_settings: dict):
+        self.data = {"user_id": user.user_id, "settings": game_settings}
+
+
 class OpenGameAcceptMessage(UserIdMessage):
     event = "games.open.accept"
+
+
+class OpenGameRejectMessage(UserIdMessage):
+    event = "games.open.reject"
 
 
 class GameInvitesMessage(OpenGamesMessage):
@@ -126,3 +137,7 @@ class GameInviteRemoveMessage(UserIdMessage):
 
 class GameInviteAcceptMessage(UserIdMessage):
     event = "games.direct.accept"
+
+
+class GameInviteRejectMessage(UserIdMessage):
+    event = "games.direct.reject"

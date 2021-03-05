@@ -1,9 +1,11 @@
 from typing import Literal, Optional, Set, Union
 
-from pydantic import BaseModel
+from pydantic import BaseModel, root_validator
 from pydantic.types import ConstrainedFloat, ConstrainedInt, PositiveInt
 
 from explorebaduk.constants import Color, GameCategory, RuleSet, TimeSystem
+
+Handicap = Literal[0, 2, 3, 4, 5, 6, 7, 8, 9]
 
 
 class NonNegativeInt(ConstrainedInt):
@@ -160,8 +162,8 @@ class Game(BaseModel):
 class GameRestrictions(BaseModel):
     min_rating: NonNegativeInt = 0
     max_rating: NonNegativeInt = 3000
-    min_handicap: Literal[0, 2, 3, 4, 5, 6, 7, 8, 9] = 0
-    max_handicap: Literal[0, 2, 3, 4, 5, 6, 7, 8, 9] = 9
+    min_handicap: Handicap = 0
+    max_handicap: Handicap = 9
 
     class Config:
         schema_extra = {
@@ -175,7 +177,7 @@ class GameRestrictions(BaseModel):
 
 
 class OpenGame(Game):
-    restrictions: GameRestrictions
+    restrictions: Optional[GameRestrictions]
 
     class Config:
         schema_extra = {
@@ -192,26 +194,23 @@ class OpenGame(Game):
         }
 
 
-class Nigiri(BaseModel):
-    color: Literal[Color.NIGIRI]
-    handicap: Literal[0]
+class GameSettingsIn(BaseModel):
+    color: Color
+    handicap: Handicap
     komi: Komi
 
-    class Config:
-        schema_extra = {"example": {"color": "nigiri", "handicap": 0, "komi": 6.5}}
-
-
-class DefinedColor(BaseModel):
-    color: Literal[Color.BLACK, Color.WHITE]
-    handicap: Literal[0, 2, 3, 4, 5, 6, 7, 8, 9]
-    komi: Komi
+    @root_validator
+    def validate_game_settings(cls, values: dict):
+        if values["color"] is Color.NIGIRI:
+            values["handicap"] = 0
+        return values
 
     class Config:
         schema_extra = {"example": {"color": "black", "handicap": 3, "komi": 0.5}}
 
 
-class DirectGame(Game):
-    game_settings: Union[Nigiri, DefinedColor]
+class GameInviteIn(Game):
+    game_settings: GameSettingsIn
 
     class Config:
         schema_extra = {
@@ -223,6 +222,6 @@ class DirectGame(Game):
                 "category": GameCategory.REAL_TIME,
                 "rules": RuleSet.JAPANESE,
                 "time_settings": Canadian.Config.schema_extra["example"],
-                "game_settings": DefinedColor.Config.schema_extra["example"],
+                "game_settings": GameSettingsIn.Config.schema_extra["example"],
             },
         }
