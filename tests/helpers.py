@@ -32,8 +32,17 @@ class ApiTester(TestClient):
     async def accept_open_game(self, user_id: int):
         return await self.post(f"/api/open-games/accept/{user_id}")
 
+    async def reject_open_game(self, user_id: int):
+        return await self.post(f"/api/open-games/reject/{user_id}")
+
     async def create_game_invite(self, user_id: int, post_body: dict):
         return await self.post(f"/api/game-invites/{user_id}", json=post_body)
+
+    async def accept_game_invite(self, user_id: int):
+        return await self.post(f"/api/game-invites/{user_id}/accept")
+
+    async def reject_game_invite(self, user_id: int):
+        return await self.post(f"/api/game-invites/{user_id}/reject")
 
 
 class WebSocketTester:
@@ -97,7 +106,7 @@ def random_websocket(
     websockets: List[WebSocketTester],
     *,
     exclude_users: List[UserModel] = None,
-    exclude_guests: bool = False,
+    exclude_guests: bool = True,
 ) -> WebSocketTester:
     if exclude_guests:
         websockets = filter(lambda ws: ws.user, websockets)

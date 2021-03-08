@@ -4,7 +4,12 @@ import pytest
 from starlette.status import HTTP_200_OK
 
 from explorebaduk.constants import GameCategory, RuleSet, TimeSystem
-from explorebaduk.messages import OpenGameCreatedMessage, OpenGameRequestMessage
+from explorebaduk.messages import (
+    OpenGameAcceptMessage,
+    OpenGameCreatedMessage,
+    OpenGameRejectMessage,
+    OpenGameRequestMessage,
+)
 from explorebaduk.schemas import OpenGame
 
 from .helpers import random_websocket, receive_websockets
@@ -33,7 +38,7 @@ def open_game() -> dict:
 
 @pytest.mark.asyncio
 async def test_create_open_game(test_cli, db_users, websockets, open_game):
-    user_ws = random_websocket(websockets, exclude_guests=True)
+    user_ws = random_websocket(websockets)
     test_cli.authorize(user_ws.user)
 
     resp = await test_cli.create_open_game(open_game)
@@ -51,13 +56,12 @@ async def test_create_open_game(test_cli, db_users, websockets, open_game):
 
 @pytest.mark.asyncio
 async def test_request_open_game(test_cli, db_users, websockets, open_game):
-    user_ws = random_websocket(websockets, exclude_guests=True)
+    user_ws = random_websocket(websockets)
     test_cli.authorize(user_ws.user)
 
     resp = await test_cli.create_open_game(open_game)
     assert resp.status_code == HTTP_200_OK, resp.text
 
-    # flush
     await receive_websockets(websockets)
 
     opponent_ws = random_websocket(websockets, exclude_users=[user_ws.user])
@@ -94,4 +98,42 @@ async def test_accept_open_game(test_cli, db_users, websockets, open_game):
     await receive_websockets(websockets)
 
     test_cli.authorize(user_ws.user)
-    assert False
+    resp = await test_cli.accept_open_game(opponent_ws.user.user_id)
+    assert resp.status_code == HTTP_200_OK, resp.text
+    assert resp.json() == {"message": "Game accepted"}
+
+    expected = OpenGameAcceptMessage(user_ws.user).json()
+    assert await opponent_ws.receive() == [expected]
+
+    for messages in await receive_websockets(websockets):
+        assert not messages
+
+
+@pytest.mark.asyncio
+async def test_reject_open_game(test_cli, db_users, websockets, open_game):
+    user_ws = random_websocket(websockets, exclude_guests=True)
+    test_cli.authorize(user_ws.user)
+
+    resp = await test_cli.create_open_game(open_game)
+    assert resp.status_code == HTTP_200_OK, resp.text
+
+    opponent_ws = random_websocket(websockets, exclude_users=[user_ws.user])
+    test_cli.authorize(opponent_ws.user)
+
+    post_body = {"color": "black", "handicap": 3, "komi": 0.5}
+    resp = await test_cli.request_open_game(user_ws.user.user_id, post_body)
+    assert resp.status_code == HTTP_200_OK, resp.text
+
+    # flush
+    await receive_websockets(websockets)
+
+    test_cli.authorize(user_ws.user)
+    resp = await test_cli.reject_open_game(opponent_ws.user.user_id)
+    assert resp.status_code == HTTP_200_OK, resp.text
+    assert resp.json() == {"message": "Game rejected"}
+
+    expected = OpenGameRejectMessage(user_ws.user).json()
+    assert await opponent_ws.receive() == [expected]
+
+    for messages in await receive_websockets(websockets):
+        assert not messages
