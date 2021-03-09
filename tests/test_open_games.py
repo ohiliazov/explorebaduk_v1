@@ -98,7 +98,10 @@ async def test_accept_open_game(test_cli, db_users, websockets, open_game):
     await receive_websockets(websockets)
 
     test_cli.authorize(user_ws.user)
-    resp = await test_cli.accept_open_game(opponent_ws.user.user_id)
+    resp = await test_cli.accept_open_game(
+        user_ws.user.user_id,
+        opponent_ws.user.user_id,
+    )
     assert resp.status_code == HTTP_200_OK, resp.text
     assert resp.json() == {"message": "Game accepted"}
 
@@ -128,7 +131,10 @@ async def test_reject_open_game(test_cli, db_users, websockets, open_game):
     await receive_websockets(websockets)
 
     test_cli.authorize(user_ws.user)
-    resp = await test_cli.reject_open_game(opponent_ws.user.user_id)
+    resp = await test_cli.reject_open_game(
+        user_ws.user.user_id,
+        opponent_ws.user.user_id,
+    )
     assert resp.status_code == HTTP_200_OK, resp.text
     assert resp.json() == {"message": "Game rejected"}
 

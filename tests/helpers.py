@@ -27,22 +27,22 @@ class ApiTester(TestClient):
         return await self.post("/api/open-games", json=post_body)
 
     async def request_open_game(self, user_id: int, post_body: dict):
-        return await self.post(f"/api/open-games/request/{user_id}", json=post_body)
+        return await self.post(f"/api/open-games/{user_id}/request", json=post_body)
 
-    async def accept_open_game(self, user_id: int):
-        return await self.post(f"/api/open-games/accept/{user_id}")
+    async def accept_open_game(self, user_id: int, opponent_id: int):
+        return await self.post(f"/api/open-games/{user_id}/request/{opponent_id}")
 
-    async def reject_open_game(self, user_id: int):
-        return await self.post(f"/api/open-games/reject/{user_id}")
+    async def reject_open_game(self, user_id: int, opponent_id: int):
+        return await self.delete(f"/api/open-games/{user_id}/request/{opponent_id}")
 
     async def create_game_invite(self, user_id: int, post_body: dict):
-        return await self.post(f"/api/game-invites/{user_id}", json=post_body)
+        return await self.post(f"/api/game-invites/{user_id}/request", json=post_body)
 
-    async def accept_game_invite(self, user_id: int):
-        return await self.post(f"/api/game-invites/{user_id}/accept")
+    async def accept_game_invite(self, user_id: int, opponent_id: int):
+        return await self.post(f"/api/game-invites/{user_id}/request/{opponent_id}")
 
-    async def reject_game_invite(self, user_id: int):
-        return await self.post(f"/api/game-invites/{user_id}/reject")
+    async def reject_game_invite(self, user_id: int, opponent_id: int):
+        return await self.delete(f"/api/game-invites/{user_id}/request/{opponent_id}")
 
 
 class WebSocketTester:
