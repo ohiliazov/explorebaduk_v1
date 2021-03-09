@@ -8,6 +8,7 @@ from explorebaduk.messages import (
     OpenGameAcceptMessage,
     OpenGameCreatedMessage,
     OpenGameRejectMessage,
+    OpenGameRemoveMessage,
     OpenGameRequestMessage,
 )
 from explorebaduk.schemas import OpenGame
@@ -50,6 +51,25 @@ async def test_create_open_game(test_cli, db_users, websockets, open_game):
 
     expected = OpenGameCreatedMessage(user_ws.user, game).json()
 
+    for messages in await receive_websockets(websockets):
+        assert messages == [expected]
+
+
+@pytest.mark.asyncio
+async def test_cancel_open_game(test_cli, db_users, websockets, open_game):
+    user_ws = random_websocket(websockets)
+    test_cli.authorize(user_ws.user)
+
+    resp = await test_cli.create_open_game(open_game)
+    assert resp.status_code == HTTP_200_OK, resp.text
+
+    await receive_websockets(websockets)
+
+    resp = await test_cli.cancel_open_game(user_ws.user.user_id)
+    assert resp.status_code == HTTP_200_OK, resp.text
+    assert resp.json() == {"message": "Open game cancelled"}
+
+    expected = OpenGameRemoveMessage(user_ws.user).json()
     for messages in await receive_websockets(websockets):
         assert messages == [expected]
 

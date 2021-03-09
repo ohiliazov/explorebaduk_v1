@@ -6,10 +6,10 @@ from ..models import UserModel
 from ..schemas import GameInviteIn
 from ..shared import GAME_INVITES
 
-router = APIRouter()
+router = APIRouter(prefix="/game-invites", tags=["game-invites"])
 
 
-@router.post("/game-invites/{user_id}/request", response_model=GameInviteIn)
+@router.post("/{user_id}/request", response_model=GameInviteIn)
 async def create_game_invite(
     user_id: int, game: GameInviteIn, user: UserModel = Depends(current_user_online)
 ):
@@ -24,7 +24,7 @@ async def create_game_invite(
     return game
 
 
-@router.delete("/game-invites/{user_id}/request")
+@router.delete("/{user_id}/request")
 async def cancel_game_invite(
     user_id: int, user: UserModel = Depends(current_user_online)
 ):
@@ -39,7 +39,7 @@ async def cancel_game_invite(
     return {"message": "Direct invite cancelled"}
 
 
-@router.post("/game-invites/{user_id}/request/{opponent_id}")
+@router.post("/{user_id}/request/{opponent_id}")
 async def accept_game_invite(
     user_id: int,
     opponent_id: int,
@@ -58,7 +58,7 @@ async def accept_game_invite(
     return {"message": "Game invite accepted"}
 
 
-@router.delete("/game-invites/{user_id}/request/{opponent_id}")
+@router.delete("/{user_id}/request/{opponent_id}")
 async def reject_game_invite(
     user_id: int,
     opponent_id: int,

@@ -26,6 +26,9 @@ class ApiTester(TestClient):
     async def create_open_game(self, post_body: dict):
         return await self.post("/api/open-games", json=post_body)
 
+    async def cancel_open_game(self, user_id: int):
+        return await self.delete(f"/api/open-games/{user_id}")
+
     async def request_open_game(self, user_id: int, post_body: dict):
         return await self.post(f"/api/open-games/{user_id}/request", json=post_body)
 

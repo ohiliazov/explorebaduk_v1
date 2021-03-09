@@ -5,7 +5,7 @@ from ..dependencies import current_user
 from ..models import UserModel
 from ..schemas import FriendListOut
 
-router = APIRouter(prefix="/friends")
+router = APIRouter(prefix="/friends", tags=["friends"])
 
 
 @router.get("", response_model=FriendListOut)

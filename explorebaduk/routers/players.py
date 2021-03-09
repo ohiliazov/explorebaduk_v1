@@ -5,7 +5,7 @@ from fastapi import APIRouter
 from ..crud import get_players_list
 from ..schemas import PlayerOut
 
-router = APIRouter(prefix="/players")
+router = APIRouter(prefix="/players", tags=["players"])
 
 
 @router.get("", response_model=List[PlayerOut])

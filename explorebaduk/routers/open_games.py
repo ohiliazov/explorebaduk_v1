@@ -1,15 +1,22 @@
+from typing import List
+
 from fastapi import APIRouter, Depends, HTTPException
 
-from ..dependencies import current_user_online
+from ..dependencies import current_user, current_user_online
 from ..helpers import Notifier
 from ..models import UserModel
 from ..schemas import GameSettingsIn, OpenGame
 from ..shared import OPEN_GAME_REQUESTS, OPEN_GAMES
 
-router = APIRouter()
+router = APIRouter(prefix="/open-games", tags=["open-games"])
 
 
-@router.post("/open-games", response_model=OpenGame)
+@router.get("", response_model=List[OpenGame], dependencies=[Depends(current_user)])
+async def list_open_games():
+    return [game for game in OPEN_GAMES.values()]
+
+
+@router.post("", response_model=OpenGame)
 async def create_open_game(
     game: OpenGame,
     user: UserModel = Depends(current_user_online),
@@ -23,7 +30,14 @@ async def create_open_game(
     return game
 
 
-@router.delete("/open-games/user_id")
+@router.get("/{user_id}", response_model=OpenGame, dependencies=[Depends(current_user)])
+async def get_open_game(user_id: int):
+    if game := OPEN_GAMES.get(user_id):
+        return game
+    raise HTTPException(404, "Open game not found")
+
+
+@router.delete("/{user_id}")
 async def cancel_game_creation(
     user_id: int, user: UserModel = Depends(current_user_online)
 ):
@@ -36,10 +50,10 @@ async def cancel_game_creation(
     OPEN_GAMES.pop(user_id)
     await Notifier.open_game_cancelled(user)
 
-    return {"message": "Game creation cancelled"}
+    return {"message": "Open game cancelled"}
 
 
-@router.post("/open-games/{user_id}/request")
+@router.post("/{user_id}/request")
 async def request_open_game(
     user_id: int,
     settings: GameSettingsIn,
@@ -54,7 +68,7 @@ async def request_open_game(
     return {"message": "Game requested"}
 
 
-@router.post("/open-games/{user_id}/request/{opponent_id}")
+@router.post("/{user_id}/request/{opponent_id}")
 async def accept_open_game(
     user_id: int, opponent_id: int, user: UserModel = Depends(current_user_online)
 ):
@@ -73,7 +87,7 @@ async def accept_open_game(
     return {"message": "Game accepted"}
 
 
-@router.delete("/open-games/{user_id}/request/{opponent_id}")
+@router.delete("/{user_id}/request/{opponent_id}")
 async def reject_open_game(
     user_id: int, opponent_id: int, user: UserModel = Depends(current_user_online)
 ):
