@@ -1,5 +1,4 @@
 import time
-from enum import IntEnum
 from abc import ABCMeta, abstractmethod
 
 # Delay before making a move
@@ -10,17 +9,7 @@ class TimerError(Exception):
     pass
 
 
-class TimeSystem(IntEnum):
-    NO_TIME = 0
-    ABSOLUTE = 1
-    BYOYOMI = 2
-    CANADIAN = 3
-    FISCHER = 4
-
-
 class Timer(metaclass=ABCMeta):
-    time_system = None
-
     def __init__(
         self,
         main_time: int = 0,
@@ -82,12 +71,10 @@ class Timer(metaclass=ABCMeta):
         pass
 
 
-class NoTimeTimer(Timer):
+class UnlimitedTimer(Timer):
     """
     No time limit
     """
-
-    time_system = TimeSystem.NO_TIME
 
     def initial_time_left(self):
         return 0
@@ -108,8 +95,6 @@ class AbsoluteTimer(Timer):
     If a player's main time expires, they generally lose the game.
     """
 
-    time_system = TimeSystem.ABSOLUTE
-
     def initial_time_left(self):
         return self.main_time
 
@@ -120,11 +105,11 @@ class AbsoluteTimer(Timer):
 class ByoyomiTimer(Timer):
     """
     After the main time is depleted, a player has a certain number of periods.
-    If a move is completed before the time expires, the time period resets and restarts the next turn.
-    If a move is not completed within a time period, the time period will expire, and the next time period begins.
+    If a move is completed before the time expires,
+    the time period resets and restarts the next turn.
+    If a move is not completed within a time period,
+    the time period will expire, and the next time period begins.
     """
-
-    time_system = TimeSystem.BYOYOMI
 
     def initial_time_left(self):
         return self.main_time + self.overtime * self.periods
@@ -138,10 +123,9 @@ class ByoyomiTimer(Timer):
 
 class CanadianTimer(Timer):
     """
-    After the main time is depleted, a player must make a certain number of moves within a certain period of time.
+    After the main time is depleted, a player must make a certain number of moves
+    within a certain period of time.
     """
-
-    time_system = TimeSystem.CANADIAN
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -169,45 +153,8 @@ class FischerTimer(Timer):
     unless the player's main time ran out before they completed their move.
     """
 
-    time_system = TimeSystem.FISCHER
-
     def initial_time_left(self):
         return self.main_time
 
     def process_overtime(self) -> None:
         self._time_left += self.bonus
-
-
-class TimeControl:
-    def __init__(
-        self,
-        time_system: TimeSystem,
-        main_time: int = 0,
-        overtime: int = 0,
-        period: int = 1,
-        stones: int = 1,
-        bonus: int = 0,
-        **kwargs,
-    ):
-        self.time_system = time_system
-        self.main_time = main_time
-        self.overtime = overtime
-        self.periods = period
-        self.stones = stones
-        self.bonus = bonus
-
-    def __str__(self):
-        return f"TS[{self.time_system}M{self.main_time}O{self.overtime}P{self.periods}S{self.stones}B{self.bonus}]"
-
-    def timer(self) -> Timer:
-        if self.time_system is TimeSystem.NO_TIME:
-            return NoTimeTimer()
-        if self.time_system is TimeSystem.ABSOLUTE:
-            return AbsoluteTimer(main_time=self.main_time)
-        if self.time_system is TimeSystem.BYOYOMI:
-            return ByoyomiTimer(main_time=self.main_time, overtime=self.overtime, periods=self.periods)
-        if self.time_system is TimeSystem.CANADIAN:
-            return CanadianTimer(main_time=self.main_time, overtime=self.overtime, stones=self.stones)
-        if self.time_system is TimeSystem.FISCHER:
-            return FischerTimer(main_time=self.main_time, bonus=self.bonus)
-        raise NotImplementedError("Timer not implemented")

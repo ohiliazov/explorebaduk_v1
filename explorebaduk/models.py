@@ -135,9 +135,10 @@ class GameModel(BaseModel):
     __tablename__ = "games"
 
     id = Column(Integer, primary_key=True)
-    started_at = Column(DateTime, server_default=func.now())
+    created_at = Column(DateTime, server_default=func.now())
+    started_at = Column(DateTime)
     finished_at = Column(DateTime)
-    status = Column(String(255), default="Open")
+    status = Column(String(255))
     settings = Column(JSON)
     sgf = Column(Text)
 
@@ -146,8 +147,9 @@ class GameModel(BaseModel):
     def as_dict(self):
         return {
             "id": self.id,
-            "started_at": self.started_at.timestamp(),
-            "finished_at": self.finished_at.timestamp() if self.finished_at else None,
+            "created_at": self.created_at,
+            "started_at": self.started_at,
+            "finished_at": self.finished_at,
             "status": self.status,
             "settings": self.settings,
             "sgf": self.sgf,

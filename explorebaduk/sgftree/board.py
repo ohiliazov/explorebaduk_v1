@@ -40,7 +40,7 @@ class Board:
         score: dict = None,
         history: List[Tuple[np.ndarray, Location, dict]] = None,
     ):
-        self.board = np.zeros(shape, dtype=np.int) if board is None else board.copy()
+        self.board = np.zeros(shape, dtype=np.int_) if board is None else board.copy()
         self.history = history.copy() if history else []
 
         self.turn = Location.WHITE if handicap else Location.BLACK
