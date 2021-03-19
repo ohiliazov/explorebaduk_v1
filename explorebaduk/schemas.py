@@ -136,7 +136,7 @@ class Fischer(BaseModel):
         }
 
 
-class Game(BaseModel):
+class GameSetupBase(BaseModel):
     name: str
     board_size: BoardSize = 19
     is_ranked: bool = False
@@ -176,25 +176,19 @@ class GameRestrictions(BaseModel):
         }
 
 
-class OpenGame(Game):
+class OpenGame(GameSetupBase):
     restrictions: Optional[GameRestrictions]
 
     class Config:
         schema_extra = {
             "example": {
-                "name": "My first game",
-                "board_size": 19,
-                "is_ranked": False,
-                "is_private": False,
-                "category": GameCategory.REAL_TIME,
-                "rules": RuleSet.JAPANESE,
-                "time_settings": Canadian.Config.schema_extra["example"],
+                **GameSetupBase.Config.schema_extra["example"],
                 "restrictions": GameRestrictions.Config.schema_extra["example"],
             },
         }
 
 
-class GameSettingsIn(BaseModel):
+class GameSettings(BaseModel):
     color: Color
     handicap: Handicap
     komi: Komi
@@ -209,19 +203,13 @@ class GameSettingsIn(BaseModel):
         schema_extra = {"example": {"color": "black", "handicap": 3, "komi": 0.5}}
 
 
-class GameInviteIn(Game):
-    game_settings: GameSettingsIn
+class GameSetup(GameSetupBase):
+    game_settings: GameSettings
 
     class Config:
         schema_extra = {
             "example": {
-                "name": "My first game",
-                "board_size": 19,
-                "is_ranked": False,
-                "is_private": False,
-                "category": GameCategory.REAL_TIME,
-                "rules": RuleSet.JAPANESE,
-                "time_settings": Canadian.Config.schema_extra["example"],
-                "game_settings": GameSettingsIn.Config.schema_extra["example"],
+                **GameSetupBase.Config.schema_extra["example"],
+                "game_settings": GameSettings.Config.schema_extra["example"],
             },
         }

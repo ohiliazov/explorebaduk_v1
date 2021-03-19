@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from ..dependencies import current_user, current_user_online
 from ..helpers import Notifier
 from ..models import UserModel
-from ..schemas import GameSettingsIn, OpenGame
+from ..schemas import GameSettings, OpenGame
 from ..shared import OPEN_GAME_REQUESTS, OPEN_GAMES
 
 router = APIRouter(prefix="/open-games", tags=["open-games"])
@@ -56,7 +56,7 @@ async def cancel_game_creation(
 @router.post("/{user_id}/request")
 async def request_open_game(
     user_id: int,
-    settings: GameSettingsIn,
+    settings: GameSettings,
     user: UserModel = Depends(current_user_online),
 ):
     if user_id not in OPEN_GAMES:

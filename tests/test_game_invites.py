@@ -9,7 +9,7 @@ from explorebaduk.messages import (
     GameInviteAddMessage,
     GameInviteRejectMessage,
 )
-from explorebaduk.schemas import GameInviteIn
+from explorebaduk.schemas import GameSetup
 
 from .helpers import random_websocket, receive_websockets
 
@@ -44,7 +44,7 @@ async def test_create_game_invite(test_cli, db_users, websockets, game_invite):
     resp = await test_cli.create_game_invite(opponent_ws.user.user_id, game_invite)
     assert resp.status_code == HTTP_200_OK, resp.text
 
-    game = GameInviteIn.parse_obj(game_invite).dict()
+    game = GameSetup.parse_obj(game_invite).dict()
 
     assert resp.json() == game
 

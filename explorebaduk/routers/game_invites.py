@@ -3,15 +3,15 @@ from fastapi import APIRouter, Depends, HTTPException
 from ..dependencies import current_user_online
 from ..helpers import Notifier
 from ..models import UserModel
-from ..schemas import GameInviteIn
+from ..schemas import GameSetup
 from ..shared import GAME_INVITES
 
 router = APIRouter(prefix="/game-invites", tags=["game-invites"])
 
 
-@router.post("/{user_id}/request", response_model=GameInviteIn)
+@router.post("/{user_id}/request", response_model=GameSetup)
 async def create_game_invite(
-    user_id: int, game: GameInviteIn, user: UserModel = Depends(current_user_online)
+    user_id: int, game: GameSetup, user: UserModel = Depends(current_user_online)
 ):
     direct_invites = GAME_INVITES[user.user_id]
 

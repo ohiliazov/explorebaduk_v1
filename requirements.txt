@@ -3,6 +3,7 @@ coverage==5.3
 fastapi==0.63.0
 git+https://github.com/jumpman24/broadcaster.git@master
 git+https://github.com/jumpman24/starlette.git@dev
+numpy==1.20.1
 pre-commit==2.7.1
 pymysql==0.10.1
 pytest==6.2.1

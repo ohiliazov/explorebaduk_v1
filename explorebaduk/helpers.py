@@ -13,7 +13,7 @@ from explorebaduk.messages import (
     PlayerOnlineMessage,
 )
 from explorebaduk.models import UserModel
-from explorebaduk.schemas import GameInviteIn, GameSettingsIn, OpenGame
+from explorebaduk.schemas import GameSettings, GameSetup, OpenGame
 
 from .broadcast import broadcast
 
@@ -45,7 +45,7 @@ class Notifier:
 
     @classmethod
     async def open_game_requested(
-        cls, user_id: int, user: UserModel, settings: GameSettingsIn
+        cls, user_id: int, user: UserModel, settings: GameSettings
     ):
         await cls.notify(user_id, OpenGameRequestMessage(user, settings.dict()))
 
@@ -58,9 +58,7 @@ class Notifier:
         await cls.notify(user_id, OpenGameRejectMessage(user))
 
     @classmethod
-    async def game_invite_created(
-        cls, user_id: int, user: UserModel, game: GameInviteIn
-    ):
+    async def game_invite_created(cls, user_id: int, user: UserModel, game: GameSetup):
         await cls.notify(user_id, GameInviteAddMessage(user, game.dict()))
 
     @classmethod
