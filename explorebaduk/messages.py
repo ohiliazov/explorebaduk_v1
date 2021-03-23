@@ -80,10 +80,7 @@ class OpenGamesMessage(Message, PlayerInfoMixin):
     event = "games.open.list"
 
     def __init__(self, challenges: dict):
-        self.data = [
-            {"user_id": user_id, **challenge}
-            for user_id, challenge in challenges.items()
-        ]
+        self.data = [{"user_id": user_id, **challenge} for user_id, challenge in challenges.items()]
 
 
 class PlayerOnlineMessage(Message, PlayerInfoMixin):

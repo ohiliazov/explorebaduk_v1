@@ -65,7 +65,7 @@ async def test_cancel_open_game(test_cli, db_users, websockets, open_game):
 
     await receive_websockets(websockets)
 
-    resp = await test_cli.cancel_open_game(user_ws.user.user_id)
+    resp = await test_cli.cancel_open_game()
     assert resp.status_code == HTTP_200_OK, resp.text
     assert resp.json() == {"message": "Open game cancelled"}
 
@@ -125,11 +125,15 @@ async def test_accept_open_game(test_cli, db_users, websockets, open_game):
     assert resp.status_code == HTTP_200_OK, resp.text
     assert resp.json() == {"message": "Game accepted"}
 
-    expected = OpenGameAcceptMessage(user_ws.user).json()
-    assert await opponent_ws.receive() == [expected]
+    expected = [
+        OpenGameAcceptMessage(user_ws.user).json(),
+        OpenGameRemoveMessage(user_ws.user).json(),
+    ]
+    assert await opponent_ws.receive() == expected
 
-    for messages in await receive_websockets(websockets):
-        assert not messages
+    expected = [OpenGameRemoveMessage(user_ws.user).json()]
+    for messages in await receive_websockets(websockets, [opponent_ws]):
+        assert messages == expected
 
 
 @pytest.mark.asyncio

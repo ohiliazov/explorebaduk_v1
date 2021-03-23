@@ -68,10 +68,7 @@ async def test_accept_game_invite(test_cli, db_users, websockets, game_invite):
     await receive_websockets(websockets)
 
     test_cli.authorize(opponent_ws.user)
-    resp = await test_cli.accept_game_invite(
-        opponent_ws.user.user_id,
-        user_ws.user.user_id,
-    )
+    resp = await test_cli.accept_game_invite(user_ws.user.user_id)
     assert resp.status_code == HTTP_200_OK, resp.text
     assert resp.json() == {"message": "Game invite accepted"}
 
@@ -95,10 +92,7 @@ async def test_reject_game_invite(test_cli, db_users, websockets, game_invite):
     await receive_websockets(websockets)
 
     test_cli.authorize(opponent_ws.user)
-    resp = await test_cli.reject_game_invite(
-        opponent_ws.user.user_id,
-        user_ws.user.user_id,
-    )
+    resp = await test_cli.reject_game_invite(user_ws.user.user_id)
     assert resp.status_code == HTTP_200_OK, resp.text
     assert resp.json() == {"message": "Game invite rejected"}
 

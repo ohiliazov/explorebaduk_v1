@@ -43,9 +43,7 @@ class Property:
         return self.data[item]
 
     def __eq__(self, other: "Property"):
-        return (
-            other is not None and self.label == other.label and self.data == other.data
-        )
+        return other is not None and self.label == other.label and self.data == other.data
 
     def copy(self) -> "Property":
         return Property(self.label, self.data.copy())
@@ -142,9 +140,7 @@ class GameTree:
         if index < len(self):
             # convert part of existing tree into a subtree
             self.data, existing_tree = self.data[:index], self.get_subtree(index)
-            self.variations = (
-                [new_tree, existing_tree] if is_main else [existing_tree, new_tree]
-            )
+            self.variations = [new_tree, existing_tree] if is_main else [existing_tree, new_tree]
 
         elif self.variations:
             # we have some variations, so append new one
@@ -209,9 +205,7 @@ class Cursor:
         self.atSplit = (self.index + 1 == len(self.game_tree)) and bool(
             self.game_tree.variations,
         )
-        self.atEnd = (
-            self.index + 1 == len(self.game_tree)
-        ) and not self.game_tree.variations
+        self.atEnd = (self.index + 1 == len(self.game_tree)) and not self.game_tree.variations
 
     @property
     def node(self) -> Node:
@@ -277,9 +271,7 @@ class Cursor:
         if not self.atEnd and not self.atSplit:
             next_node_moves = [get_move_property(self.game_tree[self.index + 1])]
         else:
-            next_node_moves = [
-                get_move_property(tree[0]) for tree in self.game_tree.variations
-            ]
+            next_node_moves = [get_move_property(tree[0]) for tree in self.game_tree.variations]
 
         if node_move not in next_node_moves:
             self.game_tree.insert_tree(

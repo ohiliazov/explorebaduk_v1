@@ -26,8 +26,8 @@ class ApiTester(TestClient):
     async def create_open_game(self, post_body: dict):
         return await self.post("/api/open-games", json=post_body)
 
-    async def cancel_open_game(self, user_id: int):
-        return await self.delete(f"/api/open-games/{user_id}")
+    async def cancel_open_game(self):
+        return await self.delete("/api/open-games")
 
     async def request_open_game(self, user_id: int, post_body: dict):
         return await self.post(f"/api/open-games/{user_id}/request", json=post_body)
@@ -39,13 +39,16 @@ class ApiTester(TestClient):
         return await self.delete(f"/api/open-games/{user_id}/request/{opponent_id}")
 
     async def create_game_invite(self, user_id: int, post_body: dict):
-        return await self.post(f"/api/game-invites/{user_id}/request", json=post_body)
+        return await self.post(f"/api/game-invites/{user_id}", json=post_body)
 
-    async def accept_game_invite(self, user_id: int, opponent_id: int):
-        return await self.post(f"/api/game-invites/{user_id}/request/{opponent_id}")
+    async def remove_game_invite(self, user_id: int):
+        return await self.delete(f"/api/game-invites/{user_id}")
 
-    async def reject_game_invite(self, user_id: int, opponent_id: int):
-        return await self.delete(f"/api/game-invites/{user_id}/request/{opponent_id}")
+    async def accept_game_invite(self, user_id: int):
+        return await self.post(f"/api/game-invites/{user_id}/accept")
+
+    async def reject_game_invite(self, user_id: int):
+        return await self.delete(f"/api/game-invites/{user_id}/accept")
 
 
 class WebSocketTester:
@@ -78,7 +81,7 @@ class WebSocketTester:
                 return await self.authorize_with_token(token.token)
 
     async def authorize_as_guest(self):
-        await self.send({})
+        await self.send({"event": "authorize", "data": None})
 
     async def refresh(self):
         await self.send(RefreshMessage().json())
@@ -89,11 +92,7 @@ def get_online_users(
     exclude: List[UserModel] = None,
 ) -> List[UserModel]:
     exclude = exclude or []
-    return [
-        websocket.user
-        for websocket in websockets
-        if websocket.user and websocket.user not in exclude
-    ]
+    return [websocket.user for websocket in websockets if websocket.user and websocket.user not in exclude]
 
 
 def get_offline_users(
@@ -119,6 +118,11 @@ def random_websocket(
     return random.choice(list(websockets))
 
 
-async def receive_websockets(websockets: List[WebSocketTester]) -> List[List[dict]]:
-    messages, _ = await asyncio.wait([websocket.receive() for websocket in websockets])
+async def receive_websockets(
+    websockets: List[WebSocketTester], exclude_websockets: List[WebSocketTester] = None
+) -> List[List[dict]]:
+    exclude_websockets = exclude_websockets or []
+    messages, _ = await asyncio.wait(
+        [websocket.receive() for websocket in websockets if websocket not in exclude_websockets],
+    )
     return [t.result() for t in messages]

@@ -55,9 +55,7 @@ def generate_users(session, number_of_users: int) -> List[UserModel]:
     return users
 
 
-def generate_tokens(
-    session, users: list, *, expires: bool = True, **expire_kwargs
-) -> List[TokenModel]:
+def generate_tokens(session, users: list, *, expires: bool = True, **expire_kwargs) -> List[TokenModel]:
     if expires:
         expire_time = datetime.datetime.utcnow() + datetime.timedelta(**expire_kwargs)
     else:
@@ -111,10 +109,7 @@ def generate_blocked_users(
 
     pairs = random.sample(all_pairs, number_of_blocked_users)
 
-    blocked_users = [
-        generate_blocked_user(user.user_id, blocked_user.user_id)
-        for user, blocked_user in pairs
-    ]
+    blocked_users = [generate_blocked_user(user.user_id, blocked_user.user_id) for user, blocked_user in pairs]
 
     session.add_all(blocked_users)
     session.flush()

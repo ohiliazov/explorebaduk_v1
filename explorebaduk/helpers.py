@@ -36,17 +36,15 @@ class Notifier:
         await cls.broadcast(PlayerOfflineMessage(user))
 
     @classmethod
-    async def open_game_created(cls, user: UserModel, game: OpenGame):
+    async def add_open_game(cls, user: UserModel, game: OpenGame):
         await cls.broadcast(OpenGameCreatedMessage(user, game.dict()))
 
     @classmethod
-    async def open_game_cancelled(cls, user: UserModel):
+    async def remove_open_game(cls, user: UserModel):
         await cls.broadcast(OpenGameRemoveMessage(user))
 
     @classmethod
-    async def open_game_requested(
-        cls, user_id: int, user: UserModel, settings: GameSettings
-    ):
+    async def open_game_requested(cls, user_id: int, user: UserModel, settings: GameSettings):
         await cls.notify(user_id, OpenGameRequestMessage(user, settings.dict()))
 
     @classmethod
@@ -58,17 +56,17 @@ class Notifier:
         await cls.notify(user_id, OpenGameRejectMessage(user))
 
     @classmethod
-    async def game_invite_created(cls, user_id: int, user: UserModel, game: GameSetup):
+    async def create_game_invite(cls, user_id: int, user: UserModel, game: GameSetup):
         await cls.notify(user_id, GameInviteAddMessage(user, game.dict()))
 
     @classmethod
-    async def game_invite_cancelled(cls, user_id: int, user: UserModel):
+    async def remove_direct_invite(cls, user_id: int, user: UserModel):
         await cls.notify(user_id, GameInviteRemoveMessage(user))
 
     @classmethod
-    async def game_invite_accepted(cls, user_id: int, user: UserModel):
+    async def accept_direct_invite(cls, user_id: int, user: UserModel):
         await cls.notify(user_id, GameInviteAcceptMessage(user))
 
     @classmethod
-    async def game_invite_rejected(cls, user_id: int, user: UserModel):
+    async def reject_direct_invite(cls, user_id: int, user: UserModel):
         await cls.notify(user_id, GameInviteRejectMessage(user))
