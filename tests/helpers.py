@@ -29,26 +29,26 @@ class ApiTester(TestClient):
     async def cancel_open_game(self):
         return await self.delete("/api/open-games")
 
-    async def request_open_game(self, user_id: int, post_body: dict):
-        return await self.post(f"/api/open-games/{user_id}/request", json=post_body)
+    async def request_open_game(self, opponent_id: int, post_body: dict):
+        return await self.post(f"/api/open-games/{opponent_id}", json=post_body)
 
-    async def accept_open_game(self, user_id: int, opponent_id: int):
-        return await self.post(f"/api/open-games/{user_id}/request/{opponent_id}")
+    async def accept_open_game(self, opponent_id: int):
+        return await self.post(f"/api/open-games/{opponent_id}/accept")
 
-    async def reject_open_game(self, user_id: int, opponent_id: int):
-        return await self.delete(f"/api/open-games/{user_id}/request/{opponent_id}")
+    async def reject_open_game(self, opponent_id: int):
+        return await self.delete(f"/api/open-games/{opponent_id}/accept")
 
-    async def create_game_invite(self, user_id: int, post_body: dict):
-        return await self.post(f"/api/game-invites/{user_id}", json=post_body)
+    async def create_game_invite(self, opponent_id: int, post_body: dict):
+        return await self.post(f"/api/game-invites/{opponent_id}", json=post_body)
 
-    async def remove_game_invite(self, user_id: int):
-        return await self.delete(f"/api/game-invites/{user_id}")
+    async def remove_game_invite(self, opponent_id: int):
+        return await self.delete(f"/api/game-invites/{opponent_id}")
 
-    async def accept_game_invite(self, user_id: int):
-        return await self.post(f"/api/game-invites/{user_id}/accept")
+    async def accept_game_invite(self, opponent_id: int):
+        return await self.post(f"/api/game-invites/{opponent_id}/accept")
 
-    async def reject_game_invite(self, user_id: int):
-        return await self.delete(f"/api/game-invites/{user_id}/accept")
+    async def reject_game_invite(self, opponent_id: int):
+        return await self.delete(f"/api/game-invites/{opponent_id}/accept")
 
 
 class WebSocketTester:

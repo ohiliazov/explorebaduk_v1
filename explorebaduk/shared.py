@@ -71,7 +71,7 @@ class GameRequests:
     @classmethod
     async def remove_open_game(cls, user: UserModel):
         cls.open_games_requests.pop(user.user_id, None)
-        if cls.open_games.pop(user.user_id):
+        if cls.open_games.pop(user.user_id, None):
             await Notifier.remove_open_game(user)
 
     @classmethod
@@ -90,8 +90,8 @@ class GameRequests:
         await Notifier.open_game_rejected(opponent_id, user)
 
     @classmethod
-    def get_open_game_request(cls, user_id):
-        return cls.open_games_requests.get(user_id)
+    def get_open_game_request(cls, user_id: int, opponent_id: int):
+        return cls.open_games_requests[user_id][opponent_id]
 
     @classmethod
     def get_direct_invites(cls, user_id) -> Dict[int, GameSetup]:
@@ -121,3 +121,10 @@ class GameRequests:
     async def reject_direct_invite(cls, opponent_id, user: UserModel):
         await Notifier.reject_direct_invite(opponent_id, user)
         cls.direct_invites[opponent_id].pop(user.user_id)
+
+    @classmethod
+    async def clear_direct_invites(cls, user: UserModel):
+        direct_invites = cls.direct_invites[user.user_id]
+
+        if direct_invites:
+            await asyncio.wait([cls.remove_direct_invite(opponent_id, user) for opponent_id in direct_invites])

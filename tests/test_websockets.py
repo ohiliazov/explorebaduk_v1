@@ -1,3 +1,4 @@
+import asyncio
 import random
 
 import pytest
@@ -6,10 +7,16 @@ from explorebaduk.messages import (
     GameInvitesMessage,
     OpenGamesMessage,
     PlayerListMessage,
+    PlayerOfflineMessage,
     WhoAmIMessage,
 )
 
-from .helpers import get_offline_users, get_online_users
+from .helpers import (
+    get_offline_users,
+    get_online_users,
+    random_websocket,
+    receive_websockets,
+)
 
 
 @pytest.mark.asyncio
@@ -78,3 +85,27 @@ async def test_refresh_as_guest(test_cli, websockets, ws):
     assert players_list in messages
 
     assert OpenGamesMessage({}).json() in messages
+
+
+@pytest.mark.asyncio
+async def test_interrupted_connection(test_cli, db_users, websockets, ws):
+    user_ws = random_websocket(websockets)
+
+    await user_ws.websocket.close(1000)
+
+    await ws.authorize_as_user(user_ws.user)
+
+    for messages in await receive_websockets(websockets):
+        assert not messages
+
+
+@pytest.mark.asyncio
+async def test_disconnection(test_cli, db_users, websockets, ws):
+    user_ws = random_websocket(websockets)
+
+    await user_ws.websocket.close()
+    await asyncio.sleep(10)
+
+    expected = [PlayerOfflineMessage(user_ws.user).json()]
+    for messages in await receive_websockets(websockets, [user_ws]):
+        assert messages == expected

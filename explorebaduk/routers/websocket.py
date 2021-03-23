@@ -63,16 +63,9 @@ class Connection:
         if self.user:
             await UsersOnline.remove(self.user, self.websocket)
 
-            if UsersOnline.is_online(self.user):
-                return
-
-            await GameRequests.remove_open_game(self.user)
-            await asyncio.wait(
-                [
-                    GameRequests.remove_direct_invite(user_id, self.user)
-                    for user_id in GameRequests.get_direct_invites(self.user.user_id)
-                ],
-            )
+            if not UsersOnline.is_online(self.user):
+                await GameRequests.remove_open_game(self.user)
+                await GameRequests.clear_direct_invites(self.user)
 
     async def send_whoami(self):
         await self._send(WhoAmIMessage(self.user))

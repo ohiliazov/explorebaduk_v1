@@ -29,21 +29,11 @@ async def create_open_game(
 
 @router.delete("")
 async def cancel_game_creation(user: UserModel = Depends(current_user_online)):
-    try:
-        await GameRequests.remove_open_game(user)
-    except KeyError:
-        raise HTTPException(404, "Game not found")
+    await GameRequests.remove_open_game(user)
     return {"message": "Open game cancelled"}
 
 
-@router.get("/{user_id}", response_model=OpenGame, dependencies=[Depends(current_user)])
-async def get_open_game(user_id: int):
-    if game := GameRequests.get_open_game(user_id):
-        return game
-    raise HTTPException(404, "Open game not found")
-
-
-@router.post("/{user_id}/request")
+@router.post("/{user_id}")
 async def request_open_game(
     user_id: int,
     settings: GameSettings,
@@ -56,15 +46,9 @@ async def request_open_game(
     return {"message": "Game requested"}
 
 
-@router.post("/{user_id}/request/{opponent_id}")
-async def accept_open_game(user_id: int, opponent_id: int, user: UserModel = Depends(current_user_online)):
-    if user.user_id != user_id:
-        raise HTTPException(403, "Forbidden")
-
-    if not GameRequests.get_open_game(user_id):
-        raise HTTPException(404, "Open game not created")
-
-    if not GameRequests.get_open_game_request(user_id):
+@router.post("/{opponent_id}/accept")
+async def accept_open_game(opponent_id: int, user: UserModel = Depends(current_user_online)):
+    if not GameRequests.get_open_game_request(user.user_id, opponent_id):
         raise HTTPException(404, "User not requested the game")
 
     # create game model here
@@ -72,15 +56,9 @@ async def accept_open_game(user_id: int, opponent_id: int, user: UserModel = Dep
     return {"message": "Game accepted"}
 
 
-@router.delete("/{user_id}/request/{opponent_id}")
-async def reject_open_game(user_id: int, opponent_id: int, user: UserModel = Depends(current_user_online)):
-    if user.user_id != user_id:
-        raise HTTPException(403, "Forbidden")
-
-    if not GameRequests.get_open_game(user_id):
-        raise HTTPException(404, "Open game not created")
-
-    if not GameRequests.get_open_game_request(user_id):
+@router.delete("/{opponent_id}/accept")
+async def reject_open_game(opponent_id: int, user: UserModel = Depends(current_user_online)):
+    if not GameRequests.get_open_game_request(user.user_id, opponent_id):
         raise HTTPException(404, "User not requested the game")
 
     await GameRequests.reject_open_game(user, opponent_id)
