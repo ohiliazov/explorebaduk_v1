@@ -33,16 +33,16 @@ async def cancel_game_creation(user: UserModel = Depends(current_user_online)):
     return {"message": "Open game cancelled"}
 
 
-@router.post("/{user_id}")
+@router.post("/{opponent_id}")
 async def request_open_game(
-    user_id: int,
+    opponent_id: int,
     settings: GameSettings,
     user: UserModel = Depends(current_user_online),
 ):
-    if not GameRequests.get_open_game(user_id):
+    if not GameRequests.get_open_game(opponent_id):
         raise HTTPException(404, "Game not found")
 
-    await GameRequests.request_open_game(user_id, user, settings)
+    await GameRequests.request_open_game(opponent_id, user, settings)
     return {"message": "Game requested"}
 
 
