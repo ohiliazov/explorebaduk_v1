@@ -20,6 +20,12 @@ class GameCategory(str, Enum):
     CORRESPONDENCE = "correspondence"
 
 
+class GameType(str, Enum):
+    RANKED = "ranked"
+    FREE = "free"
+    TEACHING = "teaching"
+
+
 class RuleSet(str, Enum):
     JAPANESE = "japanese"
     CHINESE = "chinese"

@@ -3,7 +3,7 @@ from typing import Literal, Optional, Set, Union
 from pydantic import BaseModel, root_validator
 from pydantic.types import ConstrainedFloat, ConstrainedInt, PositiveInt
 
-from explorebaduk.constants import Color, GameCategory, RuleSet, TimeSystem
+from explorebaduk.constants import Color, GameCategory, GameType, RuleSet, TimeSystem
 
 Handicap = Literal[0, 2, 3, 4, 5, 6, 7, 8, 9]
 
@@ -141,9 +141,9 @@ class Fischer(BaseModel):
 class GameSetupBase(BaseModel):
     name: str
     board_size: BoardSize = 19
-    is_ranked: bool = False
-    is_private: bool = False
+    game_type: GameType
     category: GameCategory
+    is_private: bool = False
     rules: RuleSet
     time_settings: Union[Unlimited, Absolute, Byoyomi, Canadian, Fischer]
 
@@ -152,9 +152,9 @@ class GameSetupBase(BaseModel):
             "example": {
                 "name": "My first game",
                 "board_size": 19,
-                "is_ranked": False,
-                "is_private": False,
+                "game_type": GameType.RANKED,
                 "category": GameCategory.REAL_TIME,
+                "is_private": False,
                 "rules": RuleSet.JAPANESE,
                 "time_settings": Byoyomi.Config.schema_extra["example"],
             },
