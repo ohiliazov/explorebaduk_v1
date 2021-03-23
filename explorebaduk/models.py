@@ -28,6 +28,7 @@ class UserModel(BaseModel):
     password = Column(String(255), nullable=False)
     rating = Column(Numeric(10), default=10)
     puzzle_rating = Column(Numeric(10), default=0)
+    country = Column(String(255))
     avatar = Column(String(255))
 
     tokens: List["TokenModel"] = relationship(
@@ -64,6 +65,7 @@ class UserModel(BaseModel):
             "email": self.email,
             "rating": round(self.rating, 2),
             "puzzle_rating": round(self.puzzle_rating, 2),
+            "country": self.country,
             "avatar": self.avatar,
         }
 

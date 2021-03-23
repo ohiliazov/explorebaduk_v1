@@ -20,6 +20,9 @@ class ApiTester(TestClient):
             return await self.get("/api/players", query_string={"q": q})
         return await self.get("/api/players")
 
+    async def get_player(self, player_id: int):
+        return await self.get(f"/api/players/{player_id}")
+
     async def get_friends(self):
         return await self.get("/api/friends")
 

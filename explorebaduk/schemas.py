@@ -33,6 +33,7 @@ class PlayerOut(BaseModel):
     username: str
     rating: NonNegativeFloat = 10
     puzzle_rating: NonNegativeFloat = 0
+    country: Optional[str]
     avatar: Optional[str]
 
     class Config:
@@ -45,6 +46,7 @@ class PlayerOut(BaseModel):
                 "username": "johndoe",
                 "rating": 1992.532,
                 "puzzle_rating": 1605.321,
+                "country": "Ukraine",
                 "avatar": "avatar.jpg",
             },
         }

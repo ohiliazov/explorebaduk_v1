@@ -80,7 +80,7 @@ class OpenGamesMessage(Message, PlayerInfoMixin):
     event = "games.open.list"
 
     def __init__(self, challenges: dict):
-        self.data = [{"user_id": user_id, **challenge} for user_id, challenge in challenges.items()]
+        self.data = [{"user_id": user_id, **challenge.dict()} for user_id, challenge in challenges.items()]
 
 
 class PlayerOnlineMessage(Message, PlayerInfoMixin):
@@ -105,19 +105,23 @@ class OpenGameRemoveMessage(UserIdMessage):
     event = "games.open.remove"
 
 
-class OpenGameRequestMessage(Message):
-    event = "games.open.request"
+class CreateOpenGameRequestMessage(Message):
+    event = "games.open.request.create"
 
     def __init__(self, user: UserModel, game_settings: dict):
         self.data = {"user_id": user.user_id, "settings": game_settings}
 
 
-class OpenGameAcceptMessage(UserIdMessage):
-    event = "games.open.accept"
+class RemoveOpenGameRequestMessage(UserIdMessage):
+    event = "games.open.request.remove"
 
 
-class OpenGameRejectMessage(UserIdMessage):
-    event = "games.open.reject"
+class AcceptOpenGameRequestMessage(UserIdMessage):
+    event = "games.open.request.accept"
+
+
+class RejectOpenGameRequestMessage(UserIdMessage):
+    event = "games.open.request.reject"
 
 
 class GameInvitesMessage(OpenGamesMessage):
@@ -133,8 +137,8 @@ class GameInviteRemoveMessage(UserIdMessage):
 
 
 class GameInviteAcceptMessage(UserIdMessage):
-    event = "games.direct.accept"
+    event = "games.direct.request.accept"
 
 
 class GameInviteRejectMessage(UserIdMessage):
-    event = "games.direct.reject"
+    event = "games.direct.request.reject"

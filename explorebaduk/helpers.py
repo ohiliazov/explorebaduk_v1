@@ -1,16 +1,17 @@
 from explorebaduk.messages import (
+    AcceptOpenGameRequestMessage,
+    CreateOpenGameRequestMessage,
     GameInviteAcceptMessage,
     GameInviteAddMessage,
     GameInviteRejectMessage,
     GameInviteRemoveMessage,
     Message,
-    OpenGameAcceptMessage,
     OpenGameCreatedMessage,
-    OpenGameRejectMessage,
     OpenGameRemoveMessage,
-    OpenGameRequestMessage,
     PlayerOfflineMessage,
     PlayerOnlineMessage,
+    RejectOpenGameRequestMessage,
+    RemoveOpenGameRequestMessage,
 )
 from explorebaduk.models import UserModel
 from explorebaduk.schemas import GameSettings, GameSetup, OpenGame
@@ -44,16 +45,20 @@ class Notifier:
         await cls.broadcast(OpenGameRemoveMessage(user))
 
     @classmethod
-    async def open_game_requested(cls, user_id: int, user: UserModel, settings: GameSettings):
-        await cls.notify(user_id, OpenGameRequestMessage(user, settings.dict()))
+    async def create_open_game_request(cls, user_id: int, user: UserModel, settings: GameSettings):
+        await cls.notify(user_id, CreateOpenGameRequestMessage(user, settings.dict()))
 
     @classmethod
-    async def open_game_accepted(cls, user_id: int, user: UserModel):
-        await cls.notify(user_id, OpenGameAcceptMessage(user))
+    async def remove_open_game_request(cls, user_id: int, user: UserModel):
+        await cls.notify(user_id, RemoveOpenGameRequestMessage(user))
 
     @classmethod
-    async def open_game_rejected(cls, user_id: int, user: UserModel):
-        await cls.notify(user_id, OpenGameRejectMessage(user))
+    async def accept_open_game_request(cls, user_id: int, user: UserModel):
+        await cls.notify(user_id, AcceptOpenGameRequestMessage(user))
+
+    @classmethod
+    async def reject_open_game_request(cls, user_id: int, user: UserModel):
+        await cls.notify(user_id, RejectOpenGameRequestMessage(user))
 
     @classmethod
     async def create_game_invite(cls, user_id: int, user: UserModel, game: GameSetup):

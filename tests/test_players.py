@@ -13,6 +13,15 @@ async def test_get_players(test_cli, db_users):
 
 
 @pytest.mark.asyncio
+async def test_get_player(test_cli, db_users):
+    user = random.choice(db_users)
+    resp = await test_cli.get_player(user.user_id)
+
+    assert resp.status_code == HTTP_200_OK, resp.text
+    assert resp.json() == user.asdict()
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("attr", ["first_name", "last_name", "full_name"])
 async def test_get_players_search_last_name(test_cli, db_users, attr):
     q = getattr(random.choice(db_users), attr)

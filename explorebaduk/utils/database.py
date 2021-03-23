@@ -28,6 +28,7 @@ def generate_user(num: int) -> UserModel:
         last_name=f"Doe#{num}",
         password="$2y$10$N5ohEZckAk/9Exus/Py/5OM7pZgr8Gk6scZpH95FjvOSRWo00tVoC",
         email=f"johndoe{num}@explorebaduk.com",
+        country=random.choice(["Ukraine", "Bulgaria", "China"]),
         rating=random.randint(100, 3000),
         puzzle_rating=random.randint(100, 3000),
     )

@@ -75,19 +75,24 @@ class GameRequests:
             await Notifier.remove_open_game(user)
 
     @classmethod
-    async def request_open_game(cls, user_id, opponent: UserModel, settings: GameSettings):
+    async def create_open_game_request(cls, user_id, opponent: UserModel, settings: GameSettings):
         cls.open_games_requests[user_id][opponent.user_id] = settings
-        await Notifier.open_game_requested(user_id, opponent, settings)
+        await Notifier.create_open_game_request(user_id, opponent, settings)
 
     @classmethod
-    async def accept_open_game(cls, user: UserModel, opponent_id: int):
-        await Notifier.open_game_accepted(opponent_id, user)
+    async def remove_open_game_request(cls, user_id, opponent: UserModel):
+        if cls.open_games_requests[user_id].pop(opponent.user_id, None):
+            await Notifier.remove_open_game_request(user_id, opponent)
+
+    @classmethod
+    async def accept_open_game_request(cls, user: UserModel, opponent_id: int):
+        await Notifier.accept_open_game_request(opponent_id, user)
         await cls.remove_open_game(user)
 
     @classmethod
-    async def reject_open_game(cls, user: UserModel, opponent_id: int):
+    async def reject_open_game_request(cls, user: UserModel, opponent_id: int):
         cls.open_games_requests[user.user_id].pop(opponent_id)
-        await Notifier.open_game_rejected(opponent_id, user)
+        await Notifier.reject_open_game_request(opponent_id, user)
 
     @classmethod
     def get_open_game_request(cls, user_id: int, opponent_id: int):

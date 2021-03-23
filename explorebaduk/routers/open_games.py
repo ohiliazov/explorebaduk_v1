@@ -28,13 +28,13 @@ async def create_open_game(
 
 
 @router.delete("")
-async def cancel_game_creation(user: UserModel = Depends(current_user_online)):
+async def cancel_open_game(user: UserModel = Depends(current_user_online)):
     await GameRequests.remove_open_game(user)
     return {"message": "Open game cancelled"}
 
 
 @router.post("/{opponent_id}")
-async def request_open_game(
+async def create_open_game_request(
     opponent_id: int,
     settings: GameSettings,
     user: UserModel = Depends(current_user_online),
@@ -42,7 +42,16 @@ async def request_open_game(
     if not GameRequests.get_open_game(opponent_id):
         raise HTTPException(404, "Game not found")
 
-    await GameRequests.request_open_game(opponent_id, user, settings)
+    await GameRequests.create_open_game_request(opponent_id, user, settings)
+    return {"message": "Game requested"}
+
+
+@router.post("/{opponent_id}")
+async def cancel_open_game_request(opponent_id: int, user: UserModel = Depends(current_user_online)):
+    if not GameRequests.get_open_game(opponent_id):
+        raise HTTPException(404, "Game not found")
+
+    await GameRequests.remove_open_game_request(opponent_id, user)
     return {"message": "Game requested"}
 
 
@@ -52,7 +61,7 @@ async def accept_open_game(opponent_id: int, user: UserModel = Depends(current_u
         raise HTTPException(404, "User not requested the game")
 
     # create game model here
-    await GameRequests.accept_open_game(user, opponent_id)
+    await GameRequests.accept_open_game_request(user, opponent_id)
     return {"message": "Game accepted"}
 
 
@@ -61,5 +70,5 @@ async def reject_open_game(opponent_id: int, user: UserModel = Depends(current_u
     if not GameRequests.get_open_game_request(user.user_id, opponent_id):
         raise HTTPException(404, "User not requested the game")
 
-    await GameRequests.reject_open_game(user, opponent_id)
+    await GameRequests.reject_open_game_request(user, opponent_id)
     return {"message": "Game rejected"}

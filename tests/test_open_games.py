@@ -5,11 +5,11 @@ from starlette.status import HTTP_200_OK
 
 from explorebaduk.constants import GameCategory, RuleSet, TimeSystem
 from explorebaduk.messages import (
-    OpenGameAcceptMessage,
+    AcceptOpenGameRequestMessage,
+    CreateOpenGameRequestMessage,
     OpenGameCreatedMessage,
-    OpenGameRejectMessage,
     OpenGameRemoveMessage,
-    OpenGameRequestMessage,
+    RejectOpenGameRequestMessage,
 )
 from explorebaduk.schemas import OpenGame
 
@@ -92,7 +92,7 @@ async def test_request_open_game(test_cli, db_users, websockets, open_game):
     assert resp.status_code == HTTP_200_OK, resp.text
     assert resp.json() == {"message": "Game requested"}
 
-    expected = OpenGameRequestMessage(opponent_ws.user, post_body).json()
+    expected = CreateOpenGameRequestMessage(opponent_ws.user, post_body).json()
     assert await user_ws.receive() == [expected]
 
     for messages in await receive_websockets(websockets):
@@ -123,7 +123,7 @@ async def test_accept_open_game(test_cli, db_users, websockets, open_game):
     assert resp.json() == {"message": "Game accepted"}
 
     expected = [
-        OpenGameAcceptMessage(user_ws.user).json(),
+        AcceptOpenGameRequestMessage(user_ws.user).json(),
         OpenGameRemoveMessage(user_ws.user).json(),
     ]
     assert await opponent_ws.receive() == expected
@@ -156,7 +156,7 @@ async def test_reject_open_game(test_cli, db_users, websockets, open_game):
     assert resp.status_code == HTTP_200_OK, resp.text
     assert resp.json() == {"message": "Game rejected"}
 
-    expected = OpenGameRejectMessage(user_ws.user).json()
+    expected = RejectOpenGameRequestMessage(user_ws.user).json()
     assert await opponent_ws.receive() == [expected]
 
     for messages in await receive_websockets(websockets):
