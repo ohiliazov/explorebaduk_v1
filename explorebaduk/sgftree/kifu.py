@@ -1,14 +1,45 @@
 from .board import Board
-from .constants import APP_NAME, APP_VERSION, HANDICAP_SGF_COORDINATES
-from .properties import GoLabel, RootLabel
+from .constants import APP_NAME, APP_VERSION, HANDICAP_SGF_COORS
+from .properties import GameInfoLabel, GoLabel, RootLabel, SetupLabel
 from .sgflib import GameTree, Node, Property
 from .utils import sgf_coord_to_int
 
 
 class Kifu:
-    def __init__(self, board_size: int, handicap: int = 0, komi: float = 7.5):
-        self.cursor = self.make_game_tree(board_size, handicap, komi)
-        self.board = Board((board_size, board_size), handicap=handicap)
+    def __init__(
+        self,
+        date: str,
+        rules: str,
+        name: str,
+        player_black: str,
+        black_rank: str,
+        player_white: str,
+        white_rank: str,
+        main_time: int,
+        overtime: str,
+        board_size: int,
+        handicap: int,
+        komi: float,
+    ):
+        self.date = date
+        self.rules = rules
+        self.name = name
+        self.player_black = player_black
+        self.black_rank = black_rank
+        self.player_white = player_white
+        self.white_rank = white_rank
+
+        self.main_time = main_time
+        self.overtime = overtime
+
+        self.board_size = board_size
+        self.handicap = handicap
+        self.komi = komi
+
+        self.handicap_stones = HANDICAP_SGF_COORS[handicap]
+
+        self.cursor = None
+        self.board = None
         self.scoring_board = None
 
     @property
@@ -26,25 +57,37 @@ class Kifu:
     def time_label(self):
         return "BL" if self.turn == "black" else "WL"
 
-    def make_game_tree(self, size: int, handicap: int = 0, komi: float = 6.5):
+    def init(self):
         root_properties = [
             Property(RootLabel.FILE_FORMAT.value, ["4"]),
             Property(RootLabel.GAME_TYPE.value, ["1"]),
-            Property(RootLabel.APPLICATION.value, [f"{APP_NAME}:{APP_VERSION}"]),
             Property(RootLabel.CHARSET.value, ["UTF-8"]),
-            Property(RootLabel.BOARD_SIZE.value, [size]),
-            Property(GoLabel.HANDICAP.value, [handicap]),
-            Property(GoLabel.KOMI.value, [komi]),
+            Property(RootLabel.APPLICATION.value, [f"{APP_NAME}:{APP_VERSION}"]),
+            Property(RootLabel.BOARD_SIZE.value, [self.board_size]),
+            Property(GameInfoLabel.PLACE.value, ["explorebaduk.com"]),
+            Property(GameInfoLabel.RULES.value, [self.rules]),
+            Property(GameInfoLabel.GAME_NAME.value, [self.name]),
+            Property(GameInfoLabel.PLAYER_BLACK.value, [self.player_black]),
+            Property(GameInfoLabel.BLACK_RANK.value, [self.black_rank]),
+            Property(GameInfoLabel.PLAYER_WHITE.value, [self.player_white]),
+            Property(GameInfoLabel.WHITE_RANK.value, [self.white_rank]),
+            Property(GameInfoLabel.TIME.value, [self.main_time]),
+            Property(GameInfoLabel.OVERTIME.value, [self.overtime]),
+            Property(GoLabel.HANDICAP.value, [self.handicap]),
+            Property(GoLabel.KOMI.value, [self.komi]),
         ]
 
-        if handicap:
-            root_properties.append(Property("AB", HANDICAP_SGF_COORDINATES[handicap]))
-        game_tree = GameTree([Node(root_properties)])
+        if self.handicap:
+            root_properties.append(
+                Property(SetupLabel.BLACK.value, HANDICAP_SGF_COORS[self.handicap]),
+            )
 
-        return game_tree.cursor()
-
-    def load_sgf(self):
-        raise NotImplementedError("To be done")
+        self.cursor = GameTree([Node(root_properties)]).cursor()
+        self.board = Board(
+            shape=(self.board_size, self.board_size),
+            handicap=self.handicap,
+            komi=self.komi,
+        )
 
     def is_valid_move(self, coord):
         return bool(self.board.legal_moves[sgf_coord_to_int(coord)])

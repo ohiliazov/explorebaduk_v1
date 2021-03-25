@@ -89,7 +89,7 @@ async def test_request_open_game(test_cli, db_users, websockets, open_game):
     test_cli.authorize(opponent_ws.user)
 
     post_body = {"color": "black", "handicap": 3, "komi": 0.5}
-    resp = await test_cli.request_open_game(user_ws.user.user_id, post_body)
+    resp = await test_cli.create_open_game_request(user_ws.user.user_id, post_body)
     assert resp.status_code == HTTP_200_OK, resp.text
     assert resp.json() == {"message": "Game requested"}
 
@@ -112,7 +112,7 @@ async def test_accept_open_game(test_cli, db_users, websockets, open_game):
     test_cli.authorize(opponent_ws.user)
 
     post_body = {"color": "black", "handicap": 3, "komi": 0.5}
-    resp = await test_cli.request_open_game(user_ws.user.user_id, post_body)
+    resp = await test_cli.create_open_game_request(user_ws.user.user_id, post_body)
     assert resp.status_code == HTTP_200_OK, resp.text
 
     # flush
@@ -146,7 +146,7 @@ async def test_reject_open_game(test_cli, db_users, websockets, open_game):
     test_cli.authorize(opponent_ws.user)
 
     post_body = {"color": "black", "handicap": 3, "komi": 0.5}
-    resp = await test_cli.request_open_game(user_ws.user.user_id, post_body)
+    resp = await test_cli.create_open_game_request(user_ws.user.user_id, post_body)
     assert resp.status_code == HTTP_200_OK, resp.text
 
     # flush

@@ -3,8 +3,8 @@ from typing import Iterable, List, Tuple
 from sqlalchemy import and_, or_
 
 from .database import scoped_session
-from .models import FriendshipModel, GameModel, TokenModel, UserModel
-from .schemas import GameSetup
+from .models import FriendshipModel, GameModel, GamePlayerModel, TokenModel, UserModel
+from .schemas import Color, GameCategory, GameType, RuleSet
 
 
 def get_player_by_id(user_id: int) -> UserModel:
@@ -81,8 +81,36 @@ def get_friendships(user_id: int) -> List[Tuple[int, int]]:
         )
 
 
-def create_new_game(game_setup: GameSetup):
-    game = GameModel(status="Created", settings=game_setup.dict())
+def create_game(
+    name: str,
+    rules: RuleSet,
+    game_type: GameType,
+    category: GameCategory,
+    board_size: int,
+    handicap: int,
+    komi: float,
+    time_settings: dict,
+):
+    game = GameModel(
+        name=name,
+        rules=rules,
+        game_type=game_type,
+        category=category,
+        board_size=board_size,
+        handicap=handicap,
+        komi=komi,
+        time_settings=time_settings,
+    )
 
     with scoped_session() as session:
         session.add(game)
+        session.flush()
+        return game.game_id
+
+
+def create_game_player(game_id: int, user_id: int, color: Color, time_left: int):
+    game_player = GamePlayerModel(game_id=game_id, user_id=user_id, color=color, time_left=time_left)
+
+    with scoped_session() as session:
+        session.add(game_player)
+        session.flush()

@@ -56,12 +56,20 @@ class GameRequests:
         cls.open_games.clear()
 
     @classmethod
-    def list_open_games(cls) -> List[OpenGame]:
-        return [open_game for open_game in cls.open_games.values()]
+    def get_open_game(cls, user_id: int) -> OpenGame:
+        return cls.open_games.get(user_id)
 
     @classmethod
-    def get_open_game(cls, user_id: int):
-        return cls.open_games.get(user_id)
+    def get_open_game_requests(cls, user_id: int) -> Dict[int, GameSettings]:
+        return cls.open_games_requests[user_id]
+
+    @classmethod
+    def get_direct_invites(cls, user_id) -> Dict[int, GameSetup]:
+        return cls.direct_invites[user_id]
+
+    @classmethod
+    def get_direct_invite(cls, from_user_id, to_user_id) -> GameSetup:
+        return cls.direct_invites[from_user_id].get(to_user_id)
 
     @classmethod
     async def set_open_game(cls, user: UserModel, open_game: OpenGame):
@@ -75,61 +83,59 @@ class GameRequests:
             await Notifier.remove_open_game(user)
 
     @classmethod
-    async def create_open_game_request(cls, user_id, opponent: UserModel, settings: GameSettings):
-        cls.open_games_requests[user_id][opponent.user_id] = settings
-        await Notifier.create_open_game_request(user_id, opponent, settings)
+    async def create_open_game_request(cls, to_user_id, user: UserModel, settings: GameSettings):
+        cls.open_games_requests[to_user_id][user.user_id] = settings
+        print(f"{user.user_id=} {to_user_id=} {cls.open_games_requests=}")
+        await Notifier.create_open_game_request(to_user_id, user, settings)
 
     @classmethod
-    async def remove_open_game_request(cls, user_id, opponent: UserModel):
-        if cls.open_games_requests[user_id].pop(opponent.user_id, None):
-            await Notifier.remove_open_game_request(user_id, opponent)
+    async def remove_open_game_request(cls, to_user_id, user: UserModel):
+        if cls.open_games_requests[to_user_id].pop(user.user_id, None):
+            await Notifier.remove_open_game_request(to_user_id, user)
 
     @classmethod
-    async def accept_open_game_request(cls, user: UserModel, opponent_id: int):
-        await Notifier.accept_open_game_request(opponent_id, user)
+    async def accept_open_game_request(cls, user: UserModel, from_user_id: int):
+        print(f"{user.user_id=} {from_user_id=} {cls.open_games_requests=}")
+        await Notifier.accept_open_game_request(from_user_id, user)
         await cls.remove_open_game(user)
 
     @classmethod
-    async def reject_open_game_request(cls, user: UserModel, opponent_id: int):
-        cls.open_games_requests[user.user_id].pop(opponent_id)
-        await Notifier.reject_open_game_request(opponent_id, user)
+    async def reject_open_game_request(cls, user: UserModel, from_user_id: int):
+        cls.open_games_requests[user.user_id].pop(from_user_id)
+        await Notifier.reject_open_game_request(from_user_id, user)
 
     @classmethod
-    def get_open_game_request(cls, user_id: int, opponent_id: int):
-        return cls.open_games_requests[user_id][opponent_id]
+    def get_sent_invites(cls, user_id) -> Dict[int, GameSetup]:
+        return {
+            to_user_id: game_setup
+            for to_user_id, direct_invites in cls.direct_invites.items()
+            for from_user_id, game_setup in direct_invites.items()
+            if from_user_id == user_id
+        }
 
     @classmethod
-    def get_direct_invites(cls, user_id) -> Dict[int, GameSetup]:
-        return cls.direct_invites[user_id]
+    async def create_direct_invite(cls, to_user_id: int, user: UserModel, game_setup: GameSetup):
+        cls.direct_invites[user.user_id][to_user_id] = game_setup
+        await Notifier.create_game_invite(to_user_id, user, game_setup)
 
     @classmethod
-    async def create_direct_invite(
-        cls,
-        opponent_id: int,
-        user: UserModel,
-        game_setup: GameSetup,
-    ):
-        cls.direct_invites[user.user_id][opponent_id] = game_setup
-        await Notifier.create_game_invite(opponent_id, user, game_setup)
+    async def remove_direct_invite(cls, to_user_id: int, user: UserModel):
+        await Notifier.remove_direct_invite(to_user_id, user)
+        cls.direct_invites[user.user_id].pop(to_user_id)
 
     @classmethod
-    async def remove_direct_invite(cls, opponent_id: int, user: UserModel):
-        await Notifier.remove_direct_invite(opponent_id, user)
-        cls.direct_invites[user.user_id].pop(opponent_id)
+    async def accept_direct_invite(cls, from_user_id, user: UserModel):
+        await Notifier.accept_direct_invite(from_user_id, user)
+        cls.direct_invites[from_user_id].pop(user.user_id)
 
     @classmethod
-    async def accept_direct_invite(cls, opponent_id, user: UserModel):
-        await Notifier.accept_direct_invite(opponent_id, user)
-        cls.direct_invites[opponent_id].pop(user.user_id)
-
-    @classmethod
-    async def reject_direct_invite(cls, opponent_id, user: UserModel):
-        await Notifier.reject_direct_invite(opponent_id, user)
-        cls.direct_invites[opponent_id].pop(user.user_id)
+    async def reject_direct_invite(cls, from_user_id, user: UserModel):
+        await Notifier.reject_direct_invite(from_user_id, user)
+        cls.direct_invites[from_user_id].pop(user.user_id)
 
     @classmethod
     async def clear_direct_invites(cls, user: UserModel):
         direct_invites = cls.direct_invites[user.user_id]
 
         if direct_invites:
-            await asyncio.wait([cls.remove_direct_invite(opponent_id, user) for opponent_id in direct_invites])
+            await asyncio.wait([cls.remove_direct_invite(from_user_id, user) for from_user_id in direct_invites])

@@ -70,6 +70,9 @@ class FriendListOut(BaseModel):
 class Unlimited(BaseModel):
     time_system: Literal[TimeSystem.UNLIMITED]
 
+    def get_total_time(self):
+        return None
+
     class Config:
         schema_extra = {"example": {"time_system": TimeSystem.UNLIMITED}}
 
@@ -77,6 +80,9 @@ class Unlimited(BaseModel):
 class Absolute(BaseModel):
     time_system: Literal[TimeSystem.ABSOLUTE]
     main_time: PositiveInt
+
+    def get_total_time(self):
+        return self.main_time
 
     class Config:
         schema_extra = {
@@ -92,6 +98,9 @@ class Byoyomi(BaseModel):
     main_time: NonNegativeInt
     overtime: PositiveInt
     periods: PositiveInt
+
+    def get_total_time(self):
+        return self.main_time + self.overtime * self.periods
 
     class Config:
         schema_extra = {
@@ -110,6 +119,9 @@ class Canadian(BaseModel):
     overtime: PositiveInt
     stones: PositiveInt
 
+    def get_total_time(self):
+        return self.main_time + self.overtime
+
     class Config:
         schema_extra = {
             "example": {
@@ -126,6 +138,9 @@ class Fischer(BaseModel):
     main_time: PositiveInt
     bonus: PositiveInt
     max_time: PositiveInt
+
+    def get_total_time(self):
+        return self.main_time
 
     class Config:
         schema_extra = {

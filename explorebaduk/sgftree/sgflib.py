@@ -407,7 +407,7 @@ class SGFParser:
                 # unescape escaped characters (remove linebreaks)
                 while m_escape and m_end and (m_escape.end() < m_end.end()):
                     # copy everything up to '\', remove '\'
-                    value += self.data[self.index : m_escape.start()]
+                    value += self.data[self.index : m_escape.init()]
                     m_break = reLineBreak.match(self.data, m_escape.end())
                     if m_break:
                         # skip linebreak
@@ -419,7 +419,7 @@ class SGFParser:
                     m_end = self._search_regex(rePropertyEnd)
                     m_escape = self._search_regex(reEscape)
                 if m_end:
-                    value += self.data[self.index : m_end.start()]
+                    value += self.data[self.index : m_end.init()]
                     self.index = m_end.end()
                     pv_list.append(convert_control_chars(value))
                 else:

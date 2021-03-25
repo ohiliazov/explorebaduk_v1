@@ -2,12 +2,12 @@ from datetime import datetime
 from typing import List
 
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql.functions import func
 from sqlalchemy.sql.schema import Column, ForeignKey
 from sqlalchemy.sql.sqltypes import (
     JSON,
     Boolean,
     DateTime,
+    Enum,
     Integer,
     Numeric,
     String,
@@ -15,6 +15,7 @@ from sqlalchemy.sql.sqltypes import (
 )
 
 from .database import BaseModel
+from .schemas import Color, GameCategory, GameType, RuleSet
 
 
 class UserModel(BaseModel):
@@ -136,35 +137,52 @@ class TokenModel(BaseModel):
 class GameModel(BaseModel):
     __tablename__ = "games"
 
-    id = Column(Integer, primary_key=True)
-    created_at = Column(DateTime, server_default=func.now())
+    game_id = Column(Integer, primary_key=True)
+
     started_at = Column(DateTime)
     finished_at = Column(DateTime)
-    status = Column(String(255))
-    settings = Column(JSON)
+
+    name = Column(String(255))
+    rules = Column(Enum(RuleSet))
+    game_type = Column(Enum(GameType))
+    category = Column(Enum(GameCategory))
+
+    board_size = Column(Integer)
+    handicap = Column(Integer)
+    komi = Column(Numeric)
+
+    time_settings = Column(JSON)
     sgf = Column(Text)
+
+    result = Column(String(255))
 
     players = relationship("GamePlayerModel", back_populates="game")
 
-    def as_dict(self):
-        return {
-            "id": self.id,
-            "created_at": self.created_at,
+    def as_dict(self, with_sgf: bool = False):
+        game = {
+            "game_id": self.game_id,
             "started_at": self.started_at,
             "finished_at": self.finished_at,
-            "status": self.status,
-            "settings": self.settings,
-            "sgf": self.sgf,
+            "name": self.name,
+            "rules": self.rules,
+            "game_type": self.game_type,
+            "category": self.category,
+            "board_size": self.board_size,
+            "handicap": self.handicap,
+            "komi": self.komi,
+            "time_settings": self.time_settings,
         }
+        if with_sgf:
+            game["sgf"] = self.sgf
 
 
 class GamePlayerModel(BaseModel):
     __tablename__ = "game_players"
 
     id = Column(Integer, primary_key=True)
-    game_id = Column(Integer, ForeignKey("games.id"))
+    game_id = Column(Integer, ForeignKey("games.game_id"))
     user_id = Column(Integer, ForeignKey("users.user_id"))
-    color = Column(String(255))
+    color = Column(Enum(Color))
     time_left = Column(Numeric)
 
     game: GameModel = relationship("GameModel", back_populates="players")

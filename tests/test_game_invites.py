@@ -71,7 +71,7 @@ async def test_accept_game_invite(test_cli, db_users, websockets, game_invite):
     test_cli.authorize(opponent_ws.user)
     resp = await test_cli.accept_game_invite(user_ws.user.user_id)
     assert resp.status_code == HTTP_200_OK, resp.text
-    assert resp.json() == {"message": "Game invite accepted"}
+    assert resp.json()["message"] == "Game invite accepted"
 
     expected = GameInviteAcceptMessage(opponent_ws.user).json()
     assert expected in await user_ws.receive()

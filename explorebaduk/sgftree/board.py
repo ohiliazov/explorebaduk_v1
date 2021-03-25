@@ -4,7 +4,7 @@ from typing import FrozenSet, List, Set, Tuple, Union
 
 import numpy as np
 
-from .constants import HANDICAP_BOARD_COORDINATES
+from .constants import HANDICAP_BOARD_COORDS
 
 
 class CoordinateError(Exception):
@@ -45,7 +45,7 @@ class Board:
 
         self.turn = Location.WHITE if handicap else Location.BLACK
 
-        for coord in HANDICAP_BOARD_COORDINATES[handicap]:
+        for coord in HANDICAP_BOARD_COORDS[handicap]:
             self.board[coord] = Location.BLACK
 
         self._illegal = set()

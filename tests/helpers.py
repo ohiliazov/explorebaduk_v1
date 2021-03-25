@@ -15,10 +15,8 @@ class ApiTester(TestClient):
             if token.is_active():
                 self.headers["Authorization"] = f"Bearer {token.token}"
 
-    async def get_players(self, q: str = None):
-        if q:
-            return await self.get("/api/players", query_string={"q": q})
-        return await self.get("/api/players")
+    async def get_players(self, params: dict = None):
+        return await self.get("/api/players", query_string=params)
 
     async def get_player(self, player_id: int):
         return await self.get(f"/api/players/{player_id}")
@@ -32,7 +30,7 @@ class ApiTester(TestClient):
     async def cancel_open_game(self):
         return await self.delete("/api/open-games")
 
-    async def request_open_game(self, opponent_id: int, post_body: dict):
+    async def create_open_game_request(self, opponent_id: int, post_body: dict):
         return await self.post(f"/api/open-games/{opponent_id}", json=post_body)
 
     async def accept_open_game(self, opponent_id: int):
