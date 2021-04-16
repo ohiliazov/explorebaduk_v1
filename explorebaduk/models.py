@@ -50,6 +50,20 @@ class UserModel(BaseModel):
         lazy="subquery",
     )
 
+    sent_requests: List["GameRequestModel"] = relationship(
+        "GameRequestModel",
+        back_populates="creator",
+        foreign_keys="GameRequestModel.creator_id",
+        lazy="subquery",
+    )
+
+    received_requests: List["GameRequestModel"] = relationship(
+        "GameRequestModel",
+        back_populates="opponent",
+        foreign_keys="GameRequestModel.opponent_id",
+        lazy="subquery",
+    )
+
     def __str__(self):
         return f"User(user_id={self.user_id}, name={self.full_name})"
 
@@ -132,6 +146,36 @@ class TokenModel(BaseModel):
 
     def is_active(self):
         return self.expire is None or self.expire >= datetime.utcnow()
+
+
+class GameRequestModel(BaseModel):
+    __tablename__ = "game_requests"
+
+    id = Column(Integer, primary_key=True)
+    creator_id = Column(Integer, ForeignKey("users.user_id"))
+    opponent_id = Column(Integer, ForeignKey("users.user_id"))
+    game_data = Column(JSON)
+
+    creator: UserModel = relationship(
+        "UserModel",
+        back_populates="sent_requests",
+        foreign_keys="GameRequestModel.creator_id",
+        lazy="subquery",
+    )
+
+    opponent: UserModel = relationship(
+        "UserModel",
+        back_populates="received_requests",
+        foreign_keys="GameRequestModel.opponent_id",
+        lazy="subquery",
+    )
+
+    def as_dict(self):
+        return {
+            "creator_id": self.creator_id,
+            "opponent_id": self.opponent_id,
+            "game_data": self.game_data,
+        }
 
 
 class GameModel(BaseModel):

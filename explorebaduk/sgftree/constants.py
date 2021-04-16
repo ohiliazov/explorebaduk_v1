@@ -1,5 +1,4 @@
-APP_NAME = "sgftree"
-APP_VERSION = "1.0"
+APP_NAME = "sgftree:1.0"
 SGF_COORDINATES = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 HANDICAP_SGF_COORS = [

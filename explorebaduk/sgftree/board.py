@@ -39,13 +39,14 @@ class Board:
         board: np.ndarray = None,
         score: dict = None,
         history: List[Tuple[np.ndarray, Location, dict]] = None,
+        handicap_coords: List[Tuple[int, int]] = None,
     ):
         self.board = np.zeros(shape, dtype=np.int_) if board is None else board.copy()
         self.history = history.copy() if history else []
 
         self.turn = Location.WHITE if handicap else Location.BLACK
 
-        for coord in HANDICAP_BOARD_COORDS[handicap]:
+        for coord in handicap_coords or HANDICAP_BOARD_COORDS[handicap]:
             self.board[coord] = Location.BLACK
 
         self._illegal = set()

@@ -27,23 +27,30 @@ class Property:
     """An SGF property"""
 
     def __init__(self, label: str, prop_values: List[Union[str, int, float]] = None):
-        self.data = sorted(
-            set([escape_text(str(value)) for value in prop_values or [] if value]),
-        )
+        self.data = sorted(set(prop_values or []))
         self.label = label
 
     def __str__(self):
         """SGF representation of property"""
-        return f"{self.label}[{']['.join(self.data)}]"
+        prop_values = map(escape_text, map(str, self.data))
+        return f"{self.label}[{']['.join(prop_values)}]"
 
     def __hash__(self):
         return hash(str(self))
 
-    def __getitem__(self, item: int) -> str:
+    def __getitem__(self, item: int):
         return self.data[item]
+
+    def __iter__(self):
+        for item in self.data:
+            yield item
 
     def __eq__(self, other: "Property"):
         return other is not None and self.label == other.label and self.data == other.data
+
+    def add_value(self, value):
+        if value not in self.data:
+            self.data.append(value)
 
     def copy(self) -> "Property":
         return Property(self.label, self.data.copy())
@@ -64,8 +71,11 @@ class Node:
         values = "".join([str(prop) for prop in self.data.values()])
         return f";{values}"
 
-    def __getitem__(self, item: str):
+    def __getitem__(self, item: str) -> Property:
         return self.data[item]
+
+    def __contains__(self, item: str):
+        return item in self.data
 
     def __setitem__(self, key: str, value: Property):
         self.data[key] = value
@@ -73,16 +83,23 @@ class Node:
     def __len__(self):
         return len(self.data)
 
-    def get_prop(self, label: str):
+    def get_prop(self, label: str) -> Property:
         return self.data.get(label)
 
     def add_prop(self, prop: Property):
         """Adds property to the node"""
         self.data[prop.label] = prop
 
-    def pop_prop(self, label: str):
+    def pop_prop(self, label: str) -> Property:
         """Removes property from the node"""
-        self.data.pop(label, None)
+        return self.data.pop(label, None)
+
+    def add_prop_value(self, label: str, value=None):
+        """Adds value to existing property or creates new"""
+        sgf_prop = self.pop_prop(label) or Property(label)
+        if value is not None:
+            sgf_prop.add_value(value)
+        self.add_prop(sgf_prop)
 
     def copy(self) -> "Node":
         return Node([prop.copy() for prop in self.data.values()])
@@ -124,51 +141,57 @@ class GameTree:
             raise GameTreeError("Tree has variations")
         self.data.append(node)
 
-    def get_subtree(self, index: int = 0):
-        if 0 <= index < len(self.data):
-            return GameTree(
-                self.data[index:],
-                [tree.copy() for tree in self.variations],
-            )
+    def slice(self, start: int = 0, stop: int = None):
+        tree = self.copy()
+        assert 0 <= start < (stop or len(self) - 1) < len(self)
 
-        raise GameTreeError("Invalid subtree index")
+        if stop:
+            tree.data = tree.data[:stop]
+            tree.variations.clear()
 
-    def insert_tree(self, index: int, new_tree: "GameTree", is_main: bool = False):
+        tree.data = tree.data[start:]
+        return tree
+
+    def insert_tree(self, index: int, tree: "GameTree", is_main: bool = False):
+        assert 0 < index <= len(self), "Wrong tree index"
         if index == 0:
             raise GameTreeError("Cannot insert tree to first node")
 
+        if index >= len(self) or not self.variations:
+            self.data.extend(tree)
+            self.variations = tree.variations
+
         if index < len(self):
             # convert part of existing tree into a subtree
-            self.data, existing_tree = self.data[:index], self.get_subtree(index)
-            self.variations = [new_tree, existing_tree] if is_main else [existing_tree, new_tree]
+            self.data = self.data[:index]
+
+            if is_main:
+                self.variations = [tree, self.slice(index)]
+            else:
+                self.variations = [self.slice(index), tree]
 
         elif self.variations:
             # we have some variations, so append new one
             if is_main:
-                self.variations.insert(0, new_tree)
+                self.variations.insert(0, tree)
             else:
-                self.variations.append(new_tree)
+                self.variations.append(tree)
 
         else:
             # this is the end of game tree
-            self.data.extend(new_tree.data)
-            self.variations = new_tree.variations
+            self.data.extend(tree.data)
+            self.variations = tree.variations
 
         return self
 
-    def cut_tree(self, index: int):
-        if 0 <= index < len(self):
-            self.data = self.data[:index]
-            self.variations = []
-
-        raise GameTreeError("Invalid subtree index")
-
-    def cut_variation(self, index: int):
-        self.variations.pop(index)
+    def pop_variation(self, index: int):
+        variation = self.variations.pop(index)
 
         if len(self.variations) == 1:
             self.data.extend(self.variations[0].data)
             self.variations = self.variations[0].variations
+
+        return variation
 
     def set_main_variation(self, index: int):
         if not 0 <= index < len(self.variations):
@@ -206,6 +229,15 @@ class Cursor:
             self.game_tree.variations,
         )
         self.atEnd = (self.index + 1 == len(self.game_tree)) and not self.game_tree.variations
+
+    def at_tree_end(self) -> bool:
+        return self.index + 1 == len(self.game_tree)
+
+    @property
+    def children(self):
+        if self.at_tree_end:
+            return [node[0] for node in self.game_tree.variations]
+        return [self.game_tree[self.index + 1]]
 
     @property
     def node(self) -> Node:
@@ -283,6 +315,9 @@ class Cursor:
             self.game_tree.set_main_variation(next_node_moves.index(node_move))
 
         self._set_flags()
+
+    def add_prop_value(self, label: str, value=None):
+        self.node.add_prop_value(label, value)
 
 
 class SGFParser:
@@ -419,7 +454,7 @@ class SGFParser:
                     m_end = self._search_regex(rePropertyEnd)
                     m_escape = self._search_regex(reEscape)
                 if m_end:
-                    value += self.data[self.index : m_end.init()]
+                    value += self.data[self.index : m_end.start()]
                     self.index = m_end.end()
                     pv_list.append(convert_control_chars(value))
                 else:
