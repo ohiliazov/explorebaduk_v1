@@ -5,7 +5,6 @@ from typing import List, Optional
 from async_asgi_testclient import TestClient
 from async_asgi_testclient.websocket import WebSocketSession
 
-from explorebaduk.messages import AuthorizeMessage, RefreshMessage
 from explorebaduk.models import UserModel
 
 
@@ -57,10 +56,6 @@ class WebSocketTester:
         self.websocket = websocket
         self.user: Optional[UserModel] = None
 
-    async def send(self, data: dict):
-        await self.websocket.send_json(data)
-        print(">", str(data))
-
     async def receive(self) -> List[dict]:
         messages = []
 
@@ -72,20 +67,14 @@ class WebSocketTester:
             except asyncio.TimeoutError:
                 return messages
 
-    async def authorize_with_token(self, token: str):
-        await self.send(AuthorizeMessage(token).json())
-
     async def authorize_as_user(self, user: UserModel):
         for token in user.tokens:
             if token.is_active():
                 self.user = user
-                return await self.authorize_with_token(token.token)
+                return await self.websocket.send_text(token.token)
 
     async def authorize_as_guest(self):
-        await self.send({"event": "authorize", "data": None})
-
-    async def refresh(self):
-        await self.send(RefreshMessage().json())
+        await self.websocket.send_text("")
 
 
 def get_online_users(

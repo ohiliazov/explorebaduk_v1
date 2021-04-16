@@ -1,4 +1,3 @@
-import asyncio
 import logging
 
 from fastapi import WebSocket, WebSocketDisconnect
@@ -6,18 +5,11 @@ from fastapi.concurrency import run_until_first_complete
 from fastapi.routing import APIRouter
 
 from explorebaduk.broadcast import broadcast
-from explorebaduk.crud import get_players_list, get_user_by_token
-from explorebaduk.messages import (
-    GameInvitesMessage,
-    Message,
-    OpenGamesMessage,
-    PlayerListMessage,
-    ReceivedMessage,
-    WhoAmIMessage,
-)
+from explorebaduk.crud import get_user_by_token
+from explorebaduk.messages import Message, ReceivedMessage, WhoAmIMessage
 from explorebaduk.shared import GameRequests, UsersOnline
 
-logger = logging.getLogger("uvicorn")
+logger = logging.getLogger("explorebaduk")
 router = APIRouter()
 
 
@@ -45,19 +37,13 @@ class Connection:
 
     async def initialize(self):
         await self.websocket.accept()
-        message = await self._recv()
+        message = await self.websocket.receive_text()
 
-        if message.event == "authorize":
-            if user := get_user_by_token(message.data):
-                self.user = user
-                await UsersOnline.add(self.user, self.websocket)
+        if user := get_user_by_token(message):
+            self.user = user
+            await UsersOnline.add(self.user, self.websocket)
 
-        await self.send_whoami()
-        await asyncio.gather(
-            self.send_player_list(),
-            self.send_open_games(),
-            self.send_direct_invites(),
-        )
+        await self._send(WhoAmIMessage(self.user))
 
     async def finalize(self):
         if self.user:
@@ -66,22 +52,6 @@ class Connection:
             if not UsersOnline.is_online(self.user):
                 await GameRequests.remove_open_game(self.user)
                 await GameRequests.clear_direct_invites(self.user)
-
-    async def send_whoami(self):
-        await self._send(WhoAmIMessage(self.user))
-
-    async def send_player_list(self, search_string: str = None):
-        user_ids = UsersOnline.get_user_ids(self.user)
-
-        player_list = get_players_list(user_ids, search_string)
-        await self._send(PlayerListMessage(player_list))
-
-    async def send_open_games(self):
-        await self._send(OpenGamesMessage(GameRequests.open_games))
-
-    async def send_direct_invites(self):
-        if self.user:
-            await self._send(GameInvitesMessage(GameRequests.get_direct_invites(self.user.user_id)))
 
 
 @router.websocket_route("/ws")
@@ -105,16 +75,7 @@ async def ws_handler(websocket: WebSocket):
 
 async def ws_receiver(connection: Connection):
     async for message in connection:
-        if message.event == "players.list":
-            await connection.send_player_list(message.data)
-        elif message.event == "games.open.list":
-            await connection.send_open_games()
-        elif message.event == "games.direct.list":
-            await connection.send_direct_invites()
-        elif message.event == "refresh":
-            await connection.send_player_list()
-            await connection.send_open_games()
-            await connection.send_direct_invites()
+        logger.debug(f"< {message}")
 
 
 async def ws_sender(connection: Connection):

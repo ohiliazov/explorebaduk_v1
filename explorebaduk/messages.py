@@ -1,4 +1,4 @@
-from typing import Any, Iterable, Optional
+from typing import Any, Optional
 
 import simplejson as json
 
@@ -40,13 +40,6 @@ class AuthorizeMessage(Message):
         self.data = token
 
 
-class RefreshMessage(Message):
-    event = "refresh"
-
-    def __init__(self):
-        self.data = None
-
-
 class WhoAmIMessage(Message):
     event = "whoami"
 
@@ -66,21 +59,6 @@ class PlayerInfoMixin:
             "status": "online",
             **user.asdict(),
         }
-
-
-class PlayerListMessage(Message, PlayerInfoMixin):
-    event = "players.list"
-
-    def __init__(self, users: Iterable[UserModel]):
-        users = sorted(users, key=lambda user: (-user.rating, user.username))
-        self.data = [self.make_players_data(user) for user in users]
-
-
-class OpenGamesMessage(Message, PlayerInfoMixin):
-    event = "games.open.list"
-
-    def __init__(self, challenges: dict):
-        self.data = [{"user_id": user_id, **challenge.dict()} for user_id, challenge in challenges.items()]
 
 
 class PlayerOnlineMessage(Message, PlayerInfoMixin):
@@ -122,10 +100,6 @@ class AcceptOpenGameRequestMessage(UserIdMessage):
 
 class RejectOpenGameRequestMessage(UserIdMessage):
     event = "games.open.request.reject"
-
-
-class GameInvitesMessage(OpenGamesMessage):
-    event = "games.direct.list"
 
 
 class GameInviteAddMessage(OpenGameCreatedMessage):
