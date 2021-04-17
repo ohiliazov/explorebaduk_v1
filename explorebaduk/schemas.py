@@ -1,4 +1,4 @@
-from typing import Literal, Optional, Set, Union
+from typing import List, Literal, Optional, Union
 
 from pydantic import BaseModel, root_validator
 from pydantic.types import ConstrainedFloat, ConstrainedInt, PositiveInt
@@ -52,17 +52,15 @@ class PlayerOut(BaseModel):
         }
 
 
-class FriendListOut(BaseModel):
-    friends: Set[int]
-    pending: Optional[Set[int]]
-    waiting: Optional[Set[int]]
+class FriendList(BaseModel):
+    following: List[int]
+    followers: List[int]
 
     class Config:
         schema_extra = {
             "example": {
-                "friends": [132, 242, 312],
-                "pending": [412, 523],
-                "waiting": [676],
+                "following": [132, 242, 312, 777],
+                "followers": [412, 523, 777],
             },
         }
 

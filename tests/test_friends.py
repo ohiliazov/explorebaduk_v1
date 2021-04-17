@@ -3,8 +3,6 @@ import random
 import pytest
 from starlette.status import HTTP_200_OK
 
-from explorebaduk.crud import get_friendships
-
 
 @pytest.mark.asyncio
 async def test_get_friends(test_cli, db_friends):
@@ -14,14 +12,34 @@ async def test_get_friends(test_cli, db_friends):
     resp = await test_cli.get_friends()
     assert resp.status_code == HTTP_200_OK, resp.text
 
-    resp_json = resp.json()
-    friends_in, friends_out = set(), set()
-    for user_id, friend_id in get_friendships(user.user_id):
-        if user_id != user.user_id:
-            friends_in.add(user_id)
-        elif friend_id != user.user_id:
-            friends_out.add(friend_id)
+    expected = {
+        "following": sorted(
+            [f.friend_id for f in db_friends if f.user_id == user.user_id],
+        ),
+        "followers": sorted(
+            [f.user_id for f in db_friends if f.friend_id == user.user_id],
+        ),
+    }
+    assert resp.json() == expected
 
-    assert set(resp_json["friends"]) == friends_out & friends_in
-    assert set(resp_json["pending"]) == friends_out - friends_in
-    assert set(resp_json["waiting"]) == friends_in - friends_out
+
+@pytest.mark.asyncio
+async def test_get_user_friends(test_cli, db_friends):
+    friendship = random.choice(db_friends)
+    user = friendship.user
+    friend_id = friendship.friend_id
+
+    test_cli.authorize(user)
+
+    resp = await test_cli.get_user_friends(friend_id)
+    assert resp.status_code == HTTP_200_OK, resp.text
+
+    expected = {
+        "following": sorted(
+            [f.friend_id for f in db_friends if f.user_id == friend_id],
+        ),
+        "followers": sorted(
+            [f.user_id for f in db_friends if f.friend_id == friend_id],
+        ),
+    }
+    assert resp.json() == expected

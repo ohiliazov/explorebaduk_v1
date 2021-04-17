@@ -23,6 +23,9 @@ class ApiTester(TestClient):
     async def get_friends(self):
         return await self.get("/api/friends")
 
+    async def get_user_friends(self, user_id: int):
+        return await self.get(f"/api/friends/{user_id}")
+
     async def create_open_game(self, post_body: dict):
         return await self.post("/api/open-games", json=post_body)
 
@@ -82,7 +85,11 @@ def get_online_users(
     exclude: List[UserModel] = None,
 ) -> List[UserModel]:
     exclude = exclude or []
-    return [websocket.user for websocket in websockets if websocket.user and websocket.user not in exclude]
+    return [
+        websocket.user
+        for websocket in websockets
+        if websocket.user and websocket.user not in exclude
+    ]
 
 
 def get_offline_users(
@@ -113,6 +120,10 @@ async def receive_websockets(
 ) -> List[List[dict]]:
     exclude_websockets = exclude_websockets or []
     messages, _ = await asyncio.wait(
-        [websocket.receive() for websocket in websockets if websocket not in exclude_websockets],
+        [
+            websocket.receive()
+            for websocket in websockets
+            if websocket not in exclude_websockets
+        ],
     )
     return [t.result() for t in messages]

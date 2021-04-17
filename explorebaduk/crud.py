@@ -1,6 +1,6 @@
 import os
 from datetime import datetime
-from typing import List, Tuple
+from typing import List
 
 from sqlalchemy import and_, create_engine, or_
 from sqlalchemy.orm import Session
@@ -70,20 +70,23 @@ class DatabaseHandler:
 
         return query.all()
 
-
-def get_friendships(user_id: int) -> List[Tuple[int, int]]:
-    with scoped_session() as session:
+    def get_following(self, user_id: int) -> List[FriendshipModel]:
         return (
-            session.query(
-                FriendshipModel.user_id,
-                FriendshipModel.friend_id,
-            )
+            self.session.query(FriendshipModel)
             .filter(
-                or_(
-                    FriendshipModel.user_id == user_id,
-                    FriendshipModel.friend_id == user_id,
-                ),
+                FriendshipModel.user_id == user_id,
             )
+            .order_by(FriendshipModel.friend_id)
+            .all()
+        )
+
+    def get_followers(self, user_id: int) -> List[FriendshipModel]:
+        return (
+            self.session.query(FriendshipModel)
+            .filter(
+                FriendshipModel.friend_id == user_id,
+            )
+            .order_by(FriendshipModel.user_id)
             .all()
         )
 
