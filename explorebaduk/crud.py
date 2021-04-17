@@ -75,7 +75,7 @@ class DatabaseHandler:
                     ),
                 )
 
-        return query.all()
+        return query.order_by(UserModel.user_id).all()
 
     def get_following(self, user_id: int) -> List[FriendshipModel]:
         return (

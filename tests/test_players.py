@@ -28,7 +28,10 @@ async def test_get_players_search_last_name(test_cli, db_users, attr):
     resp = await test_cli.get_players({"q": q})
     assert resp.status_code == HTTP_200_OK, resp.text
 
-    expected = [user.asdict() for user in db_users if q in getattr(user, attr)]
+    expected = sorted(
+        [user.asdict() for user in db_users if q in getattr(user, attr)],
+        key=lambda user: user["user_id"],
+    )
     assert resp.json() == expected
 
 
