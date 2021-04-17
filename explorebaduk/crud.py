@@ -1,38 +1,60 @@
-from typing import Iterable, List, Tuple
+import os
+from datetime import datetime
+from typing import List, Tuple
 
-from sqlalchemy import and_, or_
+from sqlalchemy import and_, create_engine, or_
+from sqlalchemy.orm import Session
 
 from .database import scoped_session
 from .models import FriendshipModel, GameModel, GamePlayerModel, TokenModel, UserModel
 from .schemas import Color, GameCategory, GameType, RuleSet
 
-
-def get_player_by_id(user_id: int) -> UserModel:
-    with scoped_session() as session:
-        return session.query(UserModel).get(user_id)
+engine = create_engine(os.getenv("DATABASE_URI"))
 
 
-def get_players_list(
-    id_list: Iterable[int] = None,
-    search_string: str = None,
-) -> List[UserModel]:
-    with scoped_session() as session:
-        query = session.query(UserModel)
+class DatabaseHandler:
+    def __enter__(self):
+        self.session = Session(engine, autocommit=True, autoflush=True)
+        return self
 
-        if id_list is not None:
-            query = query.filter(UserModel.user_id.in_(id_list))
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.session.close()
 
-        if search_string:
-            if " " not in search_string:
+    def get_user_by_token(self, token) -> UserModel:
+        query = (
+            self.session.query(
+                TokenModel,
+            )
+            .filter(
+                TokenModel.token == token,
+            )
+            .filter(
+                or_(
+                    TokenModel.expire.is_(None),
+                    TokenModel.expire >= datetime.utcnow(),
+                ),
+            )
+        )
+        if auth_token := query.first():
+            return auth_token.user
+
+    def get_user_by_id(self, user_id: int) -> UserModel:
+        return self.session.query(UserModel).get(user_id)
+
+    def get_users(self, q: str = None) -> List[UserModel]:
+        query = self.session.query(UserModel)
+
+        if q:
+            if " " not in q:
                 query = query.filter(
                     or_(
-                        UserModel.first_name.contains(search_string),
-                        UserModel.last_name.contains(search_string),
-                        UserModel.username.contains(search_string),
+                        UserModel.first_name.contains(q),
+                        UserModel.last_name.contains(q),
+                        UserModel.username.contains(q),
                     ),
                 )
             else:
-                s1, s2 = search_string.split(" ")[:2]
+                s1, s2 = q.split(" ")[:2]
                 query = query.filter(
                     or_(
                         and_(
@@ -47,21 +69,6 @@ def get_players_list(
                 )
 
         return query.all()
-
-
-def get_user_by_token(token) -> UserModel:
-    with scoped_session() as session:
-
-        auth_token = (
-            session.query(TokenModel)
-            .filter(
-                TokenModel.token == token,
-            )
-            .first()
-        )
-
-        if auth_token and auth_token.is_active():
-            return auth_token.user
 
 
 def get_friendships(user_id: int) -> List[Tuple[int, int]]:
@@ -108,8 +115,18 @@ def create_game(
         return game.game_id
 
 
-def create_game_player(game_id: int, user_id: int, color: Color, time_left: int):
-    game_player = GamePlayerModel(game_id=game_id, user_id=user_id, color=color, time_left=time_left)
+def create_game_player(
+    game_id: int,
+    user_id: int,
+    color: Color,
+    time_left: int,
+):
+    game_player = GamePlayerModel(
+        game_id=game_id,
+        user_id=user_id,
+        color=color,
+        time_left=time_left,
+    )
 
     with scoped_session() as session:
         session.add(game_player)

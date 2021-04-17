@@ -4,7 +4,7 @@ import random
 
 import websockets
 
-from explorebaduk.crud import get_players_list
+from explorebaduk.crud import DatabaseHandler
 
 lock = asyncio.Lock()
 
@@ -32,7 +32,12 @@ async def players_feed(token):
 
 
 async def run():
-    all_players = [player for player in get_players_list() if any(token.is_active() for token in player.tokens)]
+    with DatabaseHandler() as db:
+        all_players = [
+            player
+            for player in db.get_users()
+            if any(token.is_active() for token in player.tokens)
+        ]
 
     players = []
 

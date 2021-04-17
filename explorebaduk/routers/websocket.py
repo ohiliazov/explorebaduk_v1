@@ -5,7 +5,7 @@ from fastapi.concurrency import run_until_first_complete
 from fastapi.routing import APIRouter
 
 from explorebaduk.broadcast import broadcast
-from explorebaduk.crud import get_user_by_token
+from explorebaduk.crud import DatabaseHandler
 from explorebaduk.messages import Message, ReceivedMessage, WhoAmIMessage
 from explorebaduk.shared import GameRequests, UsersOnline
 
@@ -39,9 +39,10 @@ class Connection:
         await self.websocket.accept()
         message = await self.websocket.receive_text()
 
-        if user := get_user_by_token(message):
-            self.user = user
-            await UsersOnline.add(self.user, self.websocket)
+        with DatabaseHandler() as db:
+            if user := db.get_user_by_token(message):
+                self.user = user
+                await UsersOnline.add(self.user, self.websocket)
 
         await self._send(WhoAmIMessage(self.user))
 

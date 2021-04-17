@@ -20,9 +20,10 @@ class UsersOnline:
 
     @classmethod
     async def add(cls, user: UserModel, websocket: WebSocket):
-        cls.user_ids[user.user_id].append(websocket)
-        if len(cls.user_ids[user.user_id]) == 1:
-            await Notifier.player_online(user)
+        if user.user_id not in cls.user_ids:
+            cls.user_ids[user.user_id].append(websocket)
+            if len(cls.user_ids[user.user_id]) == 1:
+                await Notifier.player_online(user)
 
     @classmethod
     async def remove(cls, user: UserModel, websocket: WebSocket):
@@ -83,7 +84,9 @@ class GameRequests:
             await Notifier.remove_open_game(user)
 
     @classmethod
-    async def create_open_game_request(cls, to_user_id, user: UserModel, settings: GameSettings):
+    async def create_open_game_request(
+        cls, to_user_id, user: UserModel, settings: GameSettings
+    ):
         cls.open_games_requests[to_user_id][user.user_id] = settings
         print(f"{user.user_id=} {to_user_id=} {cls.open_games_requests=}")
         await Notifier.create_open_game_request(to_user_id, user, settings)
@@ -114,7 +117,9 @@ class GameRequests:
         }
 
     @classmethod
-    async def create_direct_invite(cls, to_user_id: int, user: UserModel, game_setup: GameSetup):
+    async def create_direct_invite(
+        cls, to_user_id: int, user: UserModel, game_setup: GameSetup
+    ):
         cls.direct_invites[user.user_id][to_user_id] = game_setup
         await Notifier.create_game_invite(to_user_id, user, game_setup)
 
@@ -138,4 +143,9 @@ class GameRequests:
         direct_invites = cls.direct_invites[user.user_id]
 
         if direct_invites:
-            await asyncio.wait([cls.remove_direct_invite(from_user_id, user) for from_user_id in direct_invites])
+            await asyncio.wait(
+                [
+                    cls.remove_direct_invite(from_user_id, user)
+                    for from_user_id in direct_invites
+                ],
+            )
