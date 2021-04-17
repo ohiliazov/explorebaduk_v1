@@ -1,9 +1,29 @@
+from enum import Enum
 from typing import List, Literal, Optional, Union
 
 from pydantic import BaseModel, root_validator
 from pydantic.types import ConstrainedFloat, ConstrainedInt, PositiveInt
 
-from explorebaduk.constants import Color, GameCategory, GameType, RuleSet, TimeSystem
+from explorebaduk.constants import GameType, TimeSystem
+
+
+class Color(str, Enum):
+    AUTO = "auto"
+    NIGIRI = "nigiri"
+    BLACK = "black"
+    WHITE = "white"
+
+
+class GameSpeed(str, Enum):
+    BLITZ = "blitz"
+    LIVE = "live"
+    CORRESPONDENCE = "correspondence"
+
+
+class Rules(str, Enum):
+    JAPANESE = "japanese"
+    CHINESE = "chinese"
+
 
 Handicap = Literal[0, 2, 3, 4, 5, 6, 7, 8, 9]
 
@@ -155,9 +175,9 @@ class GameSetupBase(BaseModel):
     name: str
     board_size: BoardSize = 19
     game_type: GameType
-    category: GameCategory
+    category: GameSpeed
     is_private: bool = False
-    rules: RuleSet
+    rules: Rules
     time_settings: Union[Unlimited, Absolute, Byoyomi, Canadian, Fischer]
 
     class Config:
@@ -166,9 +186,9 @@ class GameSetupBase(BaseModel):
                 "name": "My first game",
                 "board_size": 19,
                 "game_type": GameType.RANKED,
-                "category": GameCategory.REAL_TIME,
+                "category": GameSpeed.LIVE,
                 "is_private": False,
-                "rules": RuleSet.JAPANESE,
+                "rules": Rules.JAPANESE,
                 "time_settings": Byoyomi.Config.schema_extra["example"],
             },
         }
@@ -218,7 +238,7 @@ class GameSettings(BaseModel):
         schema_extra = {"example": {"color": "black", "handicap": 3, "komi": 0.5}}
 
 
-class GameSetup(GameSetupBase):
+class GameRequest(GameSetupBase):
     game_settings: GameSettings
 
     class Config:
@@ -228,3 +248,22 @@ class GameSetup(GameSetupBase):
                 "game_settings": GameSettings.Config.schema_extra["example"],
             },
         }
+
+
+class Game(BaseModel):
+    name: str
+    private: bool
+    ranked: bool
+    board_size: BoardSize
+    rules: Rules
+    speed: GameSpeed
+    time_control: Union[Unlimited, Absolute, Byoyomi, Canadian, Fischer]
+    handicap: Optional[Handicap]
+    komi: Optional[Komi]
+
+
+class Challenge(BaseModel):
+    game: Game
+    color: Optional[Color]
+    min_rating: Optional[int]
+    max_rating: Optional[int]

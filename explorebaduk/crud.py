@@ -6,8 +6,15 @@ from sqlalchemy import and_, create_engine, or_
 from sqlalchemy.orm import Session
 
 from .database import scoped_session
-from .models import FriendshipModel, GameModel, GamePlayerModel, TokenModel, UserModel
-from .schemas import Color, GameCategory, GameType, RuleSet
+from .models import (
+    FriendshipModel,
+    GameModel,
+    GamePlayerModel,
+    GameRequestModel,
+    TokenModel,
+    UserModel,
+)
+from .schemas import Color, GameSpeed, GameType, Rules
 
 engine = create_engine(os.getenv("DATABASE_URI"))
 
@@ -90,12 +97,27 @@ class DatabaseHandler:
             .all()
         )
 
+    def create_game_request(
+        self,
+        creator_id: int,
+        opponent_id: int,
+        game_setup: dict,
+    ) -> GameRequestModel:
+        game_request = GameRequestModel(
+            creator_id=creator_id,
+            opponent_id=opponent_id,
+            game_setup=game_setup,
+        )
+        self.session.add(game_request)
+        self.session.flush()
+        return game_request
+
 
 def create_game(
     name: str,
-    rules: RuleSet,
+    rules: Rules,
     game_type: GameType,
-    category: GameCategory,
+    category: GameSpeed,
     board_size: int,
     handicap: int,
     komi: float,

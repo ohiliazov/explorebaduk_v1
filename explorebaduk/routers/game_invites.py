@@ -6,19 +6,21 @@ from fastapi import APIRouter, Depends, HTTPException
 from ..crud import create_game, create_game_player
 from ..dependencies import current_user_online
 from ..models import UserModel
-from ..schemas import Color, GameSetup
+from ..schemas import Color, GameRequest
 from ..shared import GameRequests
 
 router = APIRouter(prefix="/game-invites", tags=["game-invites"])
 
 
-@router.get("", response_model=Dict[int, GameSetup])
+@router.get("", response_model=Dict[int, GameRequest])
 async def list_direct_invites(user: UserModel = Depends(current_user_online)):
     return GameRequests.get_direct_invites(user.user_id)
 
 
-@router.post("/{opponent_id}", response_model=GameSetup)
-async def create_game_invite(opponent_id: int, game: GameSetup, user: UserModel = Depends(current_user_online)):
+@router.post("/{opponent_id}", response_model=GameRequest)
+async def create_game_invite(
+    opponent_id: int, game: GameRequest, user: UserModel = Depends(current_user_online)
+):
     if opponent_id in GameRequests.get_direct_invites(user.user_id):
         raise HTTPException(400, "Direct invite to this user already exists")
 
@@ -27,7 +29,9 @@ async def create_game_invite(opponent_id: int, game: GameSetup, user: UserModel 
 
 
 @router.delete("/{opponent_id}")
-async def cancel_game_invite(opponent_id: int, user: UserModel = Depends(current_user_online)):
+async def cancel_game_invite(
+    opponent_id: int, user: UserModel = Depends(current_user_online)
+):
     if opponent_id not in GameRequests.get_direct_invites(user.user_id):
         raise HTTPException(404, "Direct invite not found")
 

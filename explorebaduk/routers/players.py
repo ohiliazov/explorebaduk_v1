@@ -10,11 +10,11 @@ router = APIRouter(prefix="/players", tags=["players"])
 
 
 @router.get("", response_model=List[PlayerOut])
-def list_players(q: str = None, only_online: bool = False):
+def list_players(q: str = None, online: bool = False):
     with DatabaseHandler() as db:
         players = db.get_users(q=q)
 
-    if only_online:
+    if online:
         players = filter(UsersOnline.is_online, players)
 
     return [player.asdict() for player in players]

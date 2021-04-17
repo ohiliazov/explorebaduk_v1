@@ -14,7 +14,7 @@ from explorebaduk.messages import (
     RemoveOpenGameRequestMessage,
 )
 from explorebaduk.models import UserModel
-from explorebaduk.schemas import GameSettings, GameSetup, OpenGame
+from explorebaduk.schemas import GameRequest, GameSettings, OpenGame
 
 from .broadcast import broadcast
 
@@ -45,7 +45,9 @@ class Notifier:
         await cls.broadcast(OpenGameRemoveMessage(user))
 
     @classmethod
-    async def create_open_game_request(cls, user_id: int, user: UserModel, settings: GameSettings):
+    async def create_open_game_request(
+        cls, user_id: int, user: UserModel, settings: GameSettings
+    ):
         await cls.notify(user_id, CreateOpenGameRequestMessage(user, settings.dict()))
 
     @classmethod
@@ -61,7 +63,7 @@ class Notifier:
         await cls.notify(user_id, RejectOpenGameRequestMessage(user))
 
     @classmethod
-    async def create_game_invite(cls, user_id: int, user: UserModel, game: GameSetup):
+    async def create_game_invite(cls, user_id: int, user: UserModel, game: GameRequest):
         await cls.notify(user_id, GameInviteAddMessage(user, game.dict()))
 
     @classmethod

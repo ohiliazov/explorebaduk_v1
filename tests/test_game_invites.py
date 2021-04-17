@@ -3,13 +3,13 @@ import uuid
 import pytest
 from starlette.status import HTTP_200_OK
 
-from explorebaduk.constants import GameCategory, GameType, RuleSet, TimeSystem
+from explorebaduk.constants import GameType, TimeSystem
 from explorebaduk.messages import (
     GameInviteAcceptMessage,
     GameInviteAddMessage,
     GameInviteRejectMessage,
 )
-from explorebaduk.schemas import GameSetup
+from explorebaduk.schemas import GameRequest, GameSpeed, Rules
 
 from .helpers import random_websocket, receive_websockets
 
@@ -19,8 +19,8 @@ def game_invite() -> dict:
     return {
         "name": f"My Game {uuid.uuid4()}",
         "game_type": GameType.RANKED.value,
-        "category": GameCategory.REAL_TIME.value,
-        "rules": RuleSet.JAPANESE.value,
+        "category": GameSpeed.LIVE.value,
+        "rules": Rules.JAPANESE.value,
         "time_settings": {
             "time_system": TimeSystem.BYOYOMI.value,
             "main_time": 3600,
@@ -45,7 +45,7 @@ async def test_create_game_invite(test_cli, db_users, websockets, game_invite):
     resp = await test_cli.create_game_invite(opponent_ws.user.user_id, game_invite)
     assert resp.status_code == HTTP_200_OK, resp.text
 
-    game = GameSetup.parse_obj(game_invite).dict()
+    game = GameRequest.parse_obj(game_invite).dict()
 
     assert resp.json() == game
 

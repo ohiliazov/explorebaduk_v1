@@ -6,7 +6,7 @@ from fastapi import WebSocket
 
 from .helpers import Notifier
 from .models import UserModel
-from .schemas import GameSettings, GameSetup, OpenGame
+from .schemas import GameRequest, GameSettings, OpenGame
 
 OFFLINE_TIMEOUT = 5
 
@@ -48,7 +48,7 @@ class UsersOnline:
 class GameRequests:
     open_games: Dict[int, OpenGame] = {}
     open_games_requests: Dict[int, Dict[int, GameSettings]] = defaultdict(dict)
-    direct_invites: Dict[int, Dict[int, GameSetup]] = defaultdict(dict)
+    direct_invites: Dict[int, Dict[int, GameRequest]] = defaultdict(dict)
 
     @classmethod
     def clear(cls):
@@ -65,11 +65,11 @@ class GameRequests:
         return cls.open_games_requests[user_id]
 
     @classmethod
-    def get_direct_invites(cls, user_id) -> Dict[int, GameSetup]:
+    def get_direct_invites(cls, user_id) -> Dict[int, GameRequest]:
         return cls.direct_invites[user_id]
 
     @classmethod
-    def get_direct_invite(cls, from_user_id, to_user_id) -> GameSetup:
+    def get_direct_invite(cls, from_user_id, to_user_id) -> GameRequest:
         return cls.direct_invites[from_user_id].get(to_user_id)
 
     @classmethod
@@ -108,7 +108,7 @@ class GameRequests:
         await Notifier.reject_open_game_request(from_user_id, user)
 
     @classmethod
-    def get_sent_invites(cls, user_id) -> Dict[int, GameSetup]:
+    def get_sent_invites(cls, user_id) -> Dict[int, GameRequest]:
         return {
             to_user_id: game_setup
             for to_user_id, direct_invites in cls.direct_invites.items()
@@ -118,7 +118,7 @@ class GameRequests:
 
     @classmethod
     async def create_direct_invite(
-        cls, to_user_id: int, user: UserModel, game_setup: GameSetup
+        cls, to_user_id: int, user: UserModel, game_setup: GameRequest
     ):
         cls.direct_invites[user.user_id][to_user_id] = game_setup
         await Notifier.create_game_invite(to_user_id, user, game_setup)

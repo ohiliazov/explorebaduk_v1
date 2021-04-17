@@ -34,7 +34,7 @@ async def test_get_players_search_last_name(test_cli, db_users, attr):
 
 @pytest.mark.asyncio
 async def test_get_players_online(test_cli, db_users, websockets):
-    resp = await test_cli.get_players({"only_online": True})
+    resp = await test_cli.get_players({"online": True})
     assert resp.status_code == HTTP_200_OK, resp.text
 
     user_ids = [websocket.user.user_id for websocket in websockets if websocket.user]

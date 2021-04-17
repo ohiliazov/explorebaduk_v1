@@ -1,7 +1,15 @@
 import random
 from typing import Union
 
-from ..schemas import Absolute, Byoyomi, Canadian, Color, Fischer, GameSetup, Unlimited
+from ..schemas import (
+    Absolute,
+    Byoyomi,
+    Canadian,
+    Color,
+    Fischer,
+    GameRequest,
+    Unlimited,
+)
 from ..sgftree import Kifu
 from ..utils.timer import (
     AbsoluteTimer,
@@ -43,7 +51,7 @@ def timer(
 
 
 class Game:
-    def __init__(self, user_id: int, opponent_id: int, game_setup: GameSetup):
+    def __init__(self, user_id: int, opponent_id: int, game_setup: GameRequest):
         self.game_setup = game_setup
         self.black_id, self.white_id = self.get_colors(user_id, opponent_id)
         self.kifu = Kifu(

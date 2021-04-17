@@ -15,7 +15,7 @@ from sqlalchemy.sql.sqltypes import (
 )
 
 from .database import BaseModel
-from .schemas import Color, GameCategory, GameType, RuleSet
+from .schemas import Color, GameSpeed, GameType, Rules
 
 
 class UserModel(BaseModel):
@@ -154,7 +154,7 @@ class GameRequestModel(BaseModel):
     id = Column(Integer, primary_key=True)
     creator_id = Column(Integer, ForeignKey("users.user_id"))
     opponent_id = Column(Integer, ForeignKey("users.user_id"))
-    game_data = Column(JSON)
+    game_setup = Column(JSON)
 
     creator: UserModel = relationship(
         "UserModel",
@@ -174,7 +174,7 @@ class GameRequestModel(BaseModel):
         return {
             "creator_id": self.creator_id,
             "opponent_id": self.opponent_id,
-            "game_data": self.game_data,
+            "game_setup": self.game_setup,
         }
 
 
@@ -187,9 +187,9 @@ class GameModel(BaseModel):
     finished_at = Column(DateTime)
 
     name = Column(String(255))
-    rules = Column(Enum(RuleSet))
+    rules = Column(Enum(Rules))
     game_type = Column(Enum(GameType))
-    category = Column(Enum(GameCategory))
+    category = Column(Enum(GameSpeed))
 
     board_size = Column(Integer)
     handicap = Column(Integer)
