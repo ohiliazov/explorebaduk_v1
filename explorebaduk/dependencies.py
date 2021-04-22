@@ -3,7 +3,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from .crud import DatabaseHandler
 from .models import UserModel
-from .shared import UsersOnline
+from .shared import UsersManager
 
 http_bearer = HTTPBearer()
 
@@ -19,7 +19,7 @@ async def current_user(
 
 
 async def current_user_online(user: UserModel = Depends(current_user)) -> UserModel:
-    if UsersOnline.is_online(user):
+    if UsersManager.is_online(user):
         return user
 
     raise HTTPException(400, "Not connected to websocket")

@@ -47,11 +47,6 @@ class WhoAmIMessage(Message):
         self.data = user.asdict() if user else None
 
 
-class UserIdMessage(Message):
-    def __init__(self, user: UserModel):
-        self.data = {"user_id": user.user_id}
-
-
 class PlayerInfoMixin:
     @staticmethod
     def make_players_data(user: UserModel):
@@ -68,51 +63,57 @@ class PlayerOnlineMessage(Message, PlayerInfoMixin):
         self.data = self.make_players_data(user)
 
 
-class PlayerOfflineMessage(UserIdMessage):
+class PlayerOfflineMessage(Message):
     event = "players.remove"
 
-
-class OpenGameCreatedMessage(Message):
-    event = "games.open.add"
-
-    def __init__(self, user: UserModel, game: dict):
-        self.data = {"user_id": user.user_id, **game}
+    def __init__(self, user: UserModel):
+        self.data = {"user_id": user.user_id}
 
 
-class OpenGameRemoveMessage(UserIdMessage):
-    event = "games.open.remove"
+class ChallengeAddMessage(Message):
+    event = "challenges.open.add"
+
+    def __init__(self, challenge: dict):
+        self.data = challenge
 
 
-class CreateOpenGameRequestMessage(Message):
-    event = "games.open.request.create"
+class ChallengeIncomingAddMessage(Message):
+    event = "challenges.incoming.add"
 
-    def __init__(self, user: UserModel, game_settings: dict):
-        self.data = {"user_id": user.user_id, "settings": game_settings}
-
-
-class RemoveOpenGameRequestMessage(UserIdMessage):
-    event = "games.open.request.remove"
+    def __init__(self, challenge: dict):
+        self.data = challenge
 
 
-class AcceptOpenGameRequestMessage(UserIdMessage):
-    event = "games.open.request.accept"
+class ChallengeOutgoingAddMessage(Message):
+    event = "challenges.outgoing.add"
+
+    def __init__(self, challenge: dict):
+        self.data = challenge
 
 
-class RejectOpenGameRequestMessage(UserIdMessage):
-    event = "games.open.request.reject"
+class ChallengeOpenRemoveMessage(Message):
+    event = "challenges.open.remove"
+
+    def __init__(self, challenge_id: int):
+        self.data = {"challenge_id": challenge_id}
 
 
-class GameInviteAddMessage(OpenGameCreatedMessage):
-    event = "games.direct.add"
+class ChallengeIncomingRemoveMessage(Message):
+    event = "challenges.incoming.remove"
+
+    def __init__(self, challenge_id: int):
+        self.data = {"challenge_id": challenge_id}
 
 
-class GameInviteRemoveMessage(UserIdMessage):
-    event = "games.direct.remove"
+class ChallengeOutgoingRemoveMessage(Message):
+    event = "challenges.direct.remove"
+
+    def __init__(self, challenge_id: int):
+        self.data = {"challenge_id": challenge_id}
 
 
-class GameInviteAcceptMessage(UserIdMessage):
-    event = "games.direct.request.accept"
+class GameStartedMessage(Message):
+    event = "games.start"
 
-
-class GameInviteRejectMessage(UserIdMessage):
-    event = "games.direct.request.reject"
+    def __init__(self, game: dict):
+        self.data = game

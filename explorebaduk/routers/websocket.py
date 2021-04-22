@@ -1,3 +1,4 @@
+import asyncio
 import logging
 
 from fastapi import WebSocket, WebSocketDisconnect
@@ -6,8 +7,15 @@ from fastapi.routing import APIRouter
 
 from explorebaduk.broadcast import broadcast
 from explorebaduk.crud import DatabaseHandler
-from explorebaduk.messages import Message, ReceivedMessage, WhoAmIMessage
-from explorebaduk.shared import GameRequests, UsersOnline
+from explorebaduk.messages import (
+    ChallengeAddMessage,
+    ChallengeIncomingAddMessage,
+    ChallengeOutgoingAddMessage,
+    Message,
+    ReceivedMessage,
+    WhoAmIMessage,
+)
+from explorebaduk.shared import ChallengesManager, UsersManager
 
 logger = logging.getLogger("explorebaduk")
 router = APIRouter()
@@ -21,6 +29,11 @@ class Connection:
     async def __aiter__(self):
         async for message in self.websocket.iter_text():
             yield ReceivedMessage.from_string(message)
+
+    @property
+    def user_id(self):
+        if self.user:
+            return self.user.user_id
 
     @property
     def username(self):
@@ -39,20 +52,50 @@ class Connection:
         await self.websocket.accept()
         message = await self.websocket.receive_text()
 
+        await self._send_messages()
+
         with DatabaseHandler() as db:
             if user := db.get_user_by_token(message):
                 self.user = user
-                await UsersOnline.add(self.user, self.websocket)
+                await UsersManager.add(self.user, self.websocket)
+                await self._send_direct_challenges()
 
         await self._send(WhoAmIMessage(self.user))
 
+    async def _send_messages(self):
+        with DatabaseHandler() as db:
+            challenges = db.list_challenges()
+        messages = [ChallengeAddMessage(challenge) for challenge in challenges]
+
+        if messages:
+            await asyncio.wait([self._send(message) for message in messages])
+
+    async def _send_direct_challenges(self):
+        messages = []
+        messages.extend(
+            [
+                ChallengeIncomingAddMessage(challenge)
+                for challenge in ChallengesManager.get_challenges_in(self.user_id)
+            ],
+        )
+        messages.extend(
+            [
+                ChallengeOutgoingAddMessage(challenge)
+                for challenge in ChallengesManager.get_challenges_out(self.user_id)
+            ],
+        )
+
+        if messages:
+            await asyncio.wait([self._send(message) for message in messages])
+
     async def finalize(self):
         if self.user:
-            await UsersOnline.remove(self.user, self.websocket)
-
-            if not UsersOnline.is_online(self.user):
-                await GameRequests.remove_open_game(self.user)
-                await GameRequests.clear_direct_invites(self.user)
+            await UsersManager.remove(self.user, self.websocket)
+            await asyncio.sleep(5)
+            if not UsersManager.is_online(self.user):
+                pass
+                # await GameRequests.remove_open_game(self.user)
+                # await GameRequests.clear_direct_invites(self.user)
 
 
 @router.websocket_route("/ws")

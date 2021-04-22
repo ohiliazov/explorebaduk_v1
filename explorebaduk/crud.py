@@ -1,49 +1,37 @@
 import os
-from datetime import datetime
+import random
 from typing import List
 
 from sqlalchemy import and_, create_engine, or_
 from sqlalchemy.orm import Session
 
-from .database import scoped_session
 from .models import (
+    ChallengeModel,
     FriendshipModel,
     GameModel,
     GamePlayerModel,
-    GameRequestModel,
     TokenModel,
     UserModel,
 )
-from .schemas import Color, GameSpeed, GameType, Rules
+from .schemas import Challenge, Color, Game
 
 engine = create_engine(os.getenv("DATABASE_URI"))
 
 
 class DatabaseHandler:
     def __enter__(self):
-        self.session = Session(engine, autocommit=True, autoflush=True)
+        self.session = Session(engine, autocommit=True, expire_on_commit=False)
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.session.close()
 
     def get_user_by_token(self, token) -> UserModel:
-        query = (
-            self.session.query(
-                TokenModel,
-            )
-            .filter(
-                TokenModel.token == token,
-            )
-            .filter(
-                or_(
-                    TokenModel.expire.is_(None),
-                    TokenModel.expire >= datetime.utcnow(),
-                ),
-            )
-        )
+        query = self.session.query(TokenModel).filter(TokenModel.token == token)
+
         if auth_token := query.first():
-            return auth_token.user
+            if auth_token.is_active():
+                return auth_token.user
 
     def get_user_by_id(self, user_id: int) -> UserModel:
         return self.session.query(UserModel).get(user_id)
@@ -97,62 +85,97 @@ class DatabaseHandler:
             .all()
         )
 
-    def create_game_request(
+    def create_game(self, game: Game) -> GameModel:
+        game = GameModel(
+            name=game.name,
+            private=game.private,
+            ranked=game.ranked,
+            board_size=game.board_size,
+            rules=game.rules,
+            speed=game.speed,
+            time_control=game.time_control.dict(),
+            handicap=game.handicap,
+            komi=game.komi,
+        )
+        self.session.add(game)
+        return game
+
+    def get_challenge_by_id(self, challenge_id: int) -> ChallengeModel:
+        return self.session.query(ChallengeModel).get(challenge_id)
+
+    def list_challenges(self) -> List[ChallengeModel]:
+        return (
+            self.session.query(ChallengeModel)
+            .filter(ChallengeModel.opponent_id.is_(None))
+            .all()
+        )
+
+    def list_outgoing_challenges(self, user_id: int) -> List[ChallengeModel]:
+        return (
+            self.session.query(ChallengeModel)
+            .filter(
+                ChallengeModel.creator_id == user_id,
+                ChallengeModel.opponent_id.isnot(None),
+            )
+            .all()
+        )
+
+    def list_incoming_challenges(self, user_id: int) -> List[ChallengeModel]:
+        return (
+            self.session.query(ChallengeModel)
+            .filter(ChallengeModel.opponent_id == user_id)
+            .all()
+        )
+
+    def create_challenge(
         self,
+        challenge: Challenge,
+        game: GameModel,
         creator_id: int,
-        opponent_id: int,
-        game_setup: dict,
-    ) -> GameRequestModel:
-        game_request = GameRequestModel(
+        opponent_id: int = None,
+    ) -> ChallengeModel:
+        challenge = ChallengeModel(
+            game=game,
             creator_id=creator_id,
             opponent_id=opponent_id,
-            game_setup=game_setup,
+            creator_color=challenge.creator_color,
+            min_rating=challenge.min_rating,
+            max_rating=challenge.max_rating,
         )
-        self.session.add(game_request)
+        self.session.add(challenge)
         self.session.flush()
-        return game_request
+        return challenge
 
+    def start_game(self, challenge: ChallengeModel, opponent_id: int):
+        if challenge.opponent_id and challenge.opponent_id != opponent_id:
+            raise Exception("Wrong opponent")
 
-def create_game(
-    name: str,
-    rules: Rules,
-    game_type: GameType,
-    category: GameSpeed,
-    board_size: int,
-    handicap: int,
-    komi: float,
-    time_settings: dict,
-):
-    game = GameModel(
-        name=name,
-        rules=rules,
-        game_type=game_type,
-        category=category,
-        board_size=board_size,
-        handicap=handicap,
-        komi=komi,
-        time_settings=time_settings,
-    )
+        game = challenge.game
+        creator = self.get_user_by_id(challenge.creator_id)
+        opponent = self.get_user_by_id(opponent_id)
 
-    with scoped_session() as session:
-        session.add(game)
-        session.flush()
-        return game.game_id
+        if challenge.creator_color is Color.BLACK:
+            black, white = creator, opponent
+        elif challenge.creator_color is Color.WHITE:
+            black, white = opponent, creator
+        elif challenge.creator_color is Color.NIGIRI:
+            black, white = random.sample([creator, opponent], 2)
+        else:
+            black, white = sorted([creator, opponent], key=lambda user: user.rating)
 
+        black_player = GamePlayerModel(
+            game=game,
+            user=black,
+            color=Color.BLACK,
+            time_left=1000,
+        )
+        white_player = GamePlayerModel(
+            game=game,
+            user=white,
+            color=Color.WHITE,
+            time_left=1000,
+        )
+        self.session.add_all([black_player, white_player])
+        self.session.delete(challenge)
 
-def create_game_player(
-    game_id: int,
-    user_id: int,
-    color: Color,
-    time_left: int,
-):
-    game_player = GamePlayerModel(
-        game_id=game_id,
-        user_id=user_id,
-        color=color,
-        time_left=time_left,
-    )
-
-    with scoped_session() as session:
-        session.add(game_player)
-        session.flush()
+        return game

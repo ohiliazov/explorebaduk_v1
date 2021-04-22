@@ -15,7 +15,7 @@ from sqlalchemy.sql.sqltypes import (
 )
 
 from .database import BaseModel
-from .schemas import Color, GameSpeed, GameType, Rules
+from .schemas import Color, GameSpeed, Rules
 
 
 class UserModel(BaseModel):
@@ -50,17 +50,17 @@ class UserModel(BaseModel):
         lazy="subquery",
     )
 
-    sent_requests: List["GameRequestModel"] = relationship(
-        "GameRequestModel",
+    outgoing_challenges: List["ChallengeModel"] = relationship(
+        "ChallengeModel",
         back_populates="creator",
-        foreign_keys="GameRequestModel.creator_id",
+        foreign_keys="ChallengeModel.creator_id",
         lazy="subquery",
     )
 
-    received_requests: List["GameRequestModel"] = relationship(
-        "GameRequestModel",
+    incoming_challenges: List["ChallengeModel"] = relationship(
+        "ChallengeModel",
         back_populates="opponent",
-        foreign_keys="GameRequestModel.opponent_id",
+        foreign_keys="ChallengeModel.opponent_id",
         lazy="subquery",
     )
 
@@ -96,8 +96,8 @@ class FriendshipModel(BaseModel):
     __tablename__ = "friends"
 
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
-    friend_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
+    user_id = Column(Integer, ForeignKey(UserModel.user_id), nullable=False)
+    friend_id = Column(Integer, ForeignKey(UserModel.user_id), nullable=False)
     muted = Column(Boolean, default=False)
 
     user: UserModel = relationship(
@@ -117,8 +117,8 @@ class BlacklistModel(BaseModel):
     __tablename__ = "blocked_users"
 
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
-    blocked_user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
+    user_id = Column(Integer, ForeignKey(UserModel.user_id), nullable=False)
+    blocked_user_id = Column(Integer, ForeignKey(UserModel.user_id), nullable=False)
 
     user: UserModel = relationship(
         "UserModel",
@@ -131,7 +131,7 @@ class TokenModel(BaseModel):
     __tablename__ = "signin_tokens"
 
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.user_id"))
+    user_id = Column(Integer, ForeignKey(UserModel.user_id))
     token = Column(String(64))
     expire = Column(DateTime, nullable=True)
 
@@ -148,85 +148,97 @@ class TokenModel(BaseModel):
         return self.expire is None or self.expire >= datetime.utcnow()
 
 
-class GameRequestModel(BaseModel):
-    __tablename__ = "game_requests"
-
-    id = Column(Integer, primary_key=True)
-    creator_id = Column(Integer, ForeignKey("users.user_id"))
-    opponent_id = Column(Integer, ForeignKey("users.user_id"))
-    game_setup = Column(JSON)
-
-    creator: UserModel = relationship(
-        "UserModel",
-        back_populates="sent_requests",
-        foreign_keys="GameRequestModel.creator_id",
-        lazy="subquery",
-    )
-
-    opponent: UserModel = relationship(
-        "UserModel",
-        back_populates="received_requests",
-        foreign_keys="GameRequestModel.opponent_id",
-        lazy="subquery",
-    )
-
-    def as_dict(self):
-        return {
-            "creator_id": self.creator_id,
-            "opponent_id": self.opponent_id,
-            "game_setup": self.game_setup,
-        }
-
-
 class GameModel(BaseModel):
     __tablename__ = "games"
 
     game_id = Column(Integer, primary_key=True)
 
-    started_at = Column(DateTime)
-    finished_at = Column(DateTime)
-
     name = Column(String(255))
-    rules = Column(Enum(Rules))
-    game_type = Column(Enum(GameType))
-    category = Column(Enum(GameSpeed))
-
+    private = Column(Boolean)
+    ranked = Column(Boolean)
     board_size = Column(Integer)
+    rules = Column(Enum(Rules))
+    speed = Column(Enum(GameSpeed))
+    time_control = Column(JSON)
     handicap = Column(Integer)
     komi = Column(Numeric)
 
-    time_settings = Column(JSON)
-    sgf = Column(Text)
+    started_at = Column(DateTime)
+    finished_at = Column(DateTime)
 
     result = Column(String(255))
+    sgf = Column(Text)
 
+    challenge = relationship("ChallengeModel", back_populates="game")
     players = relationship("GamePlayerModel", back_populates="game")
 
-    def as_dict(self, with_sgf: bool = False):
-        game = {
+    def asdict(self):
+        return {
             "game_id": self.game_id,
-            "started_at": self.started_at,
-            "finished_at": self.finished_at,
             "name": self.name,
-            "rules": self.rules,
-            "game_type": self.game_type,
-            "category": self.category,
+            "private": self.private,
+            "ranked": self.ranked,
             "board_size": self.board_size,
+            "rules": self.rules,
+            "speed": self.speed,
+            "time_control": self.time_control,
             "handicap": self.handicap,
             "komi": self.komi,
-            "time_settings": self.time_settings,
+            "started_at": self.started_at,
+            "finished_at": self.finished_at,
+            "result": self.result,
         }
-        if with_sgf:
-            game["sgf"] = self.sgf
+
+
+class ChallengeModel(BaseModel):
+    __tablename__ = "challenges"
+
+    challenge_id = Column(Integer, primary_key=True)
+    game_id = Column(Integer, ForeignKey(GameModel.game_id))
+    creator_id = Column(Integer, ForeignKey(UserModel.user_id))
+    opponent_id = Column(Integer, ForeignKey(UserModel.user_id))
+    creator_color = Column(Enum(Color))
+    min_rating = Column(Integer)
+    max_rating = Column(Integer)
+
+    created_at = Column(DateTime)
+
+    creator: UserModel = relationship(
+        UserModel,
+        back_populates="outgoing_challenges",
+        foreign_keys="ChallengeModel.creator_id",
+    )
+    opponent: UserModel = relationship(
+        UserModel,
+        back_populates="incoming_challenges",
+        foreign_keys="ChallengeModel.opponent_id",
+    )
+    game: GameModel = relationship(
+        GameModel,
+        back_populates="challenge",
+    )
+
+    def asdict(self):
+        return {
+            "challenge_id": self.challenge_id,
+            "creator_id": self.creator_id,
+            "opponent_id": self.opponent_id,
+            "creator_color": self.creator_color,
+            "min_rating": self.min_rating,
+            "max_rating": self.max_rating,
+            "created_at": self.created_at,
+            "game": self.game.asdict(),
+        }
 
 
 class GamePlayerModel(BaseModel):
     __tablename__ = "game_players"
 
     id = Column(Integer, primary_key=True)
-    game_id = Column(Integer, ForeignKey("games.game_id"))
-    user_id = Column(Integer, ForeignKey("users.user_id"))
+    game_id = Column(Integer, ForeignKey(GameModel.game_id))
+    user_id = Column(Integer, ForeignKey(UserModel.user_id))
     color = Column(Enum(Color))
     time_left = Column(Numeric)
 
     game: GameModel = relationship("GameModel", back_populates="players")
+    user: UserModel = relationship("UserModel")

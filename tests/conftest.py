@@ -10,7 +10,7 @@ from sqlalchemy import create_engine
 from explorebaduk.database import BaseModel, SessionLocal
 from explorebaduk.main import app
 from explorebaduk.models import BlacklistModel, FriendshipModel, TokenModel, UserModel
-from explorebaduk.shared import GameRequests, UsersOnline
+from explorebaduk.shared import UsersManager
 from explorebaduk.utils.database import (
     generate_blocked_users,
     generate_friends,
@@ -60,8 +60,7 @@ def db_blocked_users(db_session, db_users, db_friends) -> List[BlacklistModel]:
 
 @pytest.fixture
 async def test_cli() -> ApiTester:
-    UsersOnline.clear()
-    GameRequests.clear()
+    UsersManager.clear()
 
     async with ApiTester(app) as client:
         yield client
@@ -78,7 +77,9 @@ async def websockets(test_cli, db_users) -> List[WebSocketTester]:
     num = 5
     users = random.sample(db_users, num)
 
-    ws_list = [WebSocketTester(test_cli.websocket_connect("/ws")) for _ in range(num + 3)]
+    ws_list = [
+        WebSocketTester(test_cli.websocket_connect("/ws")) for _ in range(num + 3)
+    ]
     async with AsyncExitStack() as stack:
         for ws in ws_list:
             await stack.enter_async_context(ws.websocket)

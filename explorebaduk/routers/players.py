@@ -4,7 +4,7 @@ from fastapi import APIRouter
 
 from ..crud import DatabaseHandler
 from ..schemas import PlayerOut
-from ..shared import UsersOnline
+from ..shared import UsersManager
 
 router = APIRouter(prefix="/players", tags=["players"])
 
@@ -15,7 +15,7 @@ def list_players(q: str = None, online: bool = False):
         players = db.get_users(q=q)
 
     if online:
-        players = filter(UsersOnline.is_online, players)
+        players = filter(UsersManager.is_online, players)
 
     return [player.asdict() for player in players]
 

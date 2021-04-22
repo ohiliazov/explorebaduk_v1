@@ -1,20 +1,16 @@
 from explorebaduk.messages import (
-    AcceptOpenGameRequestMessage,
-    CreateOpenGameRequestMessage,
-    GameInviteAcceptMessage,
-    GameInviteAddMessage,
-    GameInviteRejectMessage,
-    GameInviteRemoveMessage,
+    ChallengeAddMessage,
+    ChallengeIncomingAddMessage,
+    ChallengeIncomingRemoveMessage,
+    ChallengeOpenRemoveMessage,
+    ChallengeOutgoingAddMessage,
+    ChallengeOutgoingRemoveMessage,
+    GameStartedMessage,
     Message,
-    OpenGameCreatedMessage,
-    OpenGameRemoveMessage,
     PlayerOfflineMessage,
     PlayerOnlineMessage,
-    RejectOpenGameRequestMessage,
-    RemoveOpenGameRequestMessage,
 )
 from explorebaduk.models import UserModel
-from explorebaduk.schemas import GameRequest, GameSettings, OpenGame
 
 from .broadcast import broadcast
 
@@ -37,46 +33,41 @@ class Notifier:
         await cls.broadcast(PlayerOfflineMessage(user))
 
     @classmethod
-    async def add_open_game(cls, user: UserModel, game: OpenGame):
-        await cls.broadcast(OpenGameCreatedMessage(user, game.dict()))
+    async def challenge_created(cls, challenge: dict):
+        await cls.broadcast(ChallengeAddMessage(challenge))
 
     @classmethod
-    async def remove_open_game(cls, user: UserModel):
-        await cls.broadcast(OpenGameRemoveMessage(user))
+    async def challenge_cancelled(cls, challenge_id: int):
+        await cls.broadcast(ChallengeOpenRemoveMessage(challenge_id))
 
     @classmethod
-    async def create_open_game_request(
-        cls, user_id: int, user: UserModel, settings: GameSettings
-    ):
-        await cls.notify(user_id, CreateOpenGameRequestMessage(user, settings.dict()))
+    async def direct_challenge_created(cls, challenge: dict):
+        await cls.notify(
+            challenge["creator_id"],
+            ChallengeOutgoingAddMessage(challenge),
+        )
+        await cls.notify(
+            challenge["opponent_id"],
+            ChallengeIncomingAddMessage(challenge),
+        )
 
     @classmethod
-    async def remove_open_game_request(cls, user_id: int, user: UserModel):
-        await cls.notify(user_id, RemoveOpenGameRequestMessage(user))
+    async def direct_challenge_cancelled(cls, challenge: dict):
+        await cls.notify(
+            challenge["creator_id"],
+            ChallengeOutgoingRemoveMessage(challenge["challenge_id"]),
+        )
+        await cls.notify(
+            challenge["opponent_id"],
+            ChallengeIncomingRemoveMessage(challenge["challenge_id"]),
+        )
 
     @classmethod
-    async def accept_open_game_request(cls, user_id: int, user: UserModel):
-        await cls.notify(user_id, AcceptOpenGameRequestMessage(user))
+    async def challenge_accepted(cls, game: dict):
+        await cls.notify(game["creator_id"], GameStartedMessage(game))
+        await cls.notify(game["opponent_id"], GameStartedMessage(game))
 
-    @classmethod
-    async def reject_open_game_request(cls, user_id: int, user: UserModel):
-        await cls.notify(user_id, RejectOpenGameRequestMessage(user))
-
-    @classmethod
-    async def create_game_invite(cls, user_id: int, user: UserModel, game: GameRequest):
-        await cls.notify(user_id, GameInviteAddMessage(user, game.dict()))
-
-    @classmethod
-    async def remove_direct_invite(cls, user_id: int, user: UserModel):
-        await cls.notify(user_id, GameInviteRemoveMessage(user))
-
-    @classmethod
-    async def accept_direct_invite(cls, user_id: int, user: UserModel):
-        await cls.notify(user_id, GameInviteAcceptMessage(user))
-
-    @classmethod
-    async def reject_direct_invite(cls, user_id: int, user: UserModel):
-        await cls.notify(user_id, GameInviteRejectMessage(user))
+        await cls.broadcast(GameStartedMessage(game))
 
 
 def seconds_to_str(seconds: int) -> str:

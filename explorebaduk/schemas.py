@@ -264,6 +264,6 @@ class Game(BaseModel):
 
 class Challenge(BaseModel):
     game: Game
-    color: Optional[Color]
+    creator_color: Optional[Color]
     min_rating: Optional[int]
     max_rating: Optional[int]
