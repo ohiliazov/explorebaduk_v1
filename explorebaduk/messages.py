@@ -2,7 +2,8 @@ from typing import Any, Optional
 
 import simplejson as json
 
-from .models import UserModel
+from explorebaduk.broadcast import broadcast
+from explorebaduk.models import UserModel
 
 
 class Message:
@@ -33,13 +34,6 @@ class ReceivedMessage(Message):
         return cls(data)
 
 
-class AuthorizeMessage(Message):
-    event = "authorize"
-
-    def __init__(self, token: str = None):
-        self.data = token
-
-
 class WhoAmIMessage(Message):
     event = "whoami"
 
@@ -47,20 +41,14 @@ class WhoAmIMessage(Message):
         self.data = user.asdict() if user else None
 
 
-class PlayerInfoMixin:
-    @staticmethod
-    def make_players_data(user: UserModel):
-        return {
-            "status": "online",
-            **user.asdict(),
-        }
-
-
-class PlayerOnlineMessage(Message, PlayerInfoMixin):
+class PlayerOnlineMessage(Message):
     event = "players.add"
 
     def __init__(self, user: UserModel):
-        self.data = self.make_players_data(user)
+        self.data = {
+            "status": "online",
+            **user.asdict(),
+        }
 
 
 class PlayerOfflineMessage(Message):
@@ -106,14 +94,74 @@ class ChallengeIncomingRemoveMessage(Message):
 
 
 class ChallengeOutgoingRemoveMessage(Message):
-    event = "challenges.direct.remove"
+    event = "challenges.outgoing.remove"
 
     def __init__(self, challenge_id: int):
         self.data = {"challenge_id": challenge_id}
 
 
-class GameStartedMessage(Message):
-    event = "games.start"
+class ChallengeAcceptedMessage(Message):
+    event = "challenges.accept"
 
-    def __init__(self, game: dict):
-        self.data = game
+    def __init__(self, challenge_id: int, opponent_id: int):
+        self.data = {"challenge_id": challenge_id, "opponent_id": opponent_id}
+
+
+class GameStartedMessage(Message):
+    event = "games.add"
+
+    def __init__(self, game_id: int):
+        self.data = {"game_id": game_id}
+
+
+class Notifier:
+    @staticmethod
+    async def broadcast(message: Message):
+        await broadcast.publish("main", message.json())
+
+    @staticmethod
+    async def notify(user_id, message: Message):
+        await broadcast.publish(f"user__{user_id}", message.json())
+
+    @classmethod
+    async def player_online(cls, user: UserModel):
+        await cls.broadcast(PlayerOnlineMessage(user))
+
+    @classmethod
+    async def player_offline(cls, user: UserModel):
+        await cls.broadcast(PlayerOfflineMessage(user))
+
+    @classmethod
+    async def challenge_created(cls, challenge: dict):
+        await cls.broadcast(ChallengeAddMessage(challenge))
+
+    @classmethod
+    async def challenge_cancelled(cls, challenge_id: int):
+        await cls.broadcast(ChallengeOpenRemoveMessage(challenge_id))
+
+    @classmethod
+    async def direct_challenge_created(cls, challenge: dict):
+        await cls.notify(
+            challenge["creator_id"],
+            ChallengeOutgoingAddMessage(challenge),
+        )
+        await cls.notify(
+            challenge["opponent_id"],
+            ChallengeIncomingAddMessage(challenge),
+        )
+
+    @classmethod
+    async def direct_challenge_cancelled(cls, challenge: dict):
+        await cls.notify(
+            challenge["creator_id"],
+            ChallengeOutgoingRemoveMessage(challenge["challenge_id"]),
+        )
+        await cls.notify(
+            challenge["opponent_id"],
+            ChallengeIncomingRemoveMessage(challenge["challenge_id"]),
+        )
+
+    @classmethod
+    async def game_started(cls, game_id: int, creator_id: int, opponent_id: int):
+        await cls.notify(creator_id, GameStartedMessage(game_id))
+        await cls.notify(opponent_id, GameStartedMessage(game_id))

@@ -33,7 +33,7 @@ async def test_authorize_as_user(test_cli, db_users, websockets, ws):
     assert WhoAmIMessage(user).json() in messages
 
     expected = PlayerOnlineMessage(user).json()
-    for messages in await receive_websockets(websockets):
+    for messages in await receive_websockets(websockets, [ws]):
         assert expected in messages
 
 
@@ -44,7 +44,7 @@ async def test_interrupted_connection(test_cli, db_users, websockets, ws):
     await user_ws.websocket.close(1000)
     await ws.authorize_as_user(user_ws.user)
 
-    for messages in await receive_websockets(websockets):
+    for messages in await receive_websockets(websockets, [ws]):
         assert not messages
 
 

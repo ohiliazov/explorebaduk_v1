@@ -7,6 +7,7 @@ from fastapi.routing import APIRouter
 
 from explorebaduk.broadcast import broadcast
 from explorebaduk.crud import DatabaseHandler
+from explorebaduk.dependencies import get_current_user
 from explorebaduk.messages import (
     ChallengeAddMessage,
     ChallengeIncomingAddMessage,
@@ -15,7 +16,7 @@ from explorebaduk.messages import (
     ReceivedMessage,
     WhoAmIMessage,
 )
-from explorebaduk.shared import ChallengesManager, UsersManager
+from explorebaduk.shared import UsersManager
 
 logger = logging.getLogger("explorebaduk")
 router = APIRouter()
@@ -52,14 +53,13 @@ class Connection:
         await self.websocket.accept()
         message = await self.websocket.receive_text()
 
+        self.user = get_current_user(message)
+
+        if self.user:
+            await UsersManager.add(self.user, self.websocket)
+            await self._send_direct_challenges()
+
         await self._send_messages()
-
-        with DatabaseHandler() as db:
-            if user := db.get_user_by_token(message):
-                self.user = user
-                await UsersManager.add(self.user, self.websocket)
-                await self._send_direct_challenges()
-
         await self._send(WhoAmIMessage(self.user))
 
     async def _send_messages(self):
@@ -72,18 +72,19 @@ class Connection:
 
     async def _send_direct_challenges(self):
         messages = []
-        messages.extend(
-            [
-                ChallengeIncomingAddMessage(challenge)
-                for challenge in ChallengesManager.get_challenges_in(self.user_id)
-            ],
-        )
-        messages.extend(
-            [
-                ChallengeOutgoingAddMessage(challenge)
-                for challenge in ChallengesManager.get_challenges_out(self.user_id)
-            ],
-        )
+        with DatabaseHandler() as db:
+            messages.extend(
+                [
+                    ChallengeIncomingAddMessage(challenge.asdict())
+                    for challenge in db.list_incoming_challenges(self.user_id)
+                ],
+            )
+            messages.extend(
+                [
+                    ChallengeOutgoingAddMessage(challenge.asdict())
+                    for challenge in db.list_outgoing_challenges(self.user_id)
+                ],
+            )
 
         if messages:
             await asyncio.wait([self._send(message) for message in messages])
@@ -91,7 +92,7 @@ class Connection:
     async def finalize(self):
         if self.user:
             await UsersManager.remove(self.user, self.websocket)
-            await asyncio.sleep(5)
+
             if not UsersManager.is_online(self.user):
                 pass
                 # await GameRequests.remove_open_game(self.user)

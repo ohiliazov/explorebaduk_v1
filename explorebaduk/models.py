@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import List
 
 from sqlalchemy.orm import relationship
@@ -32,11 +31,6 @@ class UserModel(BaseModel):
     country = Column(String(255))
     avatar = Column(String(255))
 
-    tokens: List["TokenModel"] = relationship(
-        "TokenModel",
-        back_populates="user",
-        lazy="subquery",
-    )
     friends: List["FriendshipModel"] = relationship(
         "FriendshipModel",
         back_populates="user",
@@ -127,27 +121,6 @@ class BlacklistModel(BaseModel):
     )
 
 
-class TokenModel(BaseModel):
-    __tablename__ = "signin_tokens"
-
-    id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey(UserModel.user_id))
-    token = Column(String(64))
-    expire = Column(DateTime, nullable=True)
-
-    user: UserModel = relationship(
-        "UserModel",
-        back_populates="tokens",
-        lazy="subquery",
-    )
-
-    def __str__(self):
-        return f"Token(user_id={self.user_id}, token={self.token})"
-
-    def is_active(self):
-        return self.expire is None or self.expire >= datetime.utcnow()
-
-
 class GameModel(BaseModel):
     __tablename__ = "games"
 
@@ -159,6 +132,7 @@ class GameModel(BaseModel):
     board_size = Column(Integer)
     rules = Column(Enum(Rules))
     speed = Column(Enum(GameSpeed))
+    initial_time = Column(Integer, nullable=True)
     time_control = Column(JSON)
     handicap = Column(Integer)
     komi = Column(Numeric)

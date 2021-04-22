@@ -4,9 +4,9 @@ from typing import Dict, List
 
 from fastapi import WebSocket
 
-from .crud import DatabaseHandler
-from .helpers import Notifier
-from .models import ChallengeModel, UserModel
+from explorebaduk.messages import Notifier
+
+from .models import UserModel
 
 OFFLINE_TIMEOUT = 5
 
@@ -43,20 +43,3 @@ class UsersManager:
         if user:
             user_ids.remove(user.user_id)
         return user_ids
-
-
-class ChallengesManager:
-    @classmethod
-    def get_open_challenges(cls):
-        with DatabaseHandler() as db:
-            return [challenge.asdict() for challenge in db.list_challenges()]
-
-    @classmethod
-    def get_challenges_in(cls, user_id: int) -> List[ChallengeModel]:
-        with DatabaseHandler() as db:
-            return db.list_incoming_challenges(user_id)
-
-    @classmethod
-    def get_challenges_out(cls, user_id: int) -> List[ChallengeModel]:
-        with DatabaseHandler() as db:
-            return db.list_outgoing_challenges(user_id)

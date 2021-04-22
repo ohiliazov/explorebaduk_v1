@@ -5,14 +5,13 @@ from typing import List, Optional
 from async_asgi_testclient import TestClient
 from async_asgi_testclient.websocket import WebSocketSession
 
+from explorebaduk.dependencies import create_access_token
 from explorebaduk.models import UserModel
 
 
 class ApiTester(TestClient):
     def authorize(self, user: UserModel):
-        for token in user.tokens:
-            if token.is_active():
-                self.headers["Authorization"] = f"Bearer {token.token}"
+        self.headers["Authorization"] = f"Bearer {create_access_token(user)}"
 
     async def get_players(self, params: dict = None):
         return await self.get("/api/players", query_string=params)
@@ -20,8 +19,11 @@ class ApiTester(TestClient):
     async def get_player(self, player_id: int):
         return await self.get(f"/api/players/{player_id}")
 
-    async def get_friends(self):
-        return await self.get("/api/friends")
+    async def get_followers(self):
+        return await self.get("/api/me/followers")
+
+    async def get_following(self):
+        return await self.get("/api/me/following")
 
     async def get_user_friends(self, user_id: int):
         return await self.get(f"/api/friends/{user_id}")
@@ -44,10 +46,8 @@ class WebSocketTester:
                 return messages
 
     async def authorize_as_user(self, user: UserModel):
-        for token in user.tokens:
-            if token.is_active():
-                self.user = user
-                return await self.websocket.send_text(token.token)
+        await self.websocket.send_text(create_access_token(user))
+        self.user = user
 
     async def authorize_as_guest(self):
         await self.websocket.send_text("")

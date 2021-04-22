@@ -9,12 +9,11 @@ from sqlalchemy import create_engine
 
 from explorebaduk.database import BaseModel, SessionLocal
 from explorebaduk.main import app
-from explorebaduk.models import BlacklistModel, FriendshipModel, TokenModel, UserModel
+from explorebaduk.models import BlacklistModel, FriendshipModel, UserModel
 from explorebaduk.shared import UsersManager
 from explorebaduk.utils.database import (
     generate_blocked_users,
     generate_friends,
-    generate_tokens,
     generate_users,
 )
 
@@ -41,11 +40,6 @@ def db_session():
 @pytest.fixture(autouse=True)
 def db_users(db_session) -> List[UserModel]:
     return generate_users(db_session, 20)
-
-
-@pytest.fixture(autouse=True)
-def db_tokens(db_session, db_users) -> List[TokenModel]:
-    return generate_tokens(db_session, db_users, expires=False)
 
 
 @pytest.fixture(autouse=True)

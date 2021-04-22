@@ -7,6 +7,16 @@ from pydantic.types import ConstrainedFloat, ConstrainedInt, PositiveInt
 from explorebaduk.constants import GameType, TimeSystem
 
 
+class Login(BaseModel):
+    username: str
+    password: str
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+
 class Color(str, Enum):
     AUTO = "auto"
     NIGIRI = "nigiri"
@@ -57,6 +67,7 @@ class PlayerOut(BaseModel):
     avatar: Optional[str]
 
     class Config:
+        orm_mode = True
         schema_extra = {
             "example": {
                 "user_id": 123,

@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 
+from explorebaduk.messages import Notifier
+
 from ..crud import DatabaseHandler
 from ..dependencies import current_user
-from ..helpers import Notifier
 from ..models import UserModel
 from ..schemas import Challenge
 
@@ -73,13 +74,9 @@ async def accept_challenge(challenge_id: int, user: UserModel = Depends(current_
         if challenge.opponent_id and challenge.opponent_id != user.user_id:
             raise HTTPException(403, "Cannot accept this challenge")
 
-        game = challenge.game
-        db.session.delete(challenge)
+        game = db.start_game(challenge, user.user_id)
 
-        await Notifier.challenge_accepted(game.asdict())
-        if challenge.opponent_id:
-            await Notifier.direct_challenge_cancelled(challenge.asdict())
-        else:
-            await Notifier.challenge_cancelled(challenge.asdict())
+        await Notifier.game_started(game.game_id, challenge.creator_id, user.user_id)
+        await Notifier.challenge_cancelled(game.game_id)
 
     return {"game_id": game.game_id}

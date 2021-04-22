@@ -15,12 +15,12 @@ def list_players(q: str = None, online: bool = False):
         players = db.get_users(q=q)
 
     if online:
-        players = filter(UsersManager.is_online, players)
+        players = list(filter(UsersManager.is_online, players))
 
-    return [player.asdict() for player in players]
+    return players
 
 
 @router.get("/{player_id}", response_model=PlayerOut)
 def get_player(player_id: int):
     with DatabaseHandler() as db:
-        return db.get_user_by_id(player_id).asdict()
+        return db.get_user_by_id(player_id)

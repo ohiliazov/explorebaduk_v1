@@ -10,7 +10,6 @@ from .models import (
     FriendshipModel,
     GameModel,
     GamePlayerModel,
-    TokenModel,
     UserModel,
 )
 from .schemas import Challenge, Color, Game
@@ -26,15 +25,13 @@ class DatabaseHandler:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.session.close()
 
-    def get_user_by_token(self, token) -> UserModel:
-        query = self.session.query(TokenModel).filter(TokenModel.token == token)
-
-        if auth_token := query.first():
-            if auth_token.is_active():
-                return auth_token.user
-
     def get_user_by_id(self, user_id: int) -> UserModel:
         return self.session.query(UserModel).get(user_id)
+
+    def get_user_by_username(self, username: str) -> UserModel:
+        return (
+            self.session.query(UserModel).filter(UserModel.username == username).first()
+        )
 
     def get_users(self, q: str = None) -> List[UserModel]:
         query = self.session.query(UserModel)
@@ -68,9 +65,7 @@ class DatabaseHandler:
     def get_following(self, user_id: int) -> List[FriendshipModel]:
         return (
             self.session.query(FriendshipModel)
-            .filter(
-                FriendshipModel.user_id == user_id,
-            )
+            .filter(FriendshipModel.user_id == user_id)
             .order_by(FriendshipModel.friend_id)
             .all()
         )
@@ -78,9 +73,7 @@ class DatabaseHandler:
     def get_followers(self, user_id: int) -> List[FriendshipModel]:
         return (
             self.session.query(FriendshipModel)
-            .filter(
-                FriendshipModel.friend_id == user_id,
-            )
+            .filter(FriendshipModel.friend_id == user_id)
             .order_by(FriendshipModel.user_id)
             .all()
         )
@@ -93,6 +86,7 @@ class DatabaseHandler:
             board_size=game.board_size,
             rules=game.rules,
             speed=game.speed,
+            initial_time=game.time_control.get_total_time(),
             time_control=game.time_control.dict(),
             handicap=game.handicap,
             komi=game.komi,
@@ -167,13 +161,13 @@ class DatabaseHandler:
             game=game,
             user=black,
             color=Color.BLACK,
-            time_left=1000,
+            time_left=game.initial_time,
         )
         white_player = GamePlayerModel(
             game=game,
             user=white,
             color=Color.WHITE,
-            time_left=1000,
+            time_left=game.initial_time,
         )
         self.session.add_all([black_player, white_player])
         self.session.delete(challenge)

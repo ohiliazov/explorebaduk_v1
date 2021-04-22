@@ -1,23 +1,8 @@
-import datetime
 import itertools
 import random
-import string
 from typing import List
 
-from explorebaduk.models import BlacklistModel, FriendshipModel, TokenModel, UserModel
-
-
-def generate_token(user_id: int, expire_time: datetime.datetime) -> TokenModel:
-    return TokenModel(
-        user_id=user_id,
-        token="".join(
-            random.choices(
-                string.ascii_letters + string.digits + string.punctuation,
-                k=64,
-            ),
-        ),
-        expire=expire_time,
-    )
+from explorebaduk.models import BlacklistModel, FriendshipModel, UserModel
 
 
 def generate_user(num: int) -> UserModel:
@@ -54,19 +39,6 @@ def generate_users(session, number_of_users: int) -> List[UserModel]:
     session.add_all(users)
     session.flush()
     return users
-
-
-def generate_tokens(session, users: list, *, expires: bool = True, **expire_kwargs) -> List[TokenModel]:
-    if expires:
-        expire_time = datetime.datetime.utcnow() + datetime.timedelta(**expire_kwargs)
-    else:
-        expire_time = None
-
-    tokens = [generate_token(user.user_id, expire_time) for user in users]
-    session.add_all(tokens)
-    session.flush()
-
-    return tokens
 
 
 def generate_friends(
@@ -110,7 +82,10 @@ def generate_blocked_users(
 
     pairs = random.sample(all_pairs, number_of_blocked_users)
 
-    blocked_users = [generate_blocked_user(user.user_id, blocked_user.user_id) for user, blocked_user in pairs]
+    blocked_users = [
+        generate_blocked_user(user.user_id, blocked_user.user_id)
+        for user, blocked_user in pairs
+    ]
 
     session.add_all(blocked_users)
     session.flush()
