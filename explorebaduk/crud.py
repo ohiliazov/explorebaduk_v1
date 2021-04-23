@@ -12,14 +12,16 @@ from .models import (
     GamePlayerModel,
     UserModel,
 )
-from .schemas import Challenge, Color, Game
+from .schemas import Challenge, Color, Game, UserCreate
 
 engine = create_engine(os.getenv("DATABASE_URI"))
 
 
 class DatabaseHandler:
-    def __enter__(self):
+    def __init__(self):
         self.session = Session(engine, autocommit=True, expire_on_commit=False)
+
+    def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -32,6 +34,21 @@ class DatabaseHandler:
         return (
             self.session.query(UserModel).filter(UserModel.username == username).first()
         )
+
+    def create_user(self, user_data: UserCreate) -> UserModel:
+        user = UserModel(
+            first_name=user_data.first_name,
+            last_name=user_data.last_name,
+            username=user_data.username,
+            password=user_data.password,
+            email=user_data.email,
+            country=user_data.country,
+            rating=user_data.rating,
+        )
+        self.session.add(user)
+        self.session.flush()
+
+        return user
 
     def get_users(self, q: str = None) -> List[UserModel]:
         query = self.session.query(UserModel)
@@ -171,5 +188,6 @@ class DatabaseHandler:
         )
         self.session.add_all([black_player, white_player])
         self.session.delete(challenge)
+        self.session.flush()
 
         return game

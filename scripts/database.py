@@ -8,7 +8,6 @@ from explorebaduk.models import BaseModel
 from explorebaduk.utils.database import (
     generate_blocked_users,
     generate_friends,
-    generate_tokens,
     generate_users,
 )
 
@@ -20,7 +19,6 @@ def populate_database_with_data(
     num_blocked: int = 5,
 ):
     users = generate_users(session, num_users)
-    generate_tokens(session, users, expires=False)
 
     friends = generate_friends(session, users, num_friends)
     generate_blocked_users(session, users, num_blocked, friends)
@@ -42,8 +40,8 @@ if __name__ == "__main__":
         "--database-uri",
         type=str,
         help="Database URI",
-        default=os.getenv("DATABASE_URI"),
+        default=os.getenv("DATABASE_URI", "sqlite:///explorebaduk.sqlite3"),
         nargs=1,
     )
     args = parser.parse_args()
-    create_db(args.database_uri, args.clean)
+    create_db(args.database_uri)

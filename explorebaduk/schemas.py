@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import List, Literal, Optional, Union
 
-from pydantic import BaseModel, root_validator
+from pydantic import BaseModel, root_validator, validator
 from pydantic.types import ConstrainedFloat, ConstrainedInt, PositiveInt
 
 from explorebaduk.constants import GameType, TimeSystem
@@ -55,7 +55,48 @@ class Komi(ConstrainedFloat):
     multiple_of = 0.5
 
 
-class PlayerOut(BaseModel):
+class NewUserRating(ConstrainedInt):
+    ge = 10
+    le = 2300
+
+
+class UserCreate(BaseModel):
+    first_name: str
+    last_name: str
+    email: str
+    username: str
+    password: str
+    password2: str
+    rating: NewUserRating
+    country: str
+
+    @validator("password2")
+    def passwords_match(cls, v, values, **kwargs):
+        assert v == values["password"], "passwords do not match"
+        return v
+
+    @validator("username")
+    def username_alphanumeric(cls, v: str):
+        assert v.isalnum(), "username must be alphanumeric"
+        return v
+
+    class Config:
+        orm_mode = True
+        schema_extra = {
+            "example": {
+                "first_name": "John",
+                "last_name": "Doe",
+                "email": "johndoe@explorebaduk.com",
+                "username": "johndoe",
+                "country": "Ukraine",
+                "password": "mySuperStr0ngp4ssw0rd",
+                "password2": "mySuperStr0ngp4ssw0rd",
+                "rating": 2100,
+            },
+        }
+
+
+class User(BaseModel):
     user_id: int
     first_name: str
     last_name: str
@@ -262,6 +303,7 @@ class GameRequest(GameSetupBase):
 
 
 class Game(BaseModel):
+    game_id: int = None
     name: str
     private: bool
     ranked: bool
@@ -269,12 +311,43 @@ class Game(BaseModel):
     rules: Rules
     speed: GameSpeed
     time_control: Union[Unlimited, Absolute, Byoyomi, Canadian, Fischer]
-    handicap: Optional[Handicap]
-    komi: Optional[Komi]
+    handicap: Handicap = None
+    komi: Komi = None
+
+    class Config:
+        orm_mode = True
+        schema_extra = {
+            "example": {
+                "name": "The Battlefield",
+                "private": False,
+                "ranked": True,
+                "board_size": 19,
+                "rules": Rules.JAPANESE.value,
+                "speed": GameSpeed.LIVE.value,
+                "time_control": Byoyomi.Config.schema_extra["example"],
+                "handicap": None,
+                "komi": None,
+            },
+        }
 
 
 class Challenge(BaseModel):
+    challenge_id: int = None
+    creator_id: int = None
+    opponent_id: int = None
+
+    creator_color: Color
+    min_rating: int = None
+    max_rating: int = None
     game: Game
-    creator_color: Optional[Color]
-    min_rating: Optional[int]
-    max_rating: Optional[int]
+
+    class Config:
+        orm_mode = True
+        schema_extra = {
+            "example": {
+                "game": Game.Config.schema_extra["example"],
+                "creator_color": Color.NIGIRI.value,
+                "min_rating": 1200,
+                "max_rating": 2400,
+            },
+        }

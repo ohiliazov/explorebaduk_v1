@@ -2,9 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from passlib.context import CryptContext
 
-from ..crud import DatabaseHandler
-from ..dependencies import create_access_token, current_user
-from ..models import UserModel
+from explorebaduk.crud import DatabaseHandler
+from explorebaduk.dependencies import create_access_token
+from explorebaduk.schemas import User, UserCreate
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 router = APIRouter(tags=["authentication"])
@@ -34,6 +34,14 @@ def login(form_data: OAuth2PasswordRequestForm = Depends()):
     return {"access_token": token}
 
 
-@router.post("/whoami")
-def check_authentication(user: UserModel = Depends(current_user)):
-    return user.asdict()
+@router.post("/signup", response_model=User)
+def signup(user_data: UserCreate):
+    user_data.password = get_password_hash(user_data.password)
+
+    try:
+        with DatabaseHandler() as db:
+            user = db.create_user(user_data)
+    except Exception:
+        raise HTTPException(400, "Cannot create user")
+
+    return user

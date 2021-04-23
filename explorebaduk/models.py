@@ -24,7 +24,7 @@ class UserModel(BaseModel):
     first_name = Column(String(60), nullable=False)
     last_name = Column(String(60), nullable=False)
     email = Column(String(255), nullable=False)
-    username = Column(String(255), nullable=False)
+    username = Column(String(255), nullable=False, unique=True)
     password = Column(String(255), nullable=False)
     rating = Column(Numeric(10), default=10)
     puzzle_rating = Column(Numeric(10), default=0)

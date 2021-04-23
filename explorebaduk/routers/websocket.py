@@ -8,15 +8,13 @@ from fastapi.routing import APIRouter
 from explorebaduk.broadcast import broadcast
 from explorebaduk.crud import DatabaseHandler
 from explorebaduk.dependencies import get_current_user
+from explorebaduk.managers import UsersManager
 from explorebaduk.messages import (
-    ChallengeAddMessage,
-    ChallengeIncomingAddMessage,
-    ChallengeOutgoingAddMessage,
+    ChallengeCreatedMessage,
     Message,
     ReceivedMessage,
     WhoAmIMessage,
 )
-from explorebaduk.shared import UsersManager
 
 logger = logging.getLogger("explorebaduk")
 router = APIRouter()
@@ -40,11 +38,6 @@ class Connection:
     def username(self):
         return self.user.username if self.user else "guest"
 
-    async def _recv(self) -> ReceivedMessage:
-        message = ReceivedMessage.from_string(await self.websocket.receive_text())
-        logger.info("[%s] < %s", self.username, str(message))
-        return message
-
     async def _send(self, message: Message):
         await self.websocket.send_json(message.json())
         logger.info("[%s] > %s", self.username, str(message))
@@ -53,7 +46,8 @@ class Connection:
         await self.websocket.accept()
         message = await self.websocket.receive_text()
 
-        self.user = get_current_user(message)
+        with DatabaseHandler() as db:
+            self.user = get_current_user(message, db)
 
         if self.user:
             await UsersManager.add(self.user, self.websocket)
@@ -65,7 +59,7 @@ class Connection:
     async def _send_messages(self):
         with DatabaseHandler() as db:
             challenges = db.list_challenges()
-        messages = [ChallengeAddMessage(challenge) for challenge in challenges]
+        messages = [ChallengeCreatedMessage(challenge) for challenge in challenges]
 
         if messages:
             await asyncio.wait([self._send(message) for message in messages])
@@ -75,13 +69,13 @@ class Connection:
         with DatabaseHandler() as db:
             messages.extend(
                 [
-                    ChallengeIncomingAddMessage(challenge.asdict())
+                    ChallengeCreatedMessage(challenge)
                     for challenge in db.list_incoming_challenges(self.user_id)
                 ],
             )
             messages.extend(
                 [
-                    ChallengeOutgoingAddMessage(challenge.asdict())
+                    ChallengeCreatedMessage(challenge)
                     for challenge in db.list_outgoing_challenges(self.user_id)
                 ],
             )
@@ -95,8 +89,6 @@ class Connection:
 
             if not UsersManager.is_online(self.user):
                 pass
-                # await GameRequests.remove_open_game(self.user)
-                # await GameRequests.clear_direct_invites(self.user)
 
 
 @router.websocket_route("/ws")

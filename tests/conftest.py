@@ -9,8 +9,8 @@ from sqlalchemy import create_engine
 
 from explorebaduk.database import BaseModel, SessionLocal
 from explorebaduk.main import app
+from explorebaduk.managers import UsersManager
 from explorebaduk.models import BlacklistModel, FriendshipModel, UserModel
-from explorebaduk.shared import UsersManager
 from explorebaduk.utils.database import (
     generate_blocked_users,
     generate_friends,

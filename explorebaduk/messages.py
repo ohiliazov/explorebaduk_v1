@@ -1,9 +1,13 @@
+import logging
 from typing import Any, Optional
 
 import simplejson as json
 
 from explorebaduk.broadcast import broadcast
-from explorebaduk.models import UserModel
+from explorebaduk.models import ChallengeModel, UserModel
+
+logger = logging.getLogger("explorebaduk")
+logger.setLevel(logging.INFO)
 
 
 class Message:
@@ -58,69 +62,47 @@ class PlayerOfflineMessage(Message):
         self.data = {"user_id": user.user_id}
 
 
-class ChallengeAddMessage(Message):
-    event = "challenges.open.add"
+class ChallengeCreatedMessage(Message):
+    event = "challenges.add"
 
-    def __init__(self, challenge: dict):
-        self.data = challenge
-
-
-class ChallengeIncomingAddMessage(Message):
-    event = "challenges.incoming.add"
-
-    def __init__(self, challenge: dict):
-        self.data = challenge
+    def __init__(self, challenge: ChallengeModel):
+        self.data = challenge.asdict()
 
 
-class ChallengeOutgoingAddMessage(Message):
-    event = "challenges.outgoing.add"
+class ChallengeRemovedMessage(Message):
+    event = "challenges.remove"
 
-    def __init__(self, challenge: dict):
-        self.data = challenge
-
-
-class ChallengeOpenRemoveMessage(Message):
-    event = "challenges.open.remove"
-
-    def __init__(self, challenge_id: int):
-        self.data = {"challenge_id": challenge_id}
-
-
-class ChallengeIncomingRemoveMessage(Message):
-    event = "challenges.incoming.remove"
-
-    def __init__(self, challenge_id: int):
-        self.data = {"challenge_id": challenge_id}
-
-
-class ChallengeOutgoingRemoveMessage(Message):
-    event = "challenges.outgoing.remove"
-
-    def __init__(self, challenge_id: int):
-        self.data = {"challenge_id": challenge_id}
+    def __init__(self, challenge: ChallengeModel):
+        self.data = {"challenge_id": challenge.challenge_id}
 
 
 class ChallengeAcceptedMessage(Message):
     event = "challenges.accept"
 
-    def __init__(self, challenge_id: int, opponent_id: int):
-        self.data = {"challenge_id": challenge_id, "opponent_id": opponent_id}
+    def __init__(self, challenge: ChallengeModel):
+        self.data = {
+            "challenge_id": challenge.challenge_id,
+            "opponent_id": challenge.opponent_id,
+            "game_id": challenge.game_id,
+        }
 
 
-class GameStartedMessage(Message):
-    event = "games.add"
+class ChallengeRejectedMessage(Message):
+    event = "challenges.reject"
 
-    def __init__(self, game_id: int):
-        self.data = {"game_id": game_id}
+    def __init__(self, challenge: ChallengeModel):
+        self.data = {"challenge_id": challenge.challenge_id}
 
 
 class Notifier:
     @staticmethod
     async def broadcast(message: Message):
+        logger.info(f">>> [{message.event}] {message.data}")
         await broadcast.publish("main", message.json())
 
     @staticmethod
     async def notify(user_id, message: Message):
+        logger.info(f"> <{user_id}> [{message.event}] {message.data}")
         await broadcast.publish(f"user__{user_id}", message.json())
 
     @classmethod
@@ -132,36 +114,28 @@ class Notifier:
         await cls.broadcast(PlayerOfflineMessage(user))
 
     @classmethod
-    async def challenge_created(cls, challenge: dict):
-        await cls.broadcast(ChallengeAddMessage(challenge))
+    async def challenge_created(cls, challenge: ChallengeModel):
+        await cls.broadcast(ChallengeCreatedMessage(challenge))
 
     @classmethod
-    async def challenge_cancelled(cls, challenge_id: int):
-        await cls.broadcast(ChallengeOpenRemoveMessage(challenge_id))
+    async def challenge_cancelled(cls, challenge: ChallengeModel):
+        await cls.broadcast(ChallengeRemovedMessage(challenge))
 
     @classmethod
-    async def direct_challenge_created(cls, challenge: dict):
-        await cls.notify(
-            challenge["creator_id"],
-            ChallengeOutgoingAddMessage(challenge),
-        )
-        await cls.notify(
-            challenge["opponent_id"],
-            ChallengeIncomingAddMessage(challenge),
-        )
+    async def direct_challenge_created(cls, challenge: ChallengeModel):
+        await cls.notify(challenge.creator_id, ChallengeCreatedMessage(challenge))
+        await cls.notify(challenge.opponent_id, ChallengeCreatedMessage(challenge))
 
     @classmethod
-    async def direct_challenge_cancelled(cls, challenge: dict):
-        await cls.notify(
-            challenge["creator_id"],
-            ChallengeOutgoingRemoveMessage(challenge["challenge_id"]),
-        )
-        await cls.notify(
-            challenge["opponent_id"],
-            ChallengeIncomingRemoveMessage(challenge["challenge_id"]),
-        )
+    async def direct_challenge_cancelled(cls, challenge: ChallengeModel):
+        await cls.notify(challenge.creator_id, ChallengeRemovedMessage(challenge))
+        await cls.notify(challenge.opponent_id, ChallengeRemovedMessage(challenge))
 
     @classmethod
-    async def game_started(cls, game_id: int, creator_id: int, opponent_id: int):
-        await cls.notify(creator_id, GameStartedMessage(game_id))
-        await cls.notify(opponent_id, GameStartedMessage(game_id))
+    async def challenge_accepted(cls, challenge: ChallengeModel):
+        await cls.notify(challenge.creator_id, ChallengeRejectedMessage(challenge))
+        await cls.broadcast(ChallengeRemovedMessage(challenge))
+
+    @classmethod
+    async def challenge_rejected(cls, challenge: ChallengeModel):
+        await cls.notify(challenge.creator_id, ChallengeRejectedMessage(challenge))

@@ -2,14 +2,14 @@ from typing import List
 
 from fastapi import APIRouter
 
-from ..crud import DatabaseHandler
-from ..schemas import PlayerOut
-from ..shared import UsersManager
+from explorebaduk.crud import DatabaseHandler
+from explorebaduk.managers import UsersManager
+from explorebaduk.schemas import User
 
 router = APIRouter(prefix="/players", tags=["players"])
 
 
-@router.get("", response_model=List[PlayerOut])
+@router.get("", response_model=List[User])
 def list_players(q: str = None, online: bool = False):
     with DatabaseHandler() as db:
         players = db.get_users(q=q)
@@ -20,7 +20,7 @@ def list_players(q: str = None, online: bool = False):
     return players
 
 
-@router.get("/{player_id}", response_model=PlayerOut)
+@router.get("/{player_id}", response_model=User)
 def get_player(player_id: int):
     with DatabaseHandler() as db:
         return db.get_user_by_id(player_id)

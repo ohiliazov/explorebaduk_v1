@@ -6,13 +6,21 @@ from fastapi.security import HTTPBearer, OAuth2PasswordBearer
 from jose import jwt
 
 from .crud import DatabaseHandler
+from .managers import UsersManager
 from .models import UserModel
-from .shared import UsersManager
 
 http_bearer = HTTPBearer()
 SECRET_KEY = os.getenv("SECRET_KEY", "my-super-secret-token")
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/login")
+
+
+def get_db_session() -> DatabaseHandler:
+    db = DatabaseHandler()
+    try:
+        yield db
+    finally:
+        db.session.close()
 
 
 def create_access_token(user: UserModel, expires: bool = True):
@@ -26,22 +34,23 @@ def create_access_token(user: UserModel, expires: bool = True):
     return token
 
 
-def get_current_user(token: str):
+def get_current_user(token: str, db: DatabaseHandler):
     try:
         payload = jwt.decode(token, SECRET_KEY, [jwt.ALGORITHMS.HS256])
         username: str = payload.get("sub")
     except jwt.JWTError:
         return None
 
-    with DatabaseHandler() as db:
-        return db.get_user_by_username(username)
+    return db.get_user_by_username(username)
 
 
-def current_user(token: str = Depends(oauth2_scheme)):
-    if user := get_current_user(token):
+def current_user(
+    token: str = Depends(oauth2_scheme),
+    db: DatabaseHandler = Depends(get_db_session),
+):
+    if user := get_current_user(token, db):
         return user
 
-    print(user)
     raise HTTPException(status.HTTP_401_UNAUTHORIZED)
 
 

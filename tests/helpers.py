@@ -25,8 +25,8 @@ class ApiTester(TestClient):
     async def get_following(self):
         return await self.get("/api/me/following")
 
-    async def get_user_friends(self, user_id: int):
-        return await self.get(f"/api/friends/{user_id}")
+    async def create_challenge(self, post_data: dict):
+        return await self.post("/api/challenges", json=post_data)
 
 
 class WebSocketTester:

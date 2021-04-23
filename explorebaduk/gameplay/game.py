@@ -1,7 +1,7 @@
 import random
 from typing import Union
 
-from ..schemas import (
+from explorebaduk.schemas import (
     Absolute,
     Byoyomi,
     Canadian,
@@ -10,8 +10,8 @@ from ..schemas import (
     GameRequest,
     Unlimited,
 )
-from ..sgftree import Kifu
-from ..utils.timer import (
+from explorebaduk.sgftree import Kifu
+from explorebaduk.utils.timer import (
     AbsoluteTimer,
     ByoyomiTimer,
     CanadianTimer,
