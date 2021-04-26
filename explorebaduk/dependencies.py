@@ -10,7 +10,7 @@ from .managers import UsersManager
 from .models import UserModel
 
 http_bearer = HTTPBearer()
-SECRET_KEY = os.getenv("SECRET_KEY", "my-super-secret-token")
+SECRET_KEY = os.getenv("SECRET_KEY", "my-super-secret-key")
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/login")
 

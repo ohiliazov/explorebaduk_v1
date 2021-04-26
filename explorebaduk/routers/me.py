@@ -7,10 +7,10 @@ from explorebaduk.dependencies import current_user
 from explorebaduk.models import UserModel
 from explorebaduk.schemas import User
 
-router = APIRouter(tags=["friends"])
+router = APIRouter(tags=["me"])
 
 
-@router.post("/whoami")
+@router.post("/me/whoami")
 def check_authentication(user: UserModel = Depends(current_user)):
     return user.asdict()
 

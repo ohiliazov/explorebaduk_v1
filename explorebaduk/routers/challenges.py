@@ -33,6 +33,31 @@ async def create_challenge(
     return challenge
 
 
+@router.delete("/challenges/{challenge_id}")
+async def cancel_challenge(
+    challenge_id: int,
+    user: UserModel = Depends(current_user),
+    db: DatabaseHandler = Depends(get_db_session),
+):
+    challenge = db.get_challenge_by_id(challenge_id)
+
+    if not challenge:
+        raise HTTPException(404, "Challenge not found")
+
+    if user.user_id != challenge.creator_id:
+        raise HTTPException(403, "Cannot remove challenge")
+
+    db.session.delete(challenge)
+    db.session.flush()
+
+    if challenge.opponent_id:
+        await Notifier.direct_challenge_cancelled(challenge)
+    else:
+        await Notifier.challenge_cancelled(challenge)
+
+    return {"message": "Challenge removed"}
+
+
 @router.post("/challenges/{challenge_id}/accept", response_model=Game)
 async def accept_challenge(
     challenge_id: int,
@@ -58,31 +83,6 @@ async def accept_challenge(
         await Notifier.challenge_accepted(challenge)
 
     return game
-
-
-@router.delete("/challenges/{challenge_id}")
-async def cancel_challenge(
-    challenge_id: int,
-    user: UserModel = Depends(current_user),
-    db: DatabaseHandler = Depends(get_db_session),
-):
-    challenge = db.get_challenge_by_id(challenge_id)
-
-    if not challenge:
-        raise HTTPException(404, "Challenge not found")
-
-    if user.user_id != challenge.creator_id:
-        raise HTTPException(403, "Cannot remove challenge")
-
-    db.session.delete(challenge)
-    db.session.flush()
-
-    if challenge.opponent_id:
-        await Notifier.direct_challenge_cancelled(challenge)
-    else:
-        await Notifier.challenge_cancelled(challenge)
-
-    return {"message": "Challenge removed"}
 
 
 @router.post("/challenges/{challenge_id}/reject")
