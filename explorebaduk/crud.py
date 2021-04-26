@@ -12,7 +12,7 @@ from .models import (
     GamePlayerModel,
     UserModel,
 )
-from .schemas import Challenge, Color, Game, UserCreate
+from .schemas import ChallengeCreate, Color, UserCreate
 
 engine = create_engine(os.getenv("DATABASE_URI"))
 
@@ -95,22 +95,6 @@ class DatabaseHandler:
             .all()
         )
 
-    def create_game(self, game: Game) -> GameModel:
-        game = GameModel(
-            name=game.name,
-            private=game.private,
-            ranked=game.ranked,
-            board_size=game.board_size,
-            rules=game.rules,
-            speed=game.speed,
-            initial_time=game.time_control.get_total_time(),
-            time_control=game.time_control.dict(),
-            handicap=game.handicap,
-            komi=game.komi,
-        )
-        self.session.add(game)
-        return game
-
     def get_challenge_by_id(self, challenge_id: int) -> ChallengeModel:
         return self.session.query(ChallengeModel).get(challenge_id)
 
@@ -124,10 +108,7 @@ class DatabaseHandler:
     def list_outgoing_challenges(self, user_id: int) -> List[ChallengeModel]:
         return (
             self.session.query(ChallengeModel)
-            .filter(
-                ChallengeModel.creator_id == user_id,
-                ChallengeModel.opponent_id.isnot(None),
-            )
+            .filter(ChallengeModel.creator_id == user_id)
             .all()
         )
 
@@ -140,20 +121,30 @@ class DatabaseHandler:
 
     def create_challenge(
         self,
-        challenge: Challenge,
-        game: GameModel,
+        challenge: ChallengeCreate,
         creator_id: int,
-        opponent_id: int = None,
     ) -> ChallengeModel:
+        game = GameModel(
+            name=challenge.game.name,
+            private=challenge.game.private,
+            ranked=challenge.game.ranked,
+            board_size=challenge.game.board_size,
+            rules=challenge.game.rules,
+            speed=challenge.game.speed,
+            initial_time=challenge.game.time_control.get_total_time(),
+            time_control=challenge.game.time_control.dict(),
+            handicap=challenge.game.handicap,
+            komi=challenge.game.komi,
+        )
         challenge = ChallengeModel(
             game=game,
             creator_id=creator_id,
-            opponent_id=opponent_id,
+            opponent_id=challenge.opponent_id,
             creator_color=challenge.creator_color,
             min_rating=challenge.min_rating,
             max_rating=challenge.max_rating,
         )
-        self.session.add(challenge)
+        self.session.add_all([game, challenge])
         self.session.flush()
         return challenge
 
@@ -171,8 +162,14 @@ class DatabaseHandler:
             black, white = opponent, creator
         elif challenge.creator_color is Color.NIGIRI:
             black, white = random.sample([creator, opponent], 2)
+            game.handicap = 0
+            game.komi = 6.5
         else:
             black, white = sorted([creator, opponent], key=lambda user: user.rating)
+            game.handicap = abs(creator.rating - opponent.rating) / 100
+
+        game.handicap = game.handicap or 0
+        game.komi = game.komi or 0
 
         black_player = GamePlayerModel(
             game=game,

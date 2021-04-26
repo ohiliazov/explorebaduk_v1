@@ -22,7 +22,7 @@ async def test_get_player(test_cli, db_users):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("attr", ["first_name", "last_name", "full_name"])
+@pytest.mark.parametrize("attr", ["first_name", "last_name"])
 async def test_get_players_search_last_name(test_cli, db_users, attr):
     q = getattr(random.choice(db_users), attr)
     resp = await test_cli.get_players({"q": q})

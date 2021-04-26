@@ -62,22 +62,15 @@ class PlayerOfflineMessage(Message):
         self.data = {"user_id": user.user_id}
 
 
-class ChallengeCreatedMessage(Message):
-    event = "challenges.add"
+class ChallengeOpenMessage(Message):
+    event = "challenges.open.add"
 
     def __init__(self, challenge: ChallengeModel):
         self.data = challenge.asdict()
 
 
-class ChallengeRemovedMessage(Message):
-    event = "challenges.remove"
-
-    def __init__(self, challenge: ChallengeModel):
-        self.data = {"challenge_id": challenge.challenge_id}
-
-
 class ChallengeAcceptedMessage(Message):
-    event = "challenges.accept"
+    event = "challenges.open.accept"
 
     def __init__(self, challenge: ChallengeModel):
         self.data = {
@@ -87,11 +80,36 @@ class ChallengeAcceptedMessage(Message):
         }
 
 
-class ChallengeRejectedMessage(Message):
-    event = "challenges.reject"
+class ChallengeRemovedMessage(Message):
+    event = "challenges.open.remove"
 
     def __init__(self, challenge: ChallengeModel):
         self.data = {"challenge_id": challenge.challenge_id}
+
+
+class DirectChallengeMessage(Message):
+    event = "challenges.direct.add"
+
+    def __init__(self, challenge: ChallengeModel):
+        self.data = challenge.asdict()
+
+
+class DirectChallengeRemovedMessage(Message):
+    event = "challenges.direct.remove"
+
+    def __init__(self, challenge: ChallengeModel):
+        self.data = {"challenge_id": challenge.challenge_id}
+
+
+class DirectChallengeAcceptedMessage(Message):
+    event = "challenges.direct.accept"
+
+    def __init__(self, challenge: ChallengeModel):
+        self.data = {
+            "challenge_id": challenge.challenge_id,
+            "opponent_id": challenge.opponent_id,
+            "game_id": challenge.game_id,
+        }
 
 
 class Notifier:
@@ -115,7 +133,11 @@ class Notifier:
 
     @classmethod
     async def challenge_created(cls, challenge: ChallengeModel):
-        await cls.broadcast(ChallengeCreatedMessage(challenge))
+        await cls.broadcast(ChallengeOpenMessage(challenge))
+
+    @classmethod
+    async def challenge_accepted(cls, challenge: ChallengeModel):
+        await cls.broadcast(ChallengeAcceptedMessage(challenge))
 
     @classmethod
     async def challenge_cancelled(cls, challenge: ChallengeModel):
@@ -123,19 +145,16 @@ class Notifier:
 
     @classmethod
     async def direct_challenge_created(cls, challenge: ChallengeModel):
-        await cls.notify(challenge.creator_id, ChallengeCreatedMessage(challenge))
-        await cls.notify(challenge.opponent_id, ChallengeCreatedMessage(challenge))
+        await cls.notify(challenge.opponent_id, DirectChallengeMessage(challenge))
+
+    @classmethod
+    async def direct_challenge_accepted(cls, challenge: ChallengeModel):
+        await cls.notify(challenge.creator_id, ChallengeAcceptedMessage(challenge))
 
     @classmethod
     async def direct_challenge_cancelled(cls, challenge: ChallengeModel):
-        await cls.notify(challenge.creator_id, ChallengeRemovedMessage(challenge))
         await cls.notify(challenge.opponent_id, ChallengeRemovedMessage(challenge))
 
     @classmethod
-    async def challenge_accepted(cls, challenge: ChallengeModel):
-        await cls.notify(challenge.creator_id, ChallengeRejectedMessage(challenge))
-        await cls.broadcast(ChallengeRemovedMessage(challenge))
-
-    @classmethod
-    async def challenge_rejected(cls, challenge: ChallengeModel):
-        await cls.notify(challenge.creator_id, ChallengeRejectedMessage(challenge))
+    async def direct_challenge_rejected(cls, challenge: ChallengeModel):
+        await cls.notify(challenge.creator_id, ChallengeRemovedMessage(challenge))

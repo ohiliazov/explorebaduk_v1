@@ -60,15 +60,20 @@ class NewUserRating(ConstrainedInt):
     le = 2300
 
 
-class UserCreate(BaseModel):
+class UserBase(BaseModel):
     first_name: str
     last_name: str
     email: str
     username: str
+    country: str
+    avatar: str = None
+
+
+class UserCreate(UserBase):
+    rating: NewUserRating = 10
+    puzzle_rating: NewUserRating = 10
     password: str
     password2: str
-    rating: NewUserRating
-    country: str
 
     @validator("password2")
     def passwords_match(cls, v, values, **kwargs):
@@ -89,23 +94,19 @@ class UserCreate(BaseModel):
                 "email": "johndoe@explorebaduk.com",
                 "username": "johndoe",
                 "country": "Ukraine",
+                "rating": 2100,
+                "puzzle_rating": None,
+                "avatar": "my-uploaded-avatar.jpg",
                 "password": "mySuperStr0ngp4ssw0rd",
                 "password2": "mySuperStr0ngp4ssw0rd",
-                "rating": 2100,
             },
         }
 
 
-class User(BaseModel):
+class User(UserBase):
     user_id: int
-    first_name: str
-    last_name: str
-    email: str
-    username: str
-    rating: NonNegativeFloat = 10
-    puzzle_rating: NonNegativeFloat = 0
-    country: Optional[str]
-    avatar: Optional[str]
+    rating: float
+    puzzle_rating: float
 
     class Config:
         orm_mode = True
@@ -116,9 +117,9 @@ class User(BaseModel):
                 "last_name": "Doe",
                 "email": "johndoe@explorebaduk.com",
                 "username": "johndoe",
+                "country": "Ukraine",
                 "rating": 1992.532,
                 "puzzle_rating": 1605.321,
-                "country": "Ukraine",
                 "avatar": "avatar.jpg",
             },
         }
@@ -302,8 +303,7 @@ class GameRequest(GameSetupBase):
         }
 
 
-class Game(BaseModel):
-    game_id: int = None
+class GameCreate(BaseModel):
     name: str
     private: bool
     ranked: bool
@@ -331,21 +331,60 @@ class Game(BaseModel):
         }
 
 
-class Challenge(BaseModel):
-    challenge_id: int = None
-    creator_id: int = None
+class ChallengeCreate(BaseModel):
+    game: GameCreate
     opponent_id: int = None
-
     creator_color: Color
     min_rating: int = None
     max_rating: int = None
-    game: Game
 
     class Config:
         orm_mode = True
         schema_extra = {
             "example": {
-                "game": Game.Config.schema_extra["example"],
+                "game": GameCreate.Config.schema_extra["example"],
+                "opponent_id": None,
+                "creator_color": Color.NIGIRI.value,
+                "min_rating": 1200,
+                "max_rating": 2400,
+            },
+        }
+
+
+class Game(GameCreate):
+    game_id: int
+
+    class Config:
+        orm_mode = True
+        schema_extra = {
+            "example": {
+                "game_id": 654,
+                "name": "The Battlefield",
+                "private": False,
+                "ranked": True,
+                "board_size": 19,
+                "rules": Rules.JAPANESE.value,
+                "speed": GameSpeed.LIVE.value,
+                "time_control": Byoyomi.Config.schema_extra["example"],
+                "handicap": 3,
+                "komi": 0.5,
+            },
+        }
+
+
+class Challenge(ChallengeCreate):
+    game: Game
+    challenge_id: int = None
+    creator_id: int = None
+
+    class Config:
+        orm_mode = True
+        schema_extra = {
+            "example": {
+                "challenge_id": 1234,
+                "creator_id": 23,
+                "game": GameCreate.Config.schema_extra["example"],
+                "opponent_id": None,
                 "creator_color": Color.NIGIRI.value,
                 "min_rating": 1200,
                 "max_rating": 2400,

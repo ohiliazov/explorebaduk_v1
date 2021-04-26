@@ -10,14 +10,17 @@ from explorebaduk.crud import DatabaseHandler
 from explorebaduk.dependencies import get_current_user
 from explorebaduk.managers import UsersManager
 from explorebaduk.messages import (
-    ChallengeCreatedMessage,
+    ChallengeOpenMessage,
     Message,
+    Notifier,
     ReceivedMessage,
     WhoAmIMessage,
 )
 
 logger = logging.getLogger("explorebaduk")
 router = APIRouter()
+
+OFFLINE_TIMEOUT = 5
 
 
 class Connection:
@@ -59,7 +62,7 @@ class Connection:
     async def _send_messages(self):
         with DatabaseHandler() as db:
             challenges = db.list_challenges()
-        messages = [ChallengeCreatedMessage(challenge) for challenge in challenges]
+        messages = [ChallengeOpenMessage(challenge) for challenge in challenges]
 
         if messages:
             await asyncio.wait([self._send(message) for message in messages])
@@ -69,13 +72,13 @@ class Connection:
         with DatabaseHandler() as db:
             messages.extend(
                 [
-                    ChallengeCreatedMessage(challenge)
+                    ChallengeOpenMessage(challenge)
                     for challenge in db.list_incoming_challenges(self.user_id)
                 ],
             )
             messages.extend(
                 [
-                    ChallengeCreatedMessage(challenge)
+                    ChallengeOpenMessage(challenge)
                     for challenge in db.list_outgoing_challenges(self.user_id)
                 ],
             )
@@ -86,9 +89,20 @@ class Connection:
     async def finalize(self):
         if self.user:
             await UsersManager.remove(self.user, self.websocket)
+            await asyncio.sleep(OFFLINE_TIMEOUT)
 
             if not UsersManager.is_online(self.user):
-                pass
+                await Notifier.player_offline(self.user)
+
+                with DatabaseHandler() as db:
+                    challenges = db.list_outgoing_challenges(self.user.user_id)
+
+                    for challenge in challenges:
+                        if challenge.opponent_id:
+                            await Notifier.direct_challenge_cancelled(challenge)
+                        else:
+                            await Notifier.challenge_cancelled(challenge)
+                        db.session.delete(challenge)
 
 
 @router.websocket_route("/ws")

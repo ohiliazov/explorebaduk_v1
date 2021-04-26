@@ -28,6 +28,12 @@ class ApiTester(TestClient):
     async def create_challenge(self, post_data: dict):
         return await self.post("/api/challenges", json=post_data)
 
+    async def cancel_challenge(self, challenge_id: int):
+        return await self.delete(f"/api/challenges/{challenge_id}")
+
+    async def accept_challenge(self, challenge_id: int):
+        return await self.post(f"/api/challenges/{challenge_id}/accept")
+
 
 class WebSocketTester:
     def __init__(self, websocket: WebSocketSession):

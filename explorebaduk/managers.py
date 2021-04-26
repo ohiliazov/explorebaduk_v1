@@ -1,4 +1,3 @@
-import asyncio
 from collections import defaultdict
 from typing import Dict, List
 
@@ -7,8 +6,6 @@ from fastapi import WebSocket
 from explorebaduk.messages import Notifier
 
 from .models import UserModel
-
-OFFLINE_TIMEOUT = 5
 
 
 class UsersManager:
@@ -28,10 +25,6 @@ class UsersManager:
     @classmethod
     async def remove(cls, user: UserModel, websocket: WebSocket):
         cls.user_ids[user.user_id].remove(websocket)
-        await asyncio.sleep(OFFLINE_TIMEOUT)
-
-        if not cls.user_ids[user.user_id]:
-            await Notifier.player_offline(user)
 
     @classmethod
     def is_online(cls, user: UserModel) -> bool:
