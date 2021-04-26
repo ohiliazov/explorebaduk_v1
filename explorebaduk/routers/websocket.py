@@ -16,6 +16,7 @@ from explorebaduk.messages import (
     ReceivedMessage,
     WhoAmIMessage,
 )
+from explorebaduk.schemas import GameSpeed
 
 logger = logging.getLogger("explorebaduk")
 router = APIRouter()
@@ -98,6 +99,9 @@ class Connection:
                     challenges = db.list_outgoing_challenges(self.user.user_id)
 
                     for challenge in challenges:
+                        if challenge.game.speed is GameSpeed.CORRESPONDENCE:
+                            continue
+
                         if challenge.opponent_id:
                             await Notifier.direct_challenge_cancelled(challenge)
                         else:
