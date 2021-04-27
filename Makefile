@@ -14,5 +14,5 @@ init_db:
 emulate_players:
 	python -m scripts.players_emulator
 
-serve:
+serve: install
 	uvicorn explorebaduk.main:app --reload --port=8080

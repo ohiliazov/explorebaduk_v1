@@ -5,12 +5,13 @@ fastapi==0.63.0
 git+https://github.com/jumpman24/broadcaster.git@master
 git+https://github.com/jumpman24/starlette.git@dev
 numpy==1.20.1
-passlib==1.7.4
+passlib[bcrypt]==1.7.4
 pre-commit==2.7.1
 pymysql==0.10.1
 pytest==6.2.1
 pytest-asyncio==0.14.0
 pytest-cov==2.10.1
+python-jose[cryptography]==3.2.0
 python-multipart==0.0.5
 simplejson==3.17.2
 sqlalchemy==1.4.10

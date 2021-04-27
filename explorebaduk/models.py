@@ -190,6 +190,7 @@ class ChallengeModel(BaseModel):
     game: GameModel = relationship(
         GameModel,
         back_populates="challenge",
+        lazy="subquery",
     )
 
     def asdict(self):

@@ -1,10 +1,10 @@
 import asyncio
-import json
 import random
 
 import websockets
 
 from explorebaduk.crud import DatabaseHandler
+from explorebaduk.dependencies import create_access_token
 
 lock = asyncio.Lock()
 
@@ -15,29 +15,23 @@ RANDOM_USERS = 2
 GUEST_NUMBER = 1
 
 
-async def players_feed(token):
+async def players_feed(token, user):
     async with lock:
         ws = await websockets.connect("ws://localhost:8080/ws")
-        await ws.send(
-            json.dumps({"event": "authorize", "data": token.token if token else ""}),
-        )
+        await ws.send(token)
     if token:
-        print("Authorization token:", token.token)
+        print("Authorization token:", token)
     while True:
         try:
             message = await asyncio.wait_for(ws.recv(), timeout=0.5)
-            print(f"user_{token.user_id if token else 'guest'} :: {message}")
+            print(f"user_{user.username if user else 'guest'} :: {message}")
         except asyncio.TimeoutError:
             pass
 
 
 async def run():
     with DatabaseHandler() as db:
-        all_players = [
-            player
-            for player in db.get_users()
-            if any(token.is_active() for token in player.tokens)
-        ]
+        all_players = db.get_users()
 
     players = []
 
@@ -53,15 +47,12 @@ async def run():
 
     tokens = []
     for player in players:
-        for token in player.tokens:
-            if token.is_active():
-                tokens.append(token)
-                break
+        tokens.append((create_access_token(player), player))
 
     if GUEST_NUMBER:
-        tokens.extend([None for _ in range(GUEST_NUMBER)])
+        tokens.extend([("", None) for _ in range(GUEST_NUMBER)])
 
-    await asyncio.gather(*[players_feed(token) for token in tokens])
+    await asyncio.gather(*[players_feed(token, user) for token, user in tokens])
 
 
 if __name__ == "__main__":
