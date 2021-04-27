@@ -30,10 +30,8 @@ class DatabaseHandler:
     def get_user_by_id(self, user_id: int) -> UserModel:
         return self.session.query(UserModel).get(user_id)
 
-    def get_user_by_username(self, username: str) -> UserModel:
-        return (
-            self.session.query(UserModel).filter(UserModel.username == username).first()
-        )
+    def get_user_by_email(self, email: str) -> UserModel:
+        return self.session.query(UserModel).filter(UserModel.email == email).first()
 
     def create_user(self, user_data: UserCreate) -> UserModel:
         user = UserModel(

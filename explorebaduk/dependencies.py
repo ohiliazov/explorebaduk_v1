@@ -24,7 +24,7 @@ def get_db_session() -> DatabaseHandler:
 
 
 def create_access_token(user: UserModel, expires: bool = True):
-    data = {"sub": user.username}
+    data = {"sub": user.email}
 
     if expires:
         data["exp"] = datetime.utcnow() + timedelta(minutes=30)
@@ -41,7 +41,7 @@ def get_current_user(token: str, db: DatabaseHandler):
     except jwt.JWTError:
         return None
 
-    return db.get_user_by_username(username)
+    return db.get_user_by_email(username)
 
 
 def current_user(

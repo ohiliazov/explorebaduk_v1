@@ -21,7 +21,7 @@ def get_password_hash(password):
 @router.post("/login")
 def login(form_data: OAuth2PasswordRequestForm = Depends()):
     with DatabaseHandler() as db:
-        user = db.get_user_by_username(form_data.username)
+        user = db.get_user_by_email(form_data.username)
 
         if not user:
             raise HTTPException(401, "Unauthorized")
