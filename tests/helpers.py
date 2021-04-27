@@ -89,7 +89,7 @@ def random_websocket(
     if exclude_guests:
         websockets = filter(lambda ws: ws.user, websockets)
     if exclude_users:
-        websockets = filter(lambda ws: ws not in exclude_users, websockets)
+        websockets = filter(lambda ws: ws.user not in exclude_users, websockets)
 
     return random.choice(list(websockets))
 
