@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends
 from explorebaduk.crud import DatabaseHandler
 from explorebaduk.dependencies import current_user
 from explorebaduk.models import UserModel
-from explorebaduk.schemas import User
+from explorebaduk.schemas import FriendList, User
 
 router = APIRouter(tags=["me"])
 
@@ -25,6 +25,19 @@ def get_followers(user: UserModel = Depends(current_user)):
 def get_following(user: UserModel = Depends(current_user)):
     with DatabaseHandler() as db:
         return [f.user for f in db.get_followers(user.user_id)]
+
+
+@router.get("/me/friends", response_model=FriendList)
+def get_friends(user: UserModel = Depends(current_user)):
+    with DatabaseHandler() as db:
+        pending = {f.friend for f in db.get_following(user.user_id)}
+        waiting = {f.friend for f in db.get_followers(user.user_id)}
+
+    return {
+        "friends": pending & waiting,
+        "pending": pending - waiting,
+        "waiting": waiting - pending,
+    }
 
 
 @router.get("/me/challenges/incoming")
