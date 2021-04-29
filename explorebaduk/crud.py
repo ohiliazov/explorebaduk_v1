@@ -6,6 +6,7 @@ from sqlalchemy import and_, create_engine, or_
 from sqlalchemy.orm import Session
 
 from .models import (
+    BlacklistModel,
     ChallengeModel,
     FriendshipModel,
     GameModel,
@@ -75,7 +76,21 @@ class DatabaseHandler:
                     ),
                 )
 
-        return query.order_by(UserModel.user_id).all()
+        return query.all()
+
+    def get_friendship(self, user_id: int, friend_id: int) -> FriendshipModel:
+        return (
+            self.session.query(FriendshipModel)
+            .filter(FriendshipModel.user_id == user_id)
+            .filter(FriendshipModel.friend_id == friend_id)
+            .first()
+        )
+
+    def follow_user(self, user_id: int, friend_id: int) -> FriendshipModel:
+        friendship = FriendshipModel(user_id=user_id, friend_id=friend_id)
+        self.session.add(friendship)
+        self.session.flush()
+        return friendship
 
     def get_following(self, user_id: int) -> List[FriendshipModel]:
         return (
@@ -92,6 +107,27 @@ class DatabaseHandler:
             .order_by(FriendshipModel.user_id)
             .all()
         )
+
+    def get_blocked_users(self, user_id: int) -> List[BlacklistModel]:
+        return (
+            self.session.query(BlacklistModel)
+            .filter(BlacklistModel.user_id == user_id)
+            .all()
+        )
+
+    def get_blocked_user(self, user_id: int, blocked_user_id: int) -> BlacklistModel:
+        return (
+            self.session.query(BlacklistModel)
+            .filter(BlacklistModel.user_id == user_id)
+            .filter(BlacklistModel.blocked_user_id == blocked_user_id)
+            .first()
+        )
+
+    def block_user(self, user_id: int, blocked_user_id: int) -> BlacklistModel:
+        blacklist = BlacklistModel(user_id=user_id, blocked_user_id=blocked_user_id)
+        self.session.add(blacklist)
+        self.session.flush()
+        return blacklist
 
     def get_challenge_by_id(self, challenge_id: int) -> ChallengeModel:
         return self.session.query(ChallengeModel).get(challenge_id)

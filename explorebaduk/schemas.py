@@ -126,16 +126,18 @@ class User(UserBase):
 
 
 class FriendList(BaseModel):
-    pending: List[int]
-    waiting: List[int]
     mutual: List[int]
+    following: List[int]
+    followers: List[int]
+    blacklist: List[int]
 
     class Config:
         schema_extra = {
             "example": {
-                "pending": [132, 242, 312],
-                "waiting": [412, 523],
+                "following": [132, 242, 312],
+                "followers": [412, 523],
                 "mutual": [777],
+                "blacklist": [666],
             },
         }
 

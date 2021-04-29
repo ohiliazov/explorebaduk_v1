@@ -36,13 +36,15 @@ def get_friends(
     user: UserModel = Depends(current_user),
     db: DatabaseHandler = Depends(get_db_session),
 ):
-    pending = {f.friend for f in db.get_following(user.user_id)}
-    waiting = {f.friend for f in db.get_followers(user.user_id)}
+    following = {f.friend_id for f in db.get_following(user.user_id)}
+    followers = {f.user_id for f in db.get_followers(user.user_id)}
+    blacklist = {b.blocked_user_id for b in db.get_blocked_users(user.user_id)}
 
     return {
-        "friends": pending & waiting,
-        "pending": pending - waiting,
-        "waiting": waiting - pending,
+        "mutual": followers & following,
+        "following": following - followers,
+        "followers": followers - following,
+        "blacklist": blacklist,
     }
 
 
