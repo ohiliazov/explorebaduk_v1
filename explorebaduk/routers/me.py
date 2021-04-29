@@ -10,9 +10,9 @@ from explorebaduk.schemas import FriendList, User
 router = APIRouter(tags=["me"])
 
 
-@router.post("/me/whoami")
+@router.get("/me/whoami", response_model=User)
 def check_authentication(user: UserModel = Depends(current_user)):
-    return user.asdict()
+    return user
 
 
 @router.get("/me/followers", response_model=List[User])
