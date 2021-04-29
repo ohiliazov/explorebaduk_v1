@@ -31,6 +31,14 @@ def get_following(
     return [f.user for f in db.get_followers(user.user_id)]
 
 
+@router.get("/me/blacklist", response_model=List[User])
+def get_blocked_users(
+    user: UserModel = Depends(current_user),
+    db: DatabaseHandler = Depends(get_db_session),
+):
+    return [f.user for f in db.get_blocked_users(user.user_id)]
+
+
 @router.get("/me/friends", response_model=FriendList)
 def get_friends(
     user: UserModel = Depends(current_user),
