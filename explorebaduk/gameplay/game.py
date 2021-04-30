@@ -5,7 +5,7 @@ from explorebaduk.schemas import (
     Absolute,
     Byoyomi,
     Canadian,
-    Color,
+    CreatorColor,
     Fischer,
     GameRequest,
     Unlimited,
@@ -63,9 +63,9 @@ class Game:
         self.white_timer = timer(game_setup.time_settings)
 
     def get_colors(self, user_id: int, opponent_id: int):
-        if self.game_setup.game_settings.color == Color.BLACK:
+        if self.game_setup.game_settings.color == CreatorColor.BLACK:
             return user_id, opponent_id
-        elif self.game_setup.game_settings.color == Color.WHITE:
+        elif self.game_setup.game_settings.color == CreatorColor.WHITE:
             return opponent_id, user_id
         else:
             return random.sample([user_id, opponent_id], 2)

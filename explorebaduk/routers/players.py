@@ -17,7 +17,7 @@ def list_players(
     online: bool = False,
     db: DatabaseHandler = Depends(get_db_session),
 ):
-    players = db.get_users(q=q)
+    players = db.search_users(q)
 
     if online:
         players = list(filter(UsersManager.is_online, players))

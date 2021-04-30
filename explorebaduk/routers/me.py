@@ -20,7 +20,7 @@ def get_followers(
     user: UserModel = Depends(current_user),
     db: DatabaseHandler = Depends(get_db_session),
 ):
-    return [f.friend for f in db.get_following(user.user_id)]
+    return [f.friend for f in db.get_followers(user.user_id)]
 
 
 @router.get("/me/following", response_model=List[User])
@@ -61,7 +61,7 @@ async def list_incoming_challenges(
     user: UserModel = Depends(current_user),
     db: DatabaseHandler = Depends(get_db_session),
 ):
-    return db.list_incoming_challenges(user.user_id)
+    return db.get_challenges_to_user(user.user_id)
 
 
 @router.get("/me/challenges/outgoing")
@@ -69,4 +69,4 @@ async def list_outgoing_challenges(
     user: UserModel = Depends(current_user),
     db: DatabaseHandler = Depends(get_db_session),
 ):
-    return db.list_outgoing_challenges(user.user_id)
+    return db.get_challenges_from_user(user.user_id)

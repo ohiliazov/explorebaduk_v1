@@ -1,5 +1,6 @@
 from typing import List
 
+from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.schema import Column, ForeignKey
 from sqlalchemy.sql.sqltypes import (
@@ -13,8 +14,9 @@ from sqlalchemy.sql.sqltypes import (
     Text,
 )
 
-from .database import BaseModel
-from .schemas import Color, GameSpeed, Rules
+from .schemas import CreatorColor, GameSpeed, Rules
+
+BaseModel = declarative_base()
 
 
 class UserModel(BaseModel):
@@ -43,14 +45,12 @@ class UserModel(BaseModel):
         foreign_keys="BlacklistModel.user_id",
         lazy="subquery",
     )
-
     outgoing_challenges: List["ChallengeModel"] = relationship(
         "ChallengeModel",
         back_populates="creator",
         foreign_keys="ChallengeModel.creator_id",
         lazy="subquery",
     )
-
     incoming_challenges: List["ChallengeModel"] = relationship(
         "ChallengeModel",
         back_populates="opponent",
@@ -143,8 +143,11 @@ class GameModel(BaseModel):
     result = Column(String(255))
     sgf = Column(Text)
 
-    challenge = relationship("ChallengeModel", back_populates="game")
-    players = relationship("GamePlayerModel", back_populates="game")
+    challenge: "ChallengeModel" = relationship("ChallengeModel", back_populates="game")
+    players: List["GamePlayerModel"] = relationship(
+        "GamePlayerModel",
+        back_populates="game",
+    )
 
     def asdict(self):
         return {
@@ -171,7 +174,7 @@ class ChallengeModel(BaseModel):
     game_id = Column(Integer, ForeignKey(GameModel.game_id))
     creator_id = Column(Integer, ForeignKey(UserModel.user_id))
     opponent_id = Column(Integer, ForeignKey(UserModel.user_id))
-    creator_color = Column(Enum(Color))
+    creator_color = Column(Enum(CreatorColor))
     min_rating = Column(Integer)
     max_rating = Column(Integer)
 
@@ -212,7 +215,7 @@ class GamePlayerModel(BaseModel):
     id = Column(Integer, primary_key=True)
     game_id = Column(Integer, ForeignKey(GameModel.game_id))
     user_id = Column(Integer, ForeignKey(UserModel.user_id))
-    color = Column(Enum(Color))
+    color = Column(Enum(CreatorColor))
     time_left = Column(Numeric)
 
     game: GameModel = relationship("GameModel", back_populates="players")

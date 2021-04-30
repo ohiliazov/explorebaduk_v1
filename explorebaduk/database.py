@@ -1,22 +1,25 @@
 import os
-from contextlib import contextmanager
 
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-BaseModel = declarative_base()
-SessionLocal = sessionmaker(autocommit=True, autoflush=True)
+from .models import BaseModel
 
-if database_uri := os.getenv("DATABASE_URI"):
-    engine = create_engine(database_uri)
-    SessionLocal.configure(bind=engine)
+engine = create_engine(os.getenv("DATABASE_URI"))
+Session = sessionmaker(engine, autocommit=True, expire_on_commit=False)
 
 
-@contextmanager
-def scoped_session():
-    session = SessionLocal()
-    try:
-        yield session
-    finally:
-        session.close()
+class DatabaseManager:
+    def __init__(self):
+        self.session = Session()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.session.close()
+
+    def add(self, instance: BaseModel) -> BaseModel:
+        self.session.add(instance)
+        self.session.flush()
+        return instance

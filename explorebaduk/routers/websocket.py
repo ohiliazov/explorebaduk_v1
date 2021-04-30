@@ -62,7 +62,7 @@ class Connection:
 
     async def _send_messages(self):
         with DatabaseHandler() as db:
-            challenges = db.list_challenges()
+            challenges = db.get_open_challenges()
         messages = [ChallengeOpenMessage(challenge) for challenge in challenges]
 
         if messages:
@@ -74,13 +74,13 @@ class Connection:
             messages.extend(
                 [
                     ChallengeOpenMessage(challenge)
-                    for challenge in db.list_incoming_challenges(self.user_id)
+                    for challenge in db.get_challenges_to_user(self.user_id)
                 ],
             )
             messages.extend(
                 [
                     ChallengeOpenMessage(challenge)
-                    for challenge in db.list_outgoing_challenges(self.user_id)
+                    for challenge in db.get_challenges_from_user(self.user_id)
                 ],
             )
 
@@ -96,7 +96,7 @@ class Connection:
                 await Notifier.player_offline(self.user)
 
                 with DatabaseHandler() as db:
-                    challenges = db.list_outgoing_challenges(self.user.user_id)
+                    challenges = db.get_challenges_from_user(self.user.user_id)
 
                     for challenge in challenges:
                         if challenge.game.speed is GameSpeed.CORRESPONDENCE:

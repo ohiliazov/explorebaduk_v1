@@ -1,16 +1,14 @@
 import asyncio
-import os
 import random
 from contextlib import AsyncExitStack
 from typing import List
 
 import pytest
-from sqlalchemy import create_engine
 
-from explorebaduk.database import BaseModel, SessionLocal
+from explorebaduk.crud import DatabaseHandler
 from explorebaduk.main import app
 from explorebaduk.managers import UsersManager
-from explorebaduk.models import BlacklistModel, FriendshipModel, UserModel
+from explorebaduk.models import BaseModel, BlacklistModel, FriendshipModel, UserModel
 from explorebaduk.utils.database import (
     generate_blocked_users,
     generate_friends,
@@ -19,22 +17,17 @@ from explorebaduk.utils.database import (
 
 from .helpers import ApiTester, WebSocketTester
 
-BASE_DIR = os.path.dirname(__file__)
-TEST_DATABASE_PATH = os.path.join(BASE_DIR, os.path.pardir, "explorebaduk_test.sqlite3")
-TEST_DATABASE_URI = f"sqlite:///{os.path.abspath(TEST_DATABASE_PATH)}"
-engine = create_engine(TEST_DATABASE_URI, connect_args={"check_same_thread": False})
-SessionLocal.configure(bind=engine)
-
 
 @pytest.fixture
 def db_session():
-    BaseModel.metadata.drop_all(engine)
-    BaseModel.metadata.create_all(engine)
-    session = SessionLocal()
+    db = DatabaseHandler()
+    BaseModel.metadata.drop_all(db.session.bind)
+    BaseModel.metadata.create_all(db.session.bind)
+
     try:
-        yield session
+        yield db.session
     finally:
-        session.close()
+        db.session.close()
 
 
 @pytest.fixture(autouse=True)

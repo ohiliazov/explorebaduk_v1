@@ -17,9 +17,17 @@ class Token(BaseModel):
     token_type: str
 
 
-class Color(str, Enum):
+class CreatorColor(str, Enum):
     AUTO = "auto"
     NIGIRI = "nigiri"
+    BLACK = "black"
+    WHITE = "white"
+
+    def is_random(self):
+        return self.value is self.NIGIRI
+
+
+class PlayerColor(str, Enum):
     BLACK = "black"
     WHITE = "white"
 
@@ -34,6 +42,11 @@ class Rules(str, Enum):
     JAPANESE = "japanese"
     CHINESE = "chinese"
 
+
+DEFAULT_KOMI = {
+    Rules.JAPANESE.value: 6.5,
+    Rules.CHINESE.value: 7.5,
+}
 
 Handicap = Literal[0, 2, 3, 4, 5, 6, 7, 8, 9]
 
@@ -281,13 +294,13 @@ class OpenGame(GameSetupBase):
 
 
 class GameSettings(BaseModel):
-    color: Color
+    color: CreatorColor
     handicap: Handicap
     komi: Komi
 
     @root_validator
     def validate_game_settings(cls, values: dict):
-        if values["color"] is Color.NIGIRI:
+        if values["color"] is CreatorColor.NIGIRI:
             values["handicap"] = 0
         return values
 
@@ -338,7 +351,7 @@ class GameCreate(BaseModel):
 class ChallengeCreate(BaseModel):
     game: GameCreate
     opponent_id: int = None
-    creator_color: Color
+    creator_color: CreatorColor
     min_rating: int = None
     max_rating: int = None
 
@@ -348,11 +361,18 @@ class ChallengeCreate(BaseModel):
             "example": {
                 "game": GameCreate.Config.schema_extra["example"],
                 "opponent_id": None,
-                "creator_color": Color.NIGIRI.value,
+                "creator_color": CreatorColor.NIGIRI.value,
                 "min_rating": 1200,
                 "max_rating": 2400,
             },
         }
+
+
+class GamePlayer(BaseModel):
+    game_id: int
+    user_id: int
+    color: PlayerColor
+    time_left: float
 
 
 class Game(GameCreate):
@@ -389,7 +409,7 @@ class Challenge(ChallengeCreate):
                 "creator_id": 23,
                 "game": GameCreate.Config.schema_extra["example"],
                 "opponent_id": None,
-                "creator_color": Color.NIGIRI.value,
+                "creator_color": CreatorColor.NIGIRI.value,
                 "min_rating": 1200,
                 "max_rating": 2400,
             },
