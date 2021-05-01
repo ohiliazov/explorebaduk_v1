@@ -23,4 +23,4 @@ app.include_router(ws_router)
 
 
 if __name__ == "__main__":
-    uvicorn.run("explorebaduk.main:app", host="localhost", port=8081, reload=True)
+    uvicorn.run("explorebaduk.main:app", host="localhost", port=8080, reload=True)

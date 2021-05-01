@@ -34,9 +34,12 @@ class UserManager(DatabaseManager):
             ),
         )
 
+    def get_users(self) -> List[UserModel]:
+        return self.session.query(UserModel).all()
+
     def search_users(self, search_string: str) -> List[UserModel]:
         if not search_string:
-            return self.session.query(UserModel).all()
+            return self.get_users()
 
         if " " not in search_string:
             return (
