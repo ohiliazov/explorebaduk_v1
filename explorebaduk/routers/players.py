@@ -3,7 +3,7 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 
 from explorebaduk.database import DatabaseHandler
-from explorebaduk.dependencies import current_user, get_db_handler
+from explorebaduk.dependencies import current_user, db_handler
 from explorebaduk.models import UserModel
 from explorebaduk.online import UsersOnline
 from explorebaduk.schemas import User
@@ -15,7 +15,7 @@ router = APIRouter(tags=["players"])
 def list_players(
     q: str = None,
     online: bool = False,
-    db: DatabaseHandler = Depends(get_db_handler),
+    db: DatabaseHandler = Depends(db_handler),
 ):
     players = db.search_users(q)
 
@@ -26,7 +26,7 @@ def list_players(
 
 
 @router.get("/players/{player_id}", response_model=User)
-def get_player(player_id: int, db: DatabaseHandler = Depends(get_db_handler)):
+def get_player(player_id: int, db: DatabaseHandler = Depends(db_handler)):
     return db.get_user_by_id(player_id)
 
 
@@ -34,7 +34,7 @@ def get_player(player_id: int, db: DatabaseHandler = Depends(get_db_handler)):
 def follow_player(
     player_id: int,
     user: UserModel = Depends(current_user),
-    db: DatabaseHandler = Depends(get_db_handler),
+    db: DatabaseHandler = Depends(db_handler),
 ):
     if not db.get_user_by_id(player_id):
         raise HTTPException(404, "User not found")
@@ -54,7 +54,7 @@ def follow_player(
 def unfollow_player(
     player_id: int,
     user: UserModel = Depends(current_user),
-    db: DatabaseHandler = Depends(get_db_handler),
+    db: DatabaseHandler = Depends(db_handler),
 ):
     if not db.get_user_by_id(player_id):
         raise HTTPException(404, "User not found")
@@ -70,7 +70,7 @@ def unfollow_player(
 def block_player(
     player_id: int,
     user: UserModel = Depends(current_user),
-    db: DatabaseHandler = Depends(get_db_handler),
+    db: DatabaseHandler = Depends(db_handler),
 ):
     if not db.get_user_by_id(player_id):
         raise HTTPException(404, "User not found")
@@ -90,7 +90,7 @@ def block_player(
 def unblock_player(
     player_id: int,
     user: UserModel = Depends(current_user),
-    db: DatabaseHandler = Depends(get_db_handler),
+    db: DatabaseHandler = Depends(db_handler),
 ):
     if not db.get_user_by_id(player_id):
         raise HTTPException(404, "User not found")

@@ -121,7 +121,7 @@ class Notifier:
     @staticmethod
     async def notify(user_id, message: Message):
         logger.info(f"> <{user_id}> [{message.event}] {message.data}")
-        await broadcast.publish(f"user__{user_id}", message.json())
+        await broadcast.publish(f"main.user__{user_id}", message.json())
 
     @classmethod
     async def player_online(cls, user: UserModel):

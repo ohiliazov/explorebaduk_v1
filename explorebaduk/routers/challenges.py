@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 
 from explorebaduk.database import DatabaseHandler
-from explorebaduk.dependencies import current_user, get_db_handler
+from explorebaduk.dependencies import current_user, db_handler
 from explorebaduk.messages import Notifier
 from explorebaduk.models import UserModel
 from explorebaduk.schemas import (
@@ -21,7 +21,7 @@ router = APIRouter(tags=["challenges"])
 @router.get("/challenges")
 async def list_open_challenges(
     user: UserModel = Depends(current_user),
-    db: DatabaseHandler = Depends(get_db_handler),
+    db: DatabaseHandler = Depends(db_handler),
 ):
     return db.get_open_challenges()
 
@@ -30,7 +30,7 @@ async def list_open_challenges(
 async def create_challenge(
     challenge_data: ChallengeCreate,
     user: UserModel = Depends(current_user),
-    db: DatabaseHandler = Depends(get_db_handler),
+    db: DatabaseHandler = Depends(db_handler),
 ):
     game = db.create_game(challenge_data.game)
     challenge = db.create_challenge(user, game, challenge_data)
@@ -47,7 +47,7 @@ async def create_challenge(
 async def cancel_challenge(
     challenge_id: int,
     user: UserModel = Depends(current_user),
-    db: DatabaseHandler = Depends(get_db_handler),
+    db: DatabaseHandler = Depends(db_handler),
 ):
     challenge = db.get_challenge_by_id(challenge_id)
 
@@ -72,7 +72,7 @@ async def cancel_challenge(
 async def accept_challenge(
     challenge_id: int,
     user: UserModel = Depends(current_user),
-    db: DatabaseHandler = Depends(get_db_handler),
+    db: DatabaseHandler = Depends(db_handler),
 ):
     challenge = db.get_challenge_by_id(challenge_id)
 
@@ -136,7 +136,7 @@ async def accept_challenge(
 async def reject_challenge(
     challenge_id: int,
     user: UserModel = Depends(current_user),
-    db: DatabaseHandler = Depends(get_db_handler),
+    db: DatabaseHandler = Depends(db_handler),
 ):
     challenge = db.get_challenge_by_id(challenge_id)
 

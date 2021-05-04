@@ -3,7 +3,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from passlib.context import CryptContext
 
 from explorebaduk.database import DatabaseHandler
-from explorebaduk.dependencies import create_access_token, get_db_handler
+from explorebaduk.dependencies import create_token, db_handler
 from explorebaduk.schemas import User, UserCreate
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -21,7 +21,7 @@ def get_password_hash(password):
 @router.post("/login")
 def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
-    db: DatabaseHandler = Depends(get_db_handler),
+    db: DatabaseHandler = Depends(db_handler),
 ):
     user = db.get_user_by_email(form_data.username)
 
@@ -31,13 +31,13 @@ def login(
     if not verify_password(form_data.password, user.password):
         raise HTTPException(401, "Unauthorized")
 
-    token = create_access_token(user)
+    token = create_token(user)
 
     return {"access_token": token}
 
 
 @router.post("/signup", response_model=User)
-def signup(user_data: UserCreate, db: DatabaseHandler = Depends(get_db_handler)):
+def signup(user_data: UserCreate, db: DatabaseHandler = Depends(db_handler)):
     user_data.password = get_password_hash(user_data.password)
 
     try:

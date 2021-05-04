@@ -5,13 +5,13 @@ from typing import List, Optional
 from async_asgi_testclient import TestClient
 from async_asgi_testclient.websocket import WebSocketSession
 
-from explorebaduk.dependencies import create_access_token
+from explorebaduk.dependencies import create_token
 from explorebaduk.models import UserModel
 
 
 class ApiTester(TestClient):
     def authorize(self, user: UserModel):
-        self.headers["Authorization"] = f"Bearer {create_access_token(user)}"
+        self.headers["Authorization"] = f"Bearer {create_token(user)}"
 
     async def get_players(self, params: dict = None):
         return await self.get("/api/players", query_string=params)
@@ -52,7 +52,7 @@ class WebSocketTester:
                 return messages
 
     async def authorize_as_user(self, user: UserModel):
-        await self.websocket.send_text(create_access_token(user))
+        await self.websocket.send_text(create_token(user))
         self.user = user
 
     async def authorize_as_guest(self):

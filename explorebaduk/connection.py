@@ -3,17 +3,17 @@ import logging
 from fastapi import WebSocket
 
 from explorebaduk.broadcast import broadcast
-from explorebaduk.database import DatabaseHandler, Session
-from explorebaduk.dependencies import get_current_user
+from explorebaduk.database import DatabaseHandler
+from explorebaduk.dependencies import parse_token
 from explorebaduk.messages import Message, ReceivedMessage, WhoAmIMessage
 
 logger = logging.getLogger("explorebaduk")
 
 
 class ConnectionManager:
-    def __init__(self, websocket: WebSocket, session: Session):
+    def __init__(self, websocket: WebSocket, db: DatabaseHandler):
         self.websocket = websocket
-        self.db = DatabaseHandler(session)
+        self.db = db
         self.user = None
 
     async def __aiter__(self):
@@ -30,13 +30,14 @@ class ConnectionManager:
         return self.user.username if self.user else "guest"
 
     async def _send(self, message: Message):
-        await self.websocket.send_json(message.json())
         logger.info("[%s] > %s", self.username, str(message))
+        await self.websocket.send_json(message.json())
 
     async def initialize(self):
         await self.websocket.accept()
         message = await self.websocket.receive_text()
-        self.user = get_current_user(message, self.db)
+        if email := parse_token(message):
+            self.user = self.db.get_user_by_email(email)
 
         await self._send(WhoAmIMessage(self.user))
 
@@ -49,8 +50,7 @@ class ConnectionManager:
     async def start_sender(self, channel: str):
         async with broadcast.subscribe(channel=channel) as subscriber:
             async for event in subscriber:
-                message = ReceivedMessage(event.message)
-                await self.websocket.send_json(message.json())
+                await self._send(ReceivedMessage(event.message))
 
     async def start_receiver(self):
         async for message in self.websocket.iter_text():

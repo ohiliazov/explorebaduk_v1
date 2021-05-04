@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from . import auth, challenges, me, players, websocket
+from explorebaduk.routers import auth, challenges, me, players, websocket
 
 api_router = APIRouter(prefix="/api")
 api_router.include_router(auth.router)

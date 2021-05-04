@@ -6,8 +6,8 @@ from fastapi.concurrency import run_until_first_complete
 from fastapi.routing import APIRouter
 
 from explorebaduk.connection import ConnectionManager
-from explorebaduk.database import Session
-from explorebaduk.dependencies import get_session
+from explorebaduk.database import DatabaseHandler
+from explorebaduk.dependencies import db_handler
 from explorebaduk.messages import ChallengeOpenMessage, DirectChallengeMessage, Notifier
 from explorebaduk.online import UsersOnline
 from explorebaduk.schemas import GameSpeed
@@ -54,15 +54,15 @@ class WebsocketManager(ConnectionManager):
 
 
 @router.websocket("/ws")
-async def ws_handler(websocket: WebSocket, session: Session = Depends(get_session)):
-    manager = WebsocketManager(websocket, session)
+async def ws_handler(websocket: WebSocket, db: DatabaseHandler = Depends(db_handler)):
+    manager = WebsocketManager(websocket, db)
     try:
         await manager.initialize()
         await manager.send_messages()
         tasks = [
             (manager.start_receiver, {}),
             (manager.start_sender, {"channel": "main"}),
-            (manager.start_sender, {"channel": f"user__{manager.user_id}"}),
+            (manager.start_sender, {"channel": f"main.{manager.username}"}),
         ]
         await run_until_first_complete(*tasks)
     except WebSocketDisconnect:

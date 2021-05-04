@@ -5,8 +5,7 @@ from typing import Dict, List
 from fastapi import WebSocket
 
 from explorebaduk.messages import Notifier
-
-from .models import UserModel
+from explorebaduk.models import UserModel
 
 logger = logging.getLogger("explorebaduk")
 

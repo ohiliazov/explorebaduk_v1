@@ -4,7 +4,7 @@ from typing import List
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from .models import (
+from explorebaduk.models import (
     BaseModel,
     BlacklistModel,
     ChallengeModel,
@@ -13,7 +13,7 @@ from .models import (
     GamePlayerModel,
     UserModel,
 )
-from .schemas import ChallengeCreate, GameCreate, GamePlayer, UserCreate
+from explorebaduk.schemas import ChallengeCreate, GameCreate, GamePlayer, UserCreate
 
 engine = create_engine(os.getenv("DATABASE_URI"))
 Session = sessionmaker(engine, autocommit=True, expire_on_commit=False)

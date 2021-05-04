@@ -4,7 +4,7 @@ import random
 import websockets
 
 from explorebaduk.database import DatabaseHandler
-from explorebaduk.dependencies import create_access_token
+from explorebaduk.dependencies import create_token
 
 lock = asyncio.Lock()
 
@@ -47,7 +47,7 @@ async def run():
 
     tokens = []
     for player in players:
-        tokens.append((create_access_token(player), player))
+        tokens.append((create_token(player), player))
 
     if GUEST_NUMBER:
         tokens.extend([("", None) for _ in range(GUEST_NUMBER)])
