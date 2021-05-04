@@ -3,7 +3,7 @@ import random
 
 import websockets
 
-from explorebaduk.crud import DatabaseHandler
+from explorebaduk.database import DatabaseHandler
 from explorebaduk.dependencies import create_access_token
 
 lock = asyncio.Lock()

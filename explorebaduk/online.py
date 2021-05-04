@@ -1,3 +1,4 @@
+import logging
 from collections import defaultdict
 from typing import Dict, List
 
@@ -7,8 +8,10 @@ from explorebaduk.messages import Notifier
 
 from .models import UserModel
 
+logger = logging.getLogger("explorebaduk")
 
-class UsersManager:
+
+class UsersOnline:
     user_ids: Dict[int, List[WebSocket]] = defaultdict(list)
 
     @classmethod

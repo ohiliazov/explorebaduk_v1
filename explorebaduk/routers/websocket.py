@@ -1,21 +1,15 @@
 import asyncio
 import logging
 
-from fastapi import WebSocket, WebSocketDisconnect
+from fastapi import Depends, WebSocket, WebSocketDisconnect
 from fastapi.concurrency import run_until_first_complete
 from fastapi.routing import APIRouter
 
-from explorebaduk.broadcast import broadcast
-from explorebaduk.crud import DatabaseHandler
-from explorebaduk.dependencies import get_current_user
-from explorebaduk.managers import UsersManager
-from explorebaduk.messages import (
-    ChallengeOpenMessage,
-    Message,
-    Notifier,
-    ReceivedMessage,
-    WhoAmIMessage,
-)
+from explorebaduk.connection import ConnectionManager
+from explorebaduk.database import Session
+from explorebaduk.dependencies import get_session
+from explorebaduk.messages import ChallengeOpenMessage, DirectChallengeMessage, Notifier
+from explorebaduk.online import UsersOnline
 from explorebaduk.schemas import GameSpeed
 
 logger = logging.getLogger("explorebaduk")
@@ -24,125 +18,54 @@ router = APIRouter()
 OFFLINE_TIMEOUT = 5
 
 
-class Connection:
-    def __init__(self, websocket: WebSocket):
-        self.websocket = websocket
-        self.user = None
-
-    async def __aiter__(self):
-        async for message in self.websocket.iter_text():
-            yield ReceivedMessage.from_string(message)
-
-    @property
-    def user_id(self):
+class WebsocketManager(ConnectionManager):
+    async def send_messages(self):
         if self.user:
-            return self.user.user_id
+            await UsersOnline.add(self.user, self.websocket)
 
-    @property
-    def username(self):
-        return self.user.username if self.user else "guest"
-
-    async def _send(self, message: Message):
-        await self.websocket.send_json(message.json())
-        logger.info("[%s] > %s", self.username, str(message))
-
-    async def initialize(self):
-        await self.websocket.accept()
-        message = await self.websocket.receive_text()
-
-        with DatabaseHandler() as db:
-            self.user = get_current_user(message, db)
-
-        if self.user:
-            await UsersManager.add(self.user, self.websocket)
-            await self._send_direct_challenges()
-
-        await self._send_messages()
-        await self._send(WhoAmIMessage(self.user))
-
-    async def _send_messages(self):
-        with DatabaseHandler() as db:
-            challenges = db.get_open_challenges()
-        messages = [ChallengeOpenMessage(challenge) for challenge in challenges]
-
-        if messages:
-            await asyncio.wait([self._send(message) for message in messages])
-
-    async def _send_direct_challenges(self):
         messages = []
-        with DatabaseHandler() as db:
-            messages.extend(
-                [
-                    ChallengeOpenMessage(challenge)
-                    for challenge in db.get_challenges_to_user(self.user_id)
-                ],
-            )
-            messages.extend(
-                [
-                    ChallengeOpenMessage(challenge)
-                    for challenge in db.get_challenges_from_user(self.user_id)
-                ],
-            )
+        messages.extend(map(ChallengeOpenMessage, self.db.get_open_challenges()))
+        if self.user:
+            direct_challenges = self.db.get_direct_challenges(self.user_id)
+            messages.extend(map(DirectChallengeMessage, direct_challenges))
 
         if messages:
             await asyncio.wait([self._send(message) for message in messages])
 
     async def finalize(self):
         if self.user:
-            await UsersManager.remove(self.user, self.websocket)
+            await UsersOnline.remove(self.user, self.websocket)
             await asyncio.sleep(OFFLINE_TIMEOUT)
 
-            if not UsersManager.is_online(self.user):
+            if not UsersOnline.is_online(self.user):
                 await Notifier.player_offline(self.user)
 
-                with DatabaseHandler() as db:
-                    challenges = db.get_challenges_from_user(self.user.user_id)
+                challenges = self.db.get_challenges_from_user(self.user.user_id)
 
-                    for challenge in challenges:
-                        if challenge.game.speed is GameSpeed.CORRESPONDENCE:
-                            continue
+                for challenge in challenges:
+                    if challenge.game.speed is GameSpeed.CORRESPONDENCE:
+                        continue
 
-                        if challenge.opponent_id:
-                            await Notifier.direct_challenge_cancelled(challenge)
-                        else:
-                            await Notifier.challenge_cancelled(challenge)
-                        db.session.delete(challenge)
+                    if challenge.opponent_id:
+                        await Notifier.direct_challenge_cancelled(challenge)
+                    else:
+                        await Notifier.challenge_cancelled(challenge)
+                    self.db.session.delete(challenge)
 
 
-@router.websocket_route("/ws")
-async def ws_handler(websocket: WebSocket):
-    connection = Connection(websocket)
+@router.websocket("/ws")
+async def ws_handler(websocket: WebSocket, session: Session = Depends(get_session)):
+    manager = WebsocketManager(websocket, session)
     try:
-        await connection.initialize()
-
+        await manager.initialize()
+        await manager.send_messages()
         tasks = [
-            (ws_receiver, {"connection": connection}),
-            (ws_sender, {"connection": connection}),
+            (manager.start_receiver, {}),
+            (manager.start_sender, {"channel": "main"}),
+            (manager.start_sender, {"channel": f"user__{manager.user_id}"}),
         ]
-        if connection.user:
-            tasks.append((user_ws_sender, {"connection": connection}))
         await run_until_first_complete(*tasks)
     except WebSocketDisconnect:
         pass
     finally:
-        await connection.finalize()
-
-
-async def ws_receiver(connection: Connection):
-    async for message in connection:
-        logger.debug(f"< {message}")
-
-
-async def ws_sender(connection: Connection):
-    async with broadcast.subscribe(channel="main") as subscriber:
-        async for event in subscriber:
-            message = ReceivedMessage(event.message)
-            await connection.websocket.send_json(message.json())
-
-
-async def user_ws_sender(connection: Connection):
-    user_id = connection.user.user_id
-    async with broadcast.subscribe(channel=f"user__{user_id}") as subscriber:
-        async for event in subscriber:
-            message = ReceivedMessage(event.message)
-            await connection.websocket.send_json(message.json())
+        await manager.finalize()

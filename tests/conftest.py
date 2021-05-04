@@ -5,10 +5,10 @@ from typing import List
 
 import pytest
 
-from explorebaduk.crud import DatabaseHandler
+from explorebaduk.database import DatabaseHandler
 from explorebaduk.main import app
-from explorebaduk.managers import UsersManager
 from explorebaduk.models import BaseModel, BlacklistModel, FriendshipModel, UserModel
+from explorebaduk.online import UsersOnline
 from explorebaduk.utils.database import (
     generate_blocked_users,
     generate_friends,
@@ -19,35 +19,35 @@ from .helpers import ApiTester, WebSocketTester
 
 
 @pytest.fixture
-def db_session():
+def db():
     db = DatabaseHandler()
     BaseModel.metadata.drop_all(db.session.bind)
     BaseModel.metadata.create_all(db.session.bind)
 
     try:
-        yield db.session
+        yield db
     finally:
         db.session.close()
 
 
 @pytest.fixture(autouse=True)
-def db_users(db_session) -> List[UserModel]:
-    return generate_users(db_session, 20)
+def db_users(db) -> List[UserModel]:
+    return generate_users(db.session, 20)
 
 
 @pytest.fixture(autouse=True)
-def db_friends(db_session, db_users) -> List[FriendshipModel]:
-    return generate_friends(db_session, db_users, 5)
+def db_friends(db, db_users) -> List[FriendshipModel]:
+    return generate_friends(db.session, db_users, 5)
 
 
 @pytest.fixture(autouse=True)
-def db_blocked_users(db_session, db_users, db_friends) -> List[BlacklistModel]:
-    return generate_blocked_users(db_session, db_users, 3, db_friends)
+def db_blocked_users(db, db_users, db_friends) -> List[BlacklistModel]:
+    return generate_blocked_users(db.session, db_users, 3, db_friends)
 
 
 @pytest.fixture
 async def test_cli() -> ApiTester:
-    UsersManager.clear()
+    UsersOnline.clear()
 
     async with ApiTester(app) as client:
         yield client

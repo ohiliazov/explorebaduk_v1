@@ -1,7 +1,6 @@
 import pytest
 from starlette.status import HTTP_200_OK, HTTP_403_FORBIDDEN
 
-from explorebaduk.crud import DatabaseHandler
 from explorebaduk.messages import (
     ChallengeAcceptedMessage,
     ChallengeOpenMessage,
@@ -37,23 +36,22 @@ def challenge_json() -> dict:
 
 
 @pytest.mark.asyncio
-async def test_create_challenge(test_cli, websockets, challenge_json):
+async def test_create_challenge(db, test_cli, websockets, challenge_json):
     creator_ws = random_websocket(websockets)
     test_cli.authorize(creator_ws.user)
 
     resp = await test_cli.create_challenge(challenge_json)
     assert resp.status_code == HTTP_200_OK, resp.text
 
-    with DatabaseHandler() as db:
-        challenge = db.get_challenge_by_id(resp.json()["challenge_id"])
-        expected = ChallengeOpenMessage(challenge).json()
+    challenge = db.get_challenge_by_id(resp.json()["challenge_id"])
+    expected = ChallengeOpenMessage(challenge).json()
 
     for messages in await receive_websockets(websockets):
         assert expected in messages
 
 
 @pytest.mark.asyncio
-async def test_accept_challenge(test_cli, websockets, challenge_json):
+async def test_accept_challenge(db, test_cli, websockets, challenge_json):
     creator_ws = random_websocket(websockets)
     test_cli.authorize(creator_ws.user)
 
@@ -63,9 +61,9 @@ async def test_accept_challenge(test_cli, websockets, challenge_json):
     await receive_websockets(websockets)
 
     challenge_id = resp.json()["challenge_id"]
-    with DatabaseHandler() as db:
-        challenge = db.get_challenge_by_id(challenge_id)
-        expected = ChallengeAcceptedMessage(challenge).json()
+
+    challenge = db.get_challenge_by_id(challenge_id)
+    expected = ChallengeAcceptedMessage(challenge).json()
 
     opponent_ws = random_websocket(websockets, exclude_users=[creator_ws.user])
     test_cli.authorize(opponent_ws.user)
@@ -78,7 +76,7 @@ async def test_accept_challenge(test_cli, websockets, challenge_json):
 
 
 @pytest.mark.asyncio
-async def test_cancel_challenge(test_cli, websockets, challenge_json):
+async def test_cancel_challenge(db, test_cli, websockets, challenge_json):
     creator_ws = random_websocket(websockets)
     test_cli.authorize(creator_ws.user)
 
@@ -88,9 +86,8 @@ async def test_cancel_challenge(test_cli, websockets, challenge_json):
     await receive_websockets(websockets)
 
     challenge_id = resp.json()["challenge_id"]
-    with DatabaseHandler() as db:
-        challenge = db.get_challenge_by_id(challenge_id)
-        expected = ChallengeRemovedMessage(challenge).json()
+    challenge = db.get_challenge_by_id(challenge_id)
+    expected = ChallengeRemovedMessage(challenge).json()
 
     resp = await test_cli.cancel_challenge(challenge_id)
     assert resp.status_code == HTTP_200_OK, resp.text
@@ -135,7 +132,7 @@ async def test_cancel_challenge_not_self(test_cli, websockets, challenge_json):
 
 
 @pytest.mark.asyncio
-async def test_create_direct_challenge(test_cli, websockets, challenge_json):
+async def test_create_direct_challenge(db, test_cli, websockets, challenge_json):
     creator_ws = random_websocket(websockets)
     test_cli.authorize(creator_ws.user)
 
@@ -145,9 +142,8 @@ async def test_create_direct_challenge(test_cli, websockets, challenge_json):
     resp = await test_cli.create_challenge(challenge_json)
     assert resp.status_code == HTTP_200_OK, resp.text
 
-    with DatabaseHandler() as db:
-        challenge = db.get_challenge_by_id(resp.json()["challenge_id"])
-        expected = DirectChallengeMessage(challenge).json()
+    challenge = db.get_challenge_by_id(resp.json()["challenge_id"])
+    expected = DirectChallengeMessage(challenge).json()
 
     assert expected in await opponent_ws.receive()
 
@@ -156,7 +152,7 @@ async def test_create_direct_challenge(test_cli, websockets, challenge_json):
 
 
 @pytest.mark.asyncio
-async def test_accept_direct_challenge(test_cli, websockets, challenge_json):
+async def test_accept_direct_challenge(db, test_cli, websockets, challenge_json):
     creator_ws = random_websocket(websockets)
     test_cli.authorize(creator_ws.user)
 
@@ -169,9 +165,9 @@ async def test_accept_direct_challenge(test_cli, websockets, challenge_json):
     await receive_websockets(websockets)
 
     challenge_id = resp.json()["challenge_id"]
-    with DatabaseHandler() as db:
-        challenge = db.get_challenge_by_id(challenge_id)
-        expected = ChallengeAcceptedMessage(challenge).json()
+
+    challenge = db.get_challenge_by_id(challenge_id)
+    expected = ChallengeAcceptedMessage(challenge).json()
 
     test_cli.authorize(opponent_ws.user)
 

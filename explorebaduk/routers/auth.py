@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from passlib.context import CryptContext
 
-from explorebaduk.crud import DatabaseHandler
-from explorebaduk.dependencies import create_access_token, get_db_session
+from explorebaduk.database import DatabaseHandler
+from explorebaduk.dependencies import create_access_token, get_db_handler
 from explorebaduk.schemas import User, UserCreate
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -21,7 +21,7 @@ def get_password_hash(password):
 @router.post("/login")
 def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
-    db: DatabaseHandler = Depends(get_db_session),
+    db: DatabaseHandler = Depends(get_db_handler),
 ):
     user = db.get_user_by_email(form_data.username)
 
@@ -37,7 +37,7 @@ def login(
 
 
 @router.post("/signup", response_model=User)
-def signup(user_data: UserCreate, db: DatabaseHandler = Depends(get_db_session)):
+def signup(user_data: UserCreate, db: DatabaseHandler = Depends(get_db_handler)):
     user_data.password = get_password_hash(user_data.password)
 
     try:

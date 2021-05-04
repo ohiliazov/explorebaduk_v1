@@ -5,9 +5,9 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, OAuth2PasswordBearer
 from jose import jwt
 
-from .crud import DatabaseHandler
-from .managers import UsersManager
+from .database import DatabaseHandler, Session
 from .models import UserModel
+from .online import UsersOnline
 
 http_bearer = HTTPBearer()
 SECRET_KEY = os.getenv("SECRET_KEY", "my-super-secret-key")
@@ -15,7 +15,15 @@ SECRET_KEY = os.getenv("SECRET_KEY", "my-super-secret-key")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/login")
 
 
-def get_db_session() -> DatabaseHandler:
+def get_session() -> Session:
+    session = Session()
+    try:
+        yield session
+    finally:
+        session.close()
+
+
+def get_db_handler() -> DatabaseHandler:
     db = DatabaseHandler()
     try:
         yield db
@@ -46,7 +54,7 @@ def get_current_user(token: str, db: DatabaseHandler):
 
 def current_user(
     token: str = Depends(oauth2_scheme),
-    db: DatabaseHandler = Depends(get_db_session),
+    db: DatabaseHandler = Depends(get_db_handler),
 ):
     if user := get_current_user(token, db):
         return user
@@ -55,7 +63,7 @@ def current_user(
 
 
 async def current_user_online(user: UserModel = Depends(current_user)) -> UserModel:
-    if UsersManager.is_online(user):
+    if UsersOnline.is_online(user):
         return user
 
     raise HTTPException(400, "Not connected to websocket")
