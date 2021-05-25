@@ -27,7 +27,7 @@ class ConnectionManager:
         return self.user.username if self.user else "guest"
 
     async def _send(self, message: Message):
-        logger.info("[%s] > %s", self.username, str(message))
+        logger.info("[initialize %s] > %s", self.username, str(message))
         await self.websocket.send_json(message.json())
 
     async def initialize(self):

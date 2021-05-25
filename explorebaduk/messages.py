@@ -112,12 +112,12 @@ class DirectChallengeAcceptedMessage(Message):
 class Notifier:
     @staticmethod
     async def broadcast(message: Message):
-        logger.info(f">>> [{message.event}] {message.data}")
+        logger.info(f"[broadcast] [{message.event}] {message.data}")
         await broadcast.publish("main", message.json())
 
     @staticmethod
     async def notify(user_id, message: Message):
-        logger.info(f"> <{user_id}> [{message.event}] {message.data}")
+        logger.info(f"[notify {user_id}] [{message.event}] {message.data}")
         await broadcast.publish(f"main.user__{user_id}", message.json())
 
     @classmethod
