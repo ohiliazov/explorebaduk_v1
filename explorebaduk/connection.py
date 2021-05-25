@@ -1,13 +1,10 @@
-import logging
-
 from fastapi import WebSocket
 
 from explorebaduk.broadcast import broadcast
 from explorebaduk.database import DatabaseHandler
 from explorebaduk.dependencies import parse_token
+from explorebaduk.logger import logger
 from explorebaduk.messages import Message, ReceivedMessage, WhoAmIMessage
-
-logger = logging.getLogger("explorebaduk")
 
 
 class ConnectionManager:

@@ -1,4 +1,3 @@
-import logging
 from collections import defaultdict
 from typing import Dict, List
 
@@ -6,8 +5,6 @@ from fastapi import WebSocket
 
 from explorebaduk.messages import Notifier
 from explorebaduk.models import UserModel
-
-logger = logging.getLogger("explorebaduk")
 
 
 class UsersOnline:

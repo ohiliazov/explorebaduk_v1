@@ -1,5 +1,4 @@
 import asyncio
-import logging
 
 from fastapi import Depends, WebSocket, WebSocketDisconnect
 from fastapi.concurrency import run_until_first_complete
@@ -12,7 +11,6 @@ from explorebaduk.messages import ChallengeOpenMessage, DirectChallengeMessage, 
 from explorebaduk.online import UsersOnline
 from explorebaduk.schemas import GameSpeed
 
-logger = logging.getLogger("explorebaduk")
 router = APIRouter()
 
 OFFLINE_TIMEOUT = 5
@@ -23,8 +21,10 @@ class WebsocketManager(ConnectionManager):
         if self.user:
             await UsersOnline.add(self.user, self.websocket)
 
-        messages = []
-        messages.extend(map(ChallengeOpenMessage, self.db.get_open_challenges()))
+        messages = list(
+            map(ChallengeOpenMessage, self.db.get_open_challenges()),
+        )
+
         if self.user:
             direct_challenges = self.db.get_direct_challenges(self.user_id)
             messages.extend(map(DirectChallengeMessage, direct_challenges))

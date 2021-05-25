@@ -1,13 +1,10 @@
-import logging
 from typing import Any, Optional
 
 import simplejson as json
 
 from explorebaduk.broadcast import broadcast
+from explorebaduk.logger import logger
 from explorebaduk.models import ChallengeModel, UserModel
-
-logger = logging.getLogger("explorebaduk")
-logger.setLevel(logging.INFO)
 
 
 class Message:
