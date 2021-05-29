@@ -34,7 +34,7 @@ class WebsocketManager(ConnectionManager):
 
     async def finalize(self):
         if self.user:
-            await UsersOnline.remove(self.user, self.websocket)
+            UsersOnline.remove(self.user, self.websocket)
             await asyncio.sleep(OFFLINE_TIMEOUT)
 
             if not UsersOnline.is_online(self.user):
@@ -62,7 +62,7 @@ async def ws_handler(websocket: WebSocket, db: DatabaseHandler = Depends(db_hand
         tasks = [
             (manager.start_receiver, {}),
             (manager.start_sender, {"channel": "main"}),
-            (manager.start_sender, {"channel": f"main.{manager.username}"}),
+            (manager.start_sender, {"channel": f"user.{manager.user_id}"}),
         ]
         await run_until_first_complete(*tasks)
     except WebSocketDisconnect:

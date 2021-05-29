@@ -22,7 +22,7 @@ class UsersOnline:
                 await Notifier.player_online(user)
 
     @classmethod
-    async def remove(cls, user: UserModel, websocket: WebSocket):
+    def remove(cls, user: UserModel, websocket: WebSocket):
         cls.user_ids[user.user_id].remove(websocket)
 
     @classmethod
