@@ -16,10 +16,9 @@ class UsersOnline:
 
     @classmethod
     async def add(cls, user: UserModel, websocket: WebSocket):
-        if user.user_id not in cls.user_ids:
-            cls.user_ids[user.user_id].append(websocket)
-            if len(cls.user_ids[user.user_id]) == 1:
-                await Notifier.player_online(user)
+        cls.user_ids[user.user_id].append(websocket)
+        if len(cls.user_ids[user.user_id]) == 1:
+            await Notifier.player_online(user)
 
     @classmethod
     def remove(cls, user: UserModel, websocket: WebSocket):
