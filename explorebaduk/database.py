@@ -53,8 +53,12 @@ class DatabaseHandler:
             ),
         )
 
-    def get_users(self) -> List[UserModel]:
-        return self.session.query(UserModel).all()
+    def get_users(self, user_ids: List[int] = None) -> List[UserModel]:
+        query = self.session.query(UserModel)
+        if user_ids:
+            query = query.filter(UserModel.user_id.in_(user_ids))
+
+        return query.all()
 
     def search_users(self, search_string: str) -> List[UserModel]:
         if not search_string:

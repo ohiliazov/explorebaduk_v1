@@ -7,7 +7,12 @@ from fastapi.routing import APIRouter
 from explorebaduk.connection import ConnectionManager
 from explorebaduk.database import DatabaseHandler
 from explorebaduk.dependencies import db_handler
-from explorebaduk.messages import ChallengeOpenMessage, DirectChallengeMessage, Notifier
+from explorebaduk.messages import (
+    ChallengeOpenMessage,
+    DirectChallengeMessage,
+    Notifier,
+    PlayerOnlineMessage,
+)
 from explorebaduk.online import UsersOnline
 from explorebaduk.schemas import GameSpeed
 
@@ -19,16 +24,28 @@ OFFLINE_TIMEOUT = 5
 class WebsocketManager(ConnectionManager):
     async def send_messages(self):
         if self.user:
-            await UsersOnline.add(self.user, self.websocket)
+            UsersOnline.add(self.user, self.websocket)
+            if UsersOnline.is_only_connection(self.user):
+                await Notifier.player_online(self.user)
 
-        messages = list(
-            map(ChallengeOpenMessage, self.db.get_open_challenges()),
-        )
+        user_ids_online = UsersOnline.get_user_ids(self.user)
+        users_online = self.db.get_users(user_ids_online)
+        challenges = self.db.get_open_challenges()
+
+        users_messages = [PlayerOnlineMessage(user) for user in users_online]
+        challenges_messages = [
+            ChallengeOpenMessage(challenge) for challenge in challenges
+        ]
+        direct_challenges_messages = []
 
         if self.user:
             direct_challenges = self.db.get_direct_challenges(self.user_id)
-            messages.extend(map(DirectChallengeMessage, direct_challenges))
+            direct_challenges_messages = [
+                DirectChallengeMessage(direct_challenge)
+                for direct_challenge in direct_challenges
+            ]
 
+        messages = users_messages + challenges_messages + direct_challenges_messages
         if messages:
             await asyncio.wait([self._send(message) for message in messages])
 

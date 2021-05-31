@@ -18,8 +18,11 @@ async def test_authorize_as_guest(test_cli, websockets, ws):
 
     messages = await ws.receive()
 
-    assert len(messages) == 1
     assert WhoAmIMessage(None).json() in messages
+
+    for websocket in websockets:
+        if websocket.user:
+            assert PlayerOnlineMessage(websocket.user).json() in messages
 
 
 @pytest.mark.asyncio
@@ -29,8 +32,11 @@ async def test_authorize_as_user(test_cli, db_users, websockets, ws):
 
     messages = await ws.receive()
 
-    assert len(messages) == 1
     assert WhoAmIMessage(user).json() in messages
+
+    for websocket in websockets:
+        if websocket.user:
+            assert PlayerOnlineMessage(websocket.user).json() in messages
 
     expected = PlayerOnlineMessage(user).json()
     for messages in await receive_websockets(websockets, [ws]):

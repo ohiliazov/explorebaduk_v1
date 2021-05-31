@@ -3,7 +3,6 @@ from typing import Dict, List
 
 from fastapi import WebSocket
 
-from explorebaduk.messages import Notifier
 from explorebaduk.models import UserModel
 
 
@@ -15,10 +14,8 @@ class UsersOnline:
         cls.user_ids.clear()
 
     @classmethod
-    async def add(cls, user: UserModel, websocket: WebSocket):
+    def add(cls, user: UserModel, websocket: WebSocket):
         cls.user_ids[user.user_id].append(websocket)
-        if len(cls.user_ids[user.user_id]) == 1:
-            await Notifier.player_online(user)
 
     @classmethod
     def remove(cls, user: UserModel, websocket: WebSocket):
@@ -27,6 +24,10 @@ class UsersOnline:
     @classmethod
     def is_online(cls, user: UserModel) -> bool:
         return bool(cls.user_ids[user.user_id])
+
+    @classmethod
+    def is_only_connection(cls, user: UserModel) -> bool:
+        return len(cls.user_ids[user.user_id]) == 1
 
     @classmethod
     def get_user_ids(cls, user: UserModel = None) -> List[int]:
