@@ -1,9 +1,10 @@
 -r docs/requirements.txt
+async-asgi-testclient==1.4.6
 bcrypt==3.2.0
 coverage==5.3
-fastapi==0.63.0
-git+https://github.com/jumpman24/broadcaster.git@master
-git+https://github.com/jumpman24/starlette.git@dev
+fastapi==0.65.2
+broadcaster==0.2.0
+starlette==0.14.2
 numpy==1.20.1
 passlib[bcrypt]==1.7.4
 pre-commit==2.7.1
@@ -14,6 +15,6 @@ pytest-cov==2.10.1
 python-jose[cryptography]==3.2.0
 python-multipart==0.0.5
 simplejson==3.17.2
-sqlalchemy==1.4.10
-uvicorn==0.13.3
-websockets==8.1
+sqlalchemy==1.4.18
+uvicorn==0.14.0
+websockets==9.0

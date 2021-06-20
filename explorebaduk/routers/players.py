@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from explorebaduk.database import DatabaseHandler
 from explorebaduk.dependencies import current_user, db_handler
 from explorebaduk.models import UserModel
-from explorebaduk.online import UsersOnline
+from explorebaduk.managers import is_player_online
 from explorebaduk.schemas import User
 
 router = APIRouter(tags=["players"])
@@ -20,7 +20,7 @@ def list_players(
     players = db.search_users(q)
 
     if online:
-        players = list(filter(UsersOnline.is_online, players))
+        players = list(filter(is_player_online, players))
 
     return players
 

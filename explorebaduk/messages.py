@@ -47,7 +47,7 @@ class PlayerOnlineMessage(Message):
 
     def __init__(self, user: UserModel):
         self.data = {
-            "status": "online",
+            "status": "managers",
             **user.asdict(),
         }
 

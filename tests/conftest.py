@@ -8,7 +8,7 @@ import pytest
 from explorebaduk.database import DatabaseHandler
 from explorebaduk.main import app
 from explorebaduk.models import BaseModel, BlacklistModel, FriendshipModel, UserModel
-from explorebaduk.online import UsersOnline
+from explorebaduk.managers import clear_server_state
 from explorebaduk.utils.database import (
     generate_blocked_users,
     generate_friends,
@@ -47,7 +47,7 @@ def db_blocked_users(db, db_users, db_friends) -> List[BlacklistModel]:
 
 @pytest.fixture
 async def test_cli() -> ApiTester:
-    UsersOnline.clear()
+    clear_server_state()
 
     async with ApiTester(app) as client:
         yield client

@@ -47,8 +47,14 @@ class ConnectionManager:
     async def start_sender(self, channel: str):
         async with broadcast.subscribe(channel=channel) as subscriber:
             async for event in subscriber:
-                await self._send(ReceivedMessage(event.message))
+                await self.send_notification(ReceivedMessage(event.message))
+
+    async def send_notification(self, message: ReceivedMessage):
+        await self._send(message)
 
     async def start_receiver(self):
-        async for message in self.websocket.iter_text():
-            logger.debug(f"< {message}")
+        async for message in self.websocket.iter_json():
+            await self.process_message(ReceivedMessage(message))
+
+    async def process_message(self, message: ReceivedMessage):
+        logger.debug(f"< {message}")

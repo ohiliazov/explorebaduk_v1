@@ -12,8 +12,14 @@ from explorebaduk.messages import (
     DirectChallengeMessage,
     Notifier,
     PlayerOnlineMessage,
+    PlayerOfflineMessage,
 )
-from explorebaduk.online import UsersOnline
+from explorebaduk.managers import (
+    get_player_ids,
+    is_player_online,
+    add_player_ws,
+    remove_player_ws,
+)
 from explorebaduk.schemas import GameSpeed
 
 router = APIRouter()
@@ -22,13 +28,23 @@ OFFLINE_TIMEOUT = 5
 
 
 class WebsocketManager(ConnectionManager):
+    def __init__(self, websocket, db):
+        super().__init__(websocket, db)
+        self.search_field = ""
+
     async def send_messages(self):
+        was_online = is_player_online(self.user)
+
         if self.user:
-            UsersOnline.add(self.user, self.websocket)
-            if UsersOnline.is_only_connection(self.user):
+            add_player_ws(self.user, self.websocket)
+
+            if not was_online:
                 await Notifier.player_online(self.user)
 
-        user_ids_online = UsersOnline.get_user_ids(self.user)
+        user_ids_online = get_player_ids()
+        if self.user:
+            user_ids_online.remove(self.user.user_id)
+
         users_online = self.db.get_users(user_ids_online)
         challenges = self.db.get_open_challenges()
 
@@ -51,10 +67,10 @@ class WebsocketManager(ConnectionManager):
 
     async def finalize(self):
         if self.user:
-            UsersOnline.remove(self.user, self.websocket)
+            remove_player_ws(self.user, self.websocket)
             await asyncio.sleep(OFFLINE_TIMEOUT)
 
-            if not UsersOnline.is_online(self.user):
+            if not is_player_online(self.user):
                 await Notifier.player_offline(self.user)
 
                 challenges = self.db.get_challenges_from_user(self.user.user_id)
@@ -68,6 +84,54 @@ class WebsocketManager(ConnectionManager):
                     else:
                         await Notifier.challenge_cancelled(challenge)
                     self.db.session.delete(challenge)
+
+    def check_player_filter(self, player_data):
+        if not self.search_field:
+            return True
+
+        first_name = player_data["first_name"]
+        last_name = player_data["last_name"]
+        username = player_data["username"]
+
+        if " " not in self.search_field:
+            return any([
+                self.search_field in first_name,
+                self.search_field in last_name,
+                self.search_field in username,
+            ])
+
+        s1, s2 = self.search_field.split(" ", maxsplit=1)
+        return any([
+            s1 in first_name and s2 in last_name,
+            s2 in first_name and s1 in last_name,
+        ])
+
+    async def send_notification(self, message):
+
+        if message.event in (
+                PlayerOnlineMessage.event,
+                PlayerOfflineMessage.event
+        ) and not self.check_player_filter(message.data):
+            return
+
+        await self._send(message)
+
+    async def process_message(self, message):
+        if message.event == "players.list":
+            self.search_field = message.data
+
+        users_online = self.db.search_users(self.search_field)
+
+        users_messages = [
+            PlayerOnlineMessage(user) for user in users_online
+            if self.check_player_filter(user.asdict())
+        ]
+
+        if users_messages:
+            await asyncio.wait([
+                self._send(message)
+                for message in users_messages
+            ])
 
 
 @router.websocket("/ws")
