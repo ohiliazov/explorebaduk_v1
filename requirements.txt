@@ -17,4 +17,4 @@ simplejson==3.17.2
 sqlalchemy==1.4.18
 starlette==0.14.2
 uvicorn==0.14.0
-websockets==9.0
+websockets==9.1
