@@ -1,3 +1,4 @@
+# flake8: noqa: F401
 from .online import (
     add_player_ws,
     clear_server_state,

@@ -7,8 +7,8 @@ import pytest
 
 from explorebaduk.database import DatabaseHandler
 from explorebaduk.main import app
-from explorebaduk.models import BaseModel, BlacklistModel, FriendshipModel, UserModel
 from explorebaduk.managers import clear_server_state
+from explorebaduk.models import BaseModel, BlacklistModel, FriendshipModel, UserModel
 from explorebaduk.utils.database import (
     generate_blocked_users,
     generate_friends,

@@ -46,7 +46,9 @@ class Property:
             yield item
 
     def __eq__(self, other: "Property"):
-        return other is not None and self.label == other.label and self.data == other.data
+        return (
+            other is not None and self.label == other.label and self.data == other.data
+        )
 
     def add_value(self, value):
         if value not in self.data:
@@ -228,7 +230,9 @@ class Cursor:
         self.atSplit = (self.index + 1 == len(self.game_tree)) and bool(
             self.game_tree.variations,
         )
-        self.atEnd = (self.index + 1 == len(self.game_tree)) and not self.game_tree.variations
+        self.atEnd = (
+            self.index + 1 == len(self.game_tree)
+        ) and not self.game_tree.variations
 
     def at_tree_end(self) -> bool:
         return self.index + 1 == len(self.game_tree)
@@ -303,7 +307,9 @@ class Cursor:
         if not self.atEnd and not self.atSplit:
             next_node_moves = [get_move_property(self.game_tree[self.index + 1])]
         else:
-            next_node_moves = [get_move_property(tree[0]) for tree in self.game_tree.variations]
+            next_node_moves = [
+                get_move_property(tree[0]) for tree in self.game_tree.variations
+            ]
 
         if node_move not in next_node_moves:
             self.game_tree.insert_tree(

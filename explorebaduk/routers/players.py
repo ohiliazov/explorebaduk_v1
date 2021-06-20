@@ -4,8 +4,8 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from explorebaduk.database import DatabaseHandler
 from explorebaduk.dependencies import current_user, db_handler
-from explorebaduk.models import UserModel
 from explorebaduk.managers import is_player_online
+from explorebaduk.models import UserModel
 from explorebaduk.schemas import User
 
 router = APIRouter(tags=["players"])

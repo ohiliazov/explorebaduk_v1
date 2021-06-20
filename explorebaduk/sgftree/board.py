@@ -148,7 +148,9 @@ class Board:
 
         while unexplored:
             coord = unexplored.pop()
-            unexplored |= {crd for p, crd in self._get_adjacent(coord) if p in locations}
+            unexplored |= {
+                crd for p, crd in self._get_adjacent(coord) if p in locations
+            }
 
             explored.add(coord)
             unexplored -= explored
@@ -159,7 +161,11 @@ class Board:
         surrounding = set()
 
         for coord in chain:
-            surrounding |= {(p, coord) for p, coord in self._get_adjacent(coord) if coord not in chain}
+            surrounding |= {
+                (p, coord)
+                for p, coord in self._get_adjacent(coord)
+                if coord not in chain
+            }
 
         return surrounding
 
@@ -183,7 +189,9 @@ class Board:
         liberties = set()
 
         for coord in group:
-            liberties |= {coord for p, coord in self._get_adjacent(coord) if p is Location.EMPTY}
+            liberties |= {
+                coord for p, coord in self._get_adjacent(coord) if p is Location.EMPTY
+            }
 
         return liberties
 

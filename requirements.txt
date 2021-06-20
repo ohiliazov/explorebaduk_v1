@@ -1,10 +1,9 @@
 -r docs/requirements.txt
 async-asgi-testclient==1.4.6
 bcrypt==3.2.0
+broadcaster==0.2.0
 coverage==5.3
 fastapi==0.65.2
-broadcaster==0.2.0
-starlette==0.14.2
 numpy==1.20.1
 passlib[bcrypt]==1.7.4
 pre-commit==2.7.1
@@ -16,5 +15,6 @@ python-jose[cryptography]==3.2.0
 python-multipart==0.0.5
 simplejson==3.17.2
 sqlalchemy==1.4.18
+starlette==0.14.2
 uvicorn==0.14.0
 websockets==9.0

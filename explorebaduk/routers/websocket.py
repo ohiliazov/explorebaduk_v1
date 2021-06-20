@@ -7,18 +7,18 @@ from fastapi.routing import APIRouter
 from explorebaduk.connection import ConnectionManager
 from explorebaduk.database import DatabaseHandler
 from explorebaduk.dependencies import db_handler
+from explorebaduk.managers import (
+    add_player_ws,
+    get_player_ids,
+    is_player_online,
+    remove_player_ws,
+)
 from explorebaduk.messages import (
     ChallengeOpenMessage,
     DirectChallengeMessage,
     Notifier,
-    PlayerOnlineMessage,
     PlayerOfflineMessage,
-)
-from explorebaduk.managers import (
-    get_player_ids,
-    is_player_online,
-    add_player_ws,
-    remove_player_ws,
+    PlayerOnlineMessage,
 )
 from explorebaduk.schemas import GameSpeed
 
@@ -94,24 +94,32 @@ class WebsocketManager(ConnectionManager):
         username = player_data["username"]
 
         if " " not in self.search_field:
-            return any([
-                self.search_field in first_name,
-                self.search_field in last_name,
-                self.search_field in username,
-            ])
+            return any(
+                [
+                    self.search_field in first_name,
+                    self.search_field in last_name,
+                    self.search_field in username,
+                ],
+            )
 
         s1, s2 = self.search_field.split(" ", maxsplit=1)
-        return any([
-            s1 in first_name and s2 in last_name,
-            s2 in first_name and s1 in last_name,
-        ])
+        return any(
+            [
+                s1 in first_name and s2 in last_name,
+                s2 in first_name and s1 in last_name,
+            ],
+        )
 
     async def send_notification(self, message):
 
-        if message.event in (
+        if (
+            message.event
+            in (
                 PlayerOnlineMessage.event,
-                PlayerOfflineMessage.event
-        ) and not self.check_player_filter(message.data):
+                PlayerOfflineMessage.event,
+            )
+            and not self.check_player_filter(message.data)
+        ):
             return
 
         await self._send(message)
@@ -123,15 +131,13 @@ class WebsocketManager(ConnectionManager):
         users_online = self.db.search_users(self.search_field)
 
         users_messages = [
-            PlayerOnlineMessage(user) for user in users_online
+            PlayerOnlineMessage(user)
+            for user in users_online
             if self.check_player_filter(user.asdict())
         ]
 
         if users_messages:
-            await asyncio.wait([
-                self._send(message)
-                for message in users_messages
-            ])
+            await asyncio.wait([self._send(message) for message in users_messages])
 
 
 @router.websocket("/ws")

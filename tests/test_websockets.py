@@ -130,7 +130,10 @@ async def test_players_list_with_full_name(test_cli, db_users, websockets, ws):
     for websocket in websockets:
         if websocket.user:
             message = PlayerOnlineMessage(websocket.user).json()
-            if user_ws.user.first_name == websocket.user.first_name and user_ws.user.last_name == websocket.user.last_name:
+            if (
+                user_ws.user.first_name == websocket.user.first_name
+                and user_ws.user.last_name == websocket.user.last_name
+            ):
                 assert message in messages
             else:
                 assert message not in messages

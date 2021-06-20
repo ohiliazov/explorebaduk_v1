@@ -32,5 +32,24 @@ def make_pairing(players, restricted_pairs):
     return pairs
 
 
-print(make_pairing(["player1", "player2", "player3", "player4", "player5", "player6", "player7", "player8"], []))
-print(make_pairing(["player1", "player2", "player3", "player4", "player5", "player6", "player7"], []))
+print(
+    make_pairing(
+        [
+            "player1",
+            "player2",
+            "player3",
+            "player4",
+            "player5",
+            "player6",
+            "player7",
+            "player8",
+        ],
+        [],
+    ),
+)
+print(
+    make_pairing(
+        ["player1", "player2", "player3", "player4", "player5", "player6", "player7"],
+        [],
+    ),
+)

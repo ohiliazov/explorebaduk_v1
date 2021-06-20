@@ -3,9 +3,8 @@ from typing import List
 
 from fastapi import WebSocket
 
-from explorebaduk.models import UserModel
 from explorebaduk.logger import logger
-
+from explorebaduk.models import UserModel
 
 ONLINE_PLAYERS = defaultdict(list)
 
