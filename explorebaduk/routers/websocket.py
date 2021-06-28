@@ -124,20 +124,26 @@ class WebsocketManager(ConnectionManager):
 
         await self._send(message)
 
-    async def process_message(self, message):
-        if message.event == "players.list":
-            self.search_field = message.data
+    async def players_list(self, search_field: str):
+        self.search_field = search_field
 
+        user_ids_online = get_player_ids()
         users_online = self.db.search_users(self.search_field)
 
         users_messages = [
             PlayerOnlineMessage(user)
             for user in users_online
-            if self.check_player_filter(user.asdict())
+            if user.user_id in user_ids_online
         ]
 
         if users_messages:
-            await asyncio.wait([self._send(message) for message in users_messages])
+            await asyncio.wait(
+                [self._send(message) for message in users_messages],
+            )
+
+    async def process_message(self, message):
+        if message.event == "players.list":
+            await self.players_list(message.data)
 
 
 @router.websocket("/ws")
