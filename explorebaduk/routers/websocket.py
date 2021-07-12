@@ -126,13 +126,16 @@ class WebsocketManager(ConnectionManager):
 
     async def players_list(self, search_field: str):
         self.search_field = search_field
+        users = self.db.search_users(self.search_field)
 
         user_ids_online = get_player_ids()
-        users_online = self.db.search_users(self.search_field)
+
+        if self.user:
+            user_ids_online.remove(self.user_id)
 
         users_messages = [
             PlayerOnlineMessage(user)
-            for user in users_online
+            for user in users
             if user.user_id in user_ids_online
         ]
 
