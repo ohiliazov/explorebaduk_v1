@@ -4,7 +4,7 @@ bcrypt==3.2.0
 broadcaster==0.2.0
 coverage==5.5
 fastapi==0.65.2
-numpy==1.21.0
+numpy==1.22.0
 passlib[bcrypt]==1.7.4
 pre-commit==2.13.0
 pymysql==1.0.2
